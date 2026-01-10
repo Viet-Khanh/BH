@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createCrudRouter } from './routes/crud.js';
 import Product from './models/Product.js';
 import Customer from './models/Customer.js';
@@ -16,12 +19,18 @@ import { buildSeedData } from './seedData.js';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/banhang';
+const FRONTEND_DIST =
+  process.env.FRONTEND_DIST || path.resolve(__dirname, '../../banhang/dist');
+const SHOULD_SERVE_FRONTEND = process.env.SERVE_FRONTEND !== 'false';
 
 const models = {
   products: Product,
@@ -45,6 +54,17 @@ app.get('/api/health', (req, res) => {
 Object.entries(models).forEach(([key, model]) => {
   app.use(`/api/${key}`, createCrudRouter(model));
 });
+
+if (SHOULD_SERVE_FRONTEND && fs.existsSync(FRONTEND_DIST)) {
+  app.use(express.static(FRONTEND_DIST));
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+      res.status(404).json({ message: 'Not found' });
+      return;
+    }
+    res.sendFile(path.join(FRONTEND_DIST, 'index.html'));
+  });
+}
 
 const resetAll = async () => {
   await Promise.all(Object.values(models).map((Model) => Model.deleteMany({})));

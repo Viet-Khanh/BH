@@ -1,22 +1,39 @@
 import { Button, Space } from 'antd';
 
-const InvoiceHeader = ({ onCancel, onPreview, onShowDebt, onOpenPayment }) => (
+const InvoiceHeader = ({
+  onCancel,
+  onPreview,
+  onShowDebt,
+  onOpenPayment,
+  title = 'BÁN HÀNG',
+  backLabel = 'F5 - Quay lại',
+  showPreview = true,
+  previewLabel = 'Xem trước',
+  showPayment = true,
+  paymentLabel = 'F8 - Thanh toán',
+  extraActions,
+}) => (
   <div className="pos-header">
     <Button size="large" onClick={onCancel}>
-      F5 - Quay lại
+      {backLabel}
     </Button>
-    <div className="pos-header-title">BÁN HÀNG</div>
+    <div className="pos-header-title">{title}</div>
     <div className="pos-header-actions">
       <Space wrap>
-        <Button size="large" className="btn-accent" onClick={onPreview}>
-          Xem trước
-        </Button>
+        {showPreview && onPreview && (
+          <Button size="large" className="btn-accent" onClick={onPreview}>
+            {previewLabel}
+          </Button>
+        )}
         {/* <Button size="large" onClick={onShowDebt}>
           Trả nợ
         </Button> */}
-        <Button size="large" className="btn-success" onClick={onOpenPayment}>
-          F8 - Thanh toán
-        </Button>
+        {showPayment && onOpenPayment && (
+          <Button size="large" className="btn-success" onClick={onOpenPayment}>
+            {paymentLabel}
+          </Button>
+        )}
+        {extraActions}
       </Space>
     </div>
   </div>

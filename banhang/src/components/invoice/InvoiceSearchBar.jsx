@@ -9,27 +9,38 @@ const InvoiceSearchBar = ({
   onShowTemplate,
   filteredQuick,
   onQuickSelect,
+  showInput = false,
+  inputPlaceholder = 'Gõ mã hoặc tên hàng...',
+  showPrint = true,
+  printLabel = 'In A4',
+  searchLabel = 'Tìm kiếm',
+  disabled = false,
 }) => (
   <div className="pos-search">
     <Space wrap>
-      {/* <Input
-        placeholder="Gõ mã hoặc tên hàng..."
-        value={searchKeyword}
-        onChange={(event) => onSearchKeywordChange(event.target.value)}
-        onPressEnter={onPressEnter}
-        style={{ minWidth: 260 }}
-      /> */}
-      <Button size="large" onClick={onOpenSearch}>
-        Tìm kiếm
+      {showInput && (
+        <Input
+          placeholder={inputPlaceholder}
+          value={searchKeyword}
+          onChange={(event) => onSearchKeywordChange(event.target.value)}
+          onPressEnter={onPressEnter}
+          style={{ minWidth: 260 }}
+          disabled={disabled}
+        />
+      )}
+      <Button size="large" onClick={onOpenSearch} disabled={disabled}>
+        {searchLabel}
       </Button>
-      <Button size="large" onClick={onPrint}>
-        In A4
-      </Button>
+      {showPrint && onPrint && (
+        <Button size="large" onClick={onPrint}>
+          {printLabel}
+        </Button>
+      )}
       {/* <Button size="large" onClick={onShowTemplate}>
         Mẫu hóa đơn
       </Button> */}
     </Space>
-    {filteredQuick.length > 0 && (
+    {!disabled && filteredQuick.length > 0 && (
       <div className="pos-quick-list">
         {filteredQuick.map((item) => (
           <button

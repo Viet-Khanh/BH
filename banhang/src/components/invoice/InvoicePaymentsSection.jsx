@@ -1,13 +1,20 @@
 import dayjs from 'dayjs';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const InvoicePaymentsSection = ({ isEdit, payments = [], changeLog = [] }) => {
+const InvoicePaymentsSection = ({
+  isEdit,
+  payments = [],
+  changeLog = [],
+  title = 'Thanh toán',
+  emptyText = 'Chưa có lần thu tiền.',
+  changeLogTitle = 'Lịch sử thay đổi',
+}) => {
   if (!isEdit) return null;
 
   return (
     <div style={{padding : 16 , border : '1.5px solid #e1eeec' , margin : 16 , borderRadius : 12}}>
       <div>
-        <div className="section-title">Thanh toán</div>
+        <div className="section-title">{title}</div>
         <div className="table-wrapper">
           <table className="invoice-items-table">
             <thead>
@@ -29,7 +36,7 @@ const InvoicePaymentsSection = ({ isEdit, payments = [], changeLog = [] }) => {
               ))}
               {!payments.length && (
                 <tr>
-                  <td colSpan={4}>Chưa có lần thu tiền.</td>
+                  <td colSpan={4}>{emptyText}</td>
                 </tr>
               )}
             </tbody>
@@ -39,7 +46,7 @@ const InvoicePaymentsSection = ({ isEdit, payments = [], changeLog = [] }) => {
 
       {changeLog.length ? (
         <div>
-          <div className="section-title">Lịch sử thay đổi</div>
+          <div className="section-title">{changeLogTitle}</div>
           <div className="table-wrapper">
             <table className="invoice-items-table">
               <thead>

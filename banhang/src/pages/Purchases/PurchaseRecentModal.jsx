@@ -16,6 +16,7 @@ const PurchaseRecentModal = ({
   onFilterSupplierChange,
   exportRows,
   onSelectDetail,
+  onSelectPayment,
 }) => (
   <Modal
     title="Phiếu nhập gần đây"
@@ -61,7 +62,17 @@ const PurchaseRecentModal = ({
                 <td>{formatMoney(purchase.total)}</td>
                 <td>{purchase.note}</td>
                 <td>
-                  <Button onClick={() => onSelectDetail(purchase)}>Xem</Button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Button size="small" onClick={() => onSelectDetail(purchase)}>Xem</Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      className="btn-primary"
+                      onClick={() => onSelectPayment?.(purchase)}
+                    >
+                      Thanh toán
+                    </Button>
+                  </div>
                 </td>
               </tr>
             );

@@ -2,40 +2,29 @@ import dayjs from 'dayjs';
 import { Button, DatePicker, Input, Select } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const InvoiceTopSection = ({
+const PurchaseTopSection = ({
   code,
   date,
   onDateChange,
   onCancelTicket,
-  onShowRecent,
   onNewTicket,
-  showNewTicket = true,
-  showRecent = true,
+  onSave,
+  disableSave = false,
   itemsCount,
   totalQty,
-  customerDebt,
+  supplierDebt,
   total,
-  customerId,
-  onCustomerChange,
-  customers,
-  customer,
+  supplierId,
+  onSupplierChange,
+  supplierOptions,
+  supplier,
   note,
   onNoteChange,
-  codeLabel = 'HĐ',
-  recentLabel = 'F4 - HĐ gần đây',
-  partnerLabel = 'Tên khách hàng',
-  partnerPhoneLabel = 'Điện thoại',
-  partnerAddressLabel = 'Địa chỉ',
-  noteLabel = 'Ghi chú',
-  itemsLabel = 'Tổng MH',
-  qtyLabel = 'Tổng SL',
-  debtLabel = 'Nợ cũ',
-  totalLabel = 'Tổng tiền',
   readOnly = false,
 }) => (
   <div className="pos-top">
     <div className="pos-info-box">
-      <div className="pos-info-row">{codeLabel}: <strong>{code}</strong></div>
+      <div className="pos-info-row">Phiếu: <strong>{code}</strong></div>
       <div className="pos-info-row">
         Ngày:
         <DatePicker
@@ -47,62 +36,57 @@ const InvoiceTopSection = ({
       <div className="pos-info-row">NV: <strong>admin</strong></div>
       <div className="pos-actions-row">
         <Button danger onClick={onCancelTicket}>F3 - Hủy phiếu</Button>
-        {showRecent && (
-          <Button onClick={onShowRecent}>{recentLabel}</Button>
-        )}
-        {showNewTicket && (
-          <Button type="primary" className="btn-primary" onClick={onNewTicket}>
-            F2 - Tạo phiếu
-          </Button>
-        )}
+        <Button type="primary" className="btn-primary" onClick={onNewTicket}>
+          F2 - Tạo phiếu
+        </Button>
+        <Button type="primary" className="btn-primary" onClick={onSave} disabled={disableSave}>
+          F6 - Lưu
+        </Button>
       </div>
     </div>
 
     <div className="pos-summary">
       <div className="pos-summary-row">
-        <span>{itemsLabel}:</span>
+        <span>Tổng MH:</span>
         <strong>{itemsCount}</strong>
       </div>
       <div className="pos-summary-row">
-        <span>{qtyLabel}:</span>
+        <span>Tổng SL:</span>
         <strong>{totalQty.toFixed(1)}</strong>
       </div>
       <div className="pos-summary-row">
-        <span>{debtLabel}:</span>
-        <strong>{formatMoney(customerDebt)}</strong>
+        <span>Nợ cũ:</span>
+        <strong>{formatMoney(supplierDebt)}</strong>
       </div>
       <div className="pos-summary-row total">
-        <span>{totalLabel}:</span>
+        <span>Tổng tiền:</span>
         <strong>{formatMoney(total)}</strong>
       </div>
     </div>
 
     <div className="pos-info-box">
       <div className="pos-info-row">
-        <span style={{ width: 150 }}>{partnerLabel}:</span>
+        <span>Nhà cung cấp:</span>
         <Select
-          value={customerId}
-          onChange={onCustomerChange}
+          value={supplierId}
+          onChange={onSupplierChange}
           style={{ width: '100%' }}
-          options={customers.map((item) => ({
-            value: item.id,
-            label: item.name,
-          }))}
+          options={supplierOptions}
           showSearch
           optionFilterProp="label"
           disabled={readOnly}
         />
       </div>
       <div className="pos-info-row">
-        <span style={{ width: 150 }}>{partnerPhoneLabel}:</span>
-        <Input value={customer?.phone || ''} readOnly />
+        <span>SĐT:</span>
+        <Input value={supplier?.phone || ''} readOnly />
       </div>
       <div className="pos-info-row">
-        <span style={{ width: 150 }}>{partnerAddressLabel}:</span>
-        <Input value={customer?.address || ''} readOnly />
+        <span>Địa chỉ:</span>
+        <Input value={supplier?.address || ''} readOnly />
       </div>
       <div className="pos-info-row">
-        <span style={{ width: 150 }}>{noteLabel}:</span>
+        <span>Ghi chú:</span>
         <Input
           value={note}
           onChange={(event) => onNoteChange(event.target.value)}
@@ -113,4 +97,4 @@ const InvoiceTopSection = ({
   </div>
 );
 
-export default InvoiceTopSection;
+export default PurchaseTopSection;

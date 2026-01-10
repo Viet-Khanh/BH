@@ -19,6 +19,7 @@ const InvoiceProductModal = ({
   onChangeLength,
   onChangeWidth,
   onConfirmAdd,
+  showDimensions = true,
 }) => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const searchInputRef = useRef(null);
@@ -111,7 +112,7 @@ const InvoiceProductModal = ({
                 onChange={onChangePrice}
               />
             </div>
-            {isGlassProduct(pendingProduct) && (
+            {showDimensions && isGlassProduct(pendingProduct) && (
               <>
                 <div>
                   <div>Chiều dài</div>

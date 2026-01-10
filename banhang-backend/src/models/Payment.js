@@ -4,6 +4,7 @@ const PaymentSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
     invoiceId: String,
+    purchaseId: String,
     date: String,
     method: String,
     amount: Number,

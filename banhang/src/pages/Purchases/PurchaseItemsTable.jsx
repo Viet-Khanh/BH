@@ -1,7 +1,7 @@
 import { Button, Input, InputNumber } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const PurchaseItemsTable = ({ items, products, onUpdateItem, onRemoveItem }) => (
+const PurchaseItemsTable = ({ items, products, onUpdateItem, onRemoveItem, readOnly = false }) => (
   <div className="pos-table">
     <table>
       <thead>
@@ -32,6 +32,7 @@ const PurchaseItemsTable = ({ items, products, onUpdateItem, onRemoveItem }) => 
                   min={0}
                   value={item.qty}
                   onChange={(value) => onUpdateItem(index, 'qty', value)}
+                  disabled={readOnly}
                 />
               </td>
               <td>
@@ -39,6 +40,7 @@ const PurchaseItemsTable = ({ items, products, onUpdateItem, onRemoveItem }) => 
                   min={0}
                   value={item.unitCost}
                   onChange={(value) => onUpdateItem(index, 'unitCost', value)}
+                  disabled={readOnly}
                 />
               </td>
               <td>{formatMoney(item.lineTotal)}</td>
@@ -46,10 +48,13 @@ const PurchaseItemsTable = ({ items, products, onUpdateItem, onRemoveItem }) => 
                 <Input
                   value={item.lineNote}
                   onChange={(event) => onUpdateItem(index, 'lineNote', event.target.value)}
+                  disabled={readOnly}
                 />
               </td>
               <td>
-                <Button danger onClick={() => onRemoveItem(index)}>Xóa</Button>
+                {!readOnly && (
+                  <Button danger onClick={() => onRemoveItem(index)}>Xóa</Button>
+                )}
               </td>
             </tr>
           );

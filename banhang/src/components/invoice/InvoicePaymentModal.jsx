@@ -4,6 +4,13 @@ import { formatMoney } from '../../utils/moneyFormat.js';
 const InvoicePaymentModal = ({
   open,
   onClose,
+  title = 'Thanh toán bán hàng',
+  partnerLabel = 'Khách hàng',
+  totalLabel = 'Tổng cộng',
+  debtLabel = 'Nợ cũ',
+  totalPaymentLabel = 'Tổng thanh toán',
+  paymentLabel = 'Khách trả',
+  remainingLabel = 'Còn lại',
   customerName,
   total,
   customerDebt,
@@ -20,31 +27,31 @@ const InvoicePaymentModal = ({
   onCheckout,
 }) => (
   <Modal
-    title="Thanh toán bán hàng"
+    title={title}
     open={open}
     onCancel={onClose}
     footer={null}
   >
     <div className="pos-payment">
       <div className="pos-payment-row">
-        <span>Khách hàng:</span>
+        <span>{partnerLabel}:</span>
         <strong>{customerName}</strong>
       </div>
       <div className="pos-payment-row">
-        <span>Tổng cộng:</span>
+        <span>{totalLabel}:</span>
         <strong>{formatMoney(total)}</strong>
       </div>
       <div className="pos-payment-row">
-        <span>Nợ cũ:</span>
+        <span>{debtLabel}:</span>
         <strong>{formatMoney(customerDebt)}</strong>
       </div>
       <div className="pos-payment-row total">
-        <span>Tổng thanh toán:</span>
+        <span>{totalPaymentLabel}:</span>
         <strong>{formatMoney(totalPayment)}</strong>
       </div>
 
       <div className="pos-payment-row">
-        <span>Khách trả:</span>
+        <span>{paymentLabel}:</span>
         <div style={{ display: 'flex', gap: 12 }}>
           <InputNumber
             style={{ width: '100%' }}
@@ -55,7 +62,7 @@ const InvoicePaymentModal = ({
         </div>
       </div>
       <div className="pos-payment-row">
-        <span>Còn lại:</span>
+        <span>{remainingLabel}:</span>
         <strong>{formatMoney(remainingPayment)}</strong>
       </div>
 
