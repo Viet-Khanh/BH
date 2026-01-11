@@ -7,16 +7,55 @@ $backupDir = $env:BACKUP_DIR
 if (-not $backupDir) { $backupDir = Join-Path $rootDir "backups" }
 
 $backupKeep = $env:BACKUP_KEEP
-if (-not $backupKeep) { $backupKeep = 30 }
+if (-not $backupKeep) { $backupKeep = 3 }
+
+$backupIntervalDays = $env:BACKUP_INTERVAL_DAYS
+if (-not $backupIntervalDays) { $backupIntervalDays = 3 }
 
 $mongoDb = $env:MONGO_DB
 if (-not $mongoDb) { $mongoDb = "banhang" }
 
-if (-not ($backupKeep -as [int])) {
+if ($backupKeep -notmatch '^\d+$') {
   Write-Error "BACKUP_KEEP must be a number"
   exit 1
 }
 $backupKeep = [int]$backupKeep
+
+if ($backupIntervalDays -notmatch '^\d+$') {
+  Write-Error "BACKUP_INTERVAL_DAYS must be a number"
+  exit 1
+}
+$backupIntervalDays = [int]$backupIntervalDays
+
+$useLegacy = $false
+
+function Invoke-Compose {
+  param([string[]]$Args)
+  if ($useLegacy) {
+    & docker-compose @Args
+  } else {
+    & docker compose @Args
+  }
+}
+
+New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+
+function Should-RunBackup {
+  param([string]$Path, [int]$IntervalDays)
+  if ($IntervalDays -le 0) { return $true }
+
+  $latest = Get-ChildItem -Path $Path -Filter "banhang-*.archive.gz" |
+    Sort-Object LastWriteTime -Descending | Select-Object -First 1
+  if (-not $latest) { return $true }
+
+  $age = (Get-Date) - $latest.LastWriteTime
+  return $age.TotalDays -ge $IntervalDays
+}
+
+if (-not (Should-RunBackup -Path $backupDir -IntervalDays $backupIntervalDays)) {
+  Write-Output "Skip backup: last backup is within $backupIntervalDays day(s)."
+  exit 0
+}
 
 $useLegacy = $false
 & docker compose version *> $null
@@ -29,22 +68,11 @@ if ($LASTEXITCODE -ne 0) {
   }
 }
 
-function Invoke-Compose {
-  param([string[]]$Args)
-  if ($useLegacy) {
-    & docker-compose @Args
-  } else {
-    & docker compose @Args
-  }
-}
-
 $containerId = (Invoke-Compose @("ps","-q","mongo")).Trim()
 if (-not $containerId) {
   Write-Error "Mongo container not running"
   exit 1
 }
-
-New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
 
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $backupName = "banhang-$stamp.archive.gz"
