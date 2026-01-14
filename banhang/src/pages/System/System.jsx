@@ -28,6 +28,14 @@ const System = () => {
   const [form] = Form.useForm();
 
   useEffect(() => {
+    const bootstrap = async () => {
+      await Promise.all([loadSettings(), loadProducts(), loadCustomers()]);
+    };
+    bootstrap();
+  }, [loadSettings, loadProducts, loadCustomers]);
+
+
+  useEffect(() => {
     form.setFieldsValue(settings);
   }, [form, settings]);
 

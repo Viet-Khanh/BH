@@ -1,15 +1,11 @@
-import { isGlassProduct } from '../../components/invoice/invoiceUtils.js';
-
 const getLineTotal = (item, product) => {
   const qty = Number(item.qty || 0);
   const unitCost = Number(item.unitCost || 0);
   let lineTotal = qty * unitCost;
-  if (product && isGlassProduct(product)) {
-    const length = Number(item.length || 0);
-    const width = Number(item.width || 0);
-    if (length > 0 && width > 0) {
-      lineTotal *= length * width;
-    }
+  const length = Number(item.length || 0);
+  const width = Number(item.width || 0);
+  if (length > 0 && width > 0) {
+    lineTotal *= length * width;
   }
   return lineTotal;
 };

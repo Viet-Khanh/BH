@@ -68,6 +68,82 @@ body {
   margin-bottom: 16px;
 }
 
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page-tabs {
+  background: #f7fbfa;
+  border: 1px solid #d9ece9;
+  border-radius: 20px;
+  padding: 12px;
+}
+
+.page-tabs > .ant-tabs-nav::before {
+  border-bottom: none;
+}
+
+.page-tabs.ant-tabs-left > .ant-tabs-nav::before,
+.page-tabs.ant-tabs-right > .ant-tabs-nav::before {
+  border-right: none;
+}
+
+.page-tabs .ant-tabs-nav-list {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.page-tabs .ant-tabs-tab {
+  background: #ffffff;
+  border: 1px solid #d9ece9;
+  border-radius: 12px;
+  padding: 8px 14px;
+  margin: 0;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.page-tabs .ant-tabs-tab + .ant-tabs-tab {
+  margin: 0;
+}
+
+.page-tabs .ant-tabs-tab .ant-tabs-tab-btn {
+  color: inherit;
+  font-weight: 600;
+}
+
+.page-tabs .ant-tabs-tab:hover {
+  border-color: #b6e2de;
+  color: #0d6f6c;
+}
+
+.page-tabs .ant-tabs-tab-active {
+  background: #e8f7f5;
+  border-color: #b6e2de;
+}
+
+.page-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #0d6f6c;
+}
+
+.page-tabs .ant-tabs-content-holder {
+  background: #ffffff;
+  border: 1px solid #e1eeec;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.page-tabs.ant-tabs-left > .ant-tabs-nav {
+  margin: 0;
+  padding-right: 12px;
+  border-right: 1px dashed #d6ecea;
+}
+
+.page-tabs.ant-tabs-left > .ant-tabs-content-holder {
+  margin-left: 12px;
+}
+
 .btn-primary {
   background: var(--primary);
   border-color: var(--primary);

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Button, Space } from 'antd';
 import Home from './pages/Home.jsx';
@@ -6,65 +5,18 @@ import System from './pages/System/System.jsx';
 import Catalog from './pages/Catalog/Catalog.jsx';
 import Sales from './pages/Sales/Sales.jsx';
 import SalesRecent from './pages/Sales/SalesRecent.jsx';
+import SalesHistory from './pages/Sales/SalesHistory.jsx';
 import Purchases from './pages/Purchases/Purchases.jsx';
 import Cashbook from './pages/Cashbook/Cashbook.jsx';
 import Reports from './pages/Reports/Reports.jsx';
-import { useSettingsStore } from './store/settingsStore.js';
-import { useProductStore } from './store/productStore.js';
-import { useCustomerStore } from './store/customerStore.js';
-import { useSupplierStore } from './store/supplierStore.js';
-import { useUnitStore } from './store/unitStore.js';
-import { usePurchaseStore } from './store/purchaseStore.js';
-import { useInvoiceStore } from './store/invoiceStore.js';
-import { usePaymentStore } from './store/paymentStore.js';
-import { useCashbookStore } from './store/cashbookStore.js';
+import ReportPurchasePage from './pages/Reports/ReportPurchasePage.jsx';
+import ReportStockPage from './pages/Reports/ReportStockPage.jsx';
 
 const { Header, Content } = Layout;
 
 const App = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { ensureDefaults, load: loadSettings } = useSettingsStore();
-  const { load: loadProducts } = useProductStore();
-  const { load: loadCustomers, ensureDefaultCustomer } = useCustomerStore();
-  const { load: loadSuppliers } = useSupplierStore();
-  const { load: loadUnits } = useUnitStore();
-  const { load: loadPurchases } = usePurchaseStore();
-  const { load: loadInvoices } = useInvoiceStore();
-  const { load: loadPayments } = usePaymentStore();
-  const { load: loadCashbook } = useCashbookStore();
-
-  useEffect(() => {
-    const boot = async () => {
-      await ensureDefaults();
-      await loadSettings();
-      await Promise.all([
-        loadProducts(),
-        loadCustomers(),
-        loadSuppliers(),
-        loadUnits(),
-        loadPurchases(),
-        loadInvoices(),
-        loadPayments(),
-        loadCashbook(),
-      ]);
-      await ensureDefaultCustomer();
-    };
-
-    boot();
-  }, [
-    ensureDefaults,
-    loadSettings,
-    loadProducts,
-    loadCustomers,
-    loadSuppliers,
-    loadUnits,
-    loadPurchases,
-    loadInvoices,
-    loadPayments,
-    loadCashbook,
-    ensureDefaultCustomer,
-  ]);
 
   const showBack = location.pathname !== '/';
 
@@ -88,9 +40,12 @@ const App = () => {
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/sales" element={<Sales />} />
           <Route path="/sales/recent" element={<SalesRecent />} />
+          <Route path="/sales/history" element={<SalesHistory />} />
           <Route path="/purchases" element={<Purchases />} />
           <Route path="/cashbook" element={<Cashbook />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/report-purchase" element={<ReportPurchasePage />} />
+          <Route path="/report-stock" element={<ReportStockPage />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </Content>

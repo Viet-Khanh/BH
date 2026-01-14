@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, InputNumber, Modal, Space } from 'antd';
 import ProductPicker from '../ProductPicker.jsx';
 import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
-import { isGlassProduct } from './invoiceUtils.js';
 
 const InvoiceProductModal = ({
   open,
@@ -13,6 +12,7 @@ const InvoiceProductModal = ({
   pendingPrice,
   pendingLength,
   pendingWidth,
+  onSearchProducts,
   onChangeProduct,
   onChangeQty,
   onChangePrice,
@@ -66,6 +66,15 @@ const InvoiceProductModal = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, handleAdd]);
 
+  useEffect(() => {
+    if (!open || !onSearchProducts) return;
+    const keyword = searchKeyword.trim();
+    const timer = setTimeout(() => {
+      onSearchProducts(keyword);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [open, searchKeyword, onSearchProducts]);
+
   return (
   <Modal
     title="Nhập hàng hóa"
@@ -112,7 +121,7 @@ const InvoiceProductModal = ({
                 onChange={onChangePrice}
               />
             </div>
-            {showDimensions && isGlassProduct(pendingProduct) && (
+            {showDimensions && (
               <>
                 <div>
                   <div>Chiều dài</div>

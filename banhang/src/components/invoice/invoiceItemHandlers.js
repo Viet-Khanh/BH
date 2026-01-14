@@ -1,5 +1,4 @@
 import { message } from 'antd';
-import { isGlassProduct } from './invoiceUtils.js';
 
 const getValidDimension = (value) => {
   const numeric = Number(value || 0);
@@ -30,15 +29,15 @@ export const createConfirmAddHandler = ({
     return false;
   }
 
-  let lengthValue = null;
-  let widthValue = null;
-  if (isGlassProduct(pendingProduct)) {
-    lengthValue = getValidDimension(pendingLength);
-    widthValue = getValidDimension(pendingWidth);
+  const lengthValue = getValidDimension(pendingLength);
+  const widthValue = getValidDimension(pendingWidth);
+  if ((lengthValue && !widthValue) || (!lengthValue && widthValue)) {
+    message.error('Vui lòng nhập đủ chiều dài và chiều rộng.');
+    return false;
   }
 
   let lineTotal = qty * unitPrice;
-  if (isGlassProduct(pendingProduct) && lengthValue && widthValue) {
+  if (lengthValue && widthValue) {
     lineTotal *= lengthValue * widthValue;
   }
   const newItem = {

@@ -38,7 +38,6 @@ const ReportSalesInvoiceModal = ({
               <tr>
                 <th>Tên hàng</th>
                 <th>ĐVT</th>
-                <th>Quy cách</th>
                 <th>T.SL</th>
                 <th>Đơn giá</th>
                 <th>Thành tiền</th>
@@ -50,7 +49,6 @@ const ReportSalesInvoiceModal = ({
                 <tr key={item.key}>
                   <td>{item.name}</td>
                   <td>{item.unit}</td>
-                  <td>{item.spec}</td>
                   <td>{item.qty}</td>
                   <td>{formatMoney(item.unitPrice)}</td>
                   <td>{formatMoney(item.lineTotal)}</td>

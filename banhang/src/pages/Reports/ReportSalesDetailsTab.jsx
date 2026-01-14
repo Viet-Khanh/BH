@@ -1,85 +1,157 @@
-import { Fragment, useMemo, useState } from 'react';
-import { Select } from 'antd';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Select, message } from 'antd';
 import dayjs from 'dayjs';
-import { useInvoiceStore } from '../../store/invoiceStore.js';
-import { usePaymentStore } from '../../store/paymentStore.js';
-import { useCustomerStore } from '../../store/customerStore.js';
-import { useProductStore } from '../../store/productStore.js';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
+import ExportActions from '../../components/ExportActions.jsx';
+import { apiRequest } from '../../db/repository.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
-import {
-  buildCustomerMap,
-  buildInvoiceItems,
-  buildInvoiceSummary,
-  buildOldDebtByInvoice,
-  buildPaymentsByInvoice,
-  buildProductMap,
-} from './reportSalesUtils.js';
+
+const isRetailCustomer = (name) => {
+  const normalized = String(name || '').trim().toLowerCase();
+  return normalized === 'khách lẻ' || normalized === 'khach le';
+};
+
+const buildSummary = (items = []) =>
+  items.reduce(
+    (acc, row) => ({
+      amount: acc.amount + Number(row.amount || 0),
+      paid: acc.paid + Number(row.paid || 0),
+      remain: acc.remain + Number(row.remain || 0),
+      profit: acc.profit + Number(row.profit || 0),
+    }),
+    {
+      amount: 0,
+      paid: 0,
+      remain: 0,
+      profit: 0,
+    }
+  );
+
+const buildDetailRow = (row, item, { formatted = false, includeInvoiceInfo = true } = {}) => {
+  const invoiceFields = includeInvoiceInfo
+    ? {
+        'Số HĐ': row.code,
+        Ngày: row.date ? dayjs(row.date).format('DD/MM/YYYY HH:mm') : '',
+        'Nhân viên': row.staff,
+        'Khách hàng': row.customerName,
+        'Điện thoại': row.phone,
+        'Địa chỉ': row.address,
+        MH: row.itemsCount,
+        'Tổng SL': row.qtySum,
+        'Tiền hàng': formatted ? formatMoney(row.amount) : row.amount,
+        'Đã thu': formatted ? formatMoney(row.paid) : row.paid,
+        'Nợ cũ': formatted ? formatMoney(row.oldDebt) : row.oldDebt,
+        'Tổng cộng': formatted ? formatMoney(row.totalPay) : row.totalPay,
+        'Còn nợ': formatted ? formatMoney(row.remain) : row.remain,
+        'Lợi nhuận': formatted ? formatMoney(row.profit) : row.profit,
+        'Ghi chú': row.note,
+      }
+    : {
+        'Số HĐ': '',
+        Ngày: '',
+        'Nhân viên': '',
+        'Khách hàng': '',
+        'Điện thoại': '',
+        'Địa chỉ': '',
+        MH: '',
+        'Tổng SL': '',
+        'Tiền hàng': '',
+        'Đã thu': '',
+        'Nợ cũ': '',
+        'Tổng cộng': '',
+        'Còn nợ': '',
+        'Lợi nhuận': '',
+        'Ghi chú': '',
+      };
+
+  return {
+    ...invoiceFields,
+    'Tên hàng': item?.name || '',
+    ĐVT: item?.unit || '',
+    'Quy cách': item?.spec || '',
+    SL: item?.qty ?? '',
+    'Đơn giá': formatted ? (item ? formatMoney(item.unitPrice ?? 0) : '') : item?.unitPrice ?? '',
+    'Thành tiền': formatted ? (item ? formatMoney(item.lineTotal ?? 0) : '') : item?.lineTotal ?? '',
+    'Ghi chú hàng': item?.note || '',
+  };
+};
 
 const ReportSalesDetailsTab = () => {
-  const { items: invoices } = useInvoiceStore();
-  const { items: payments } = usePaymentStore();
-  const { items: customers } = useCustomerStore();
-  const { items: products } = useProductStore();
-
   const [range, setRange] = useState(() => [
-    dayjs().startOf("day").toISOString(),
-    dayjs().endOf("day").toISOString(),
+    dayjs().startOf('day').toISOString(),
+    dayjs().endOf('day').toISOString(),
   ]);
   const [customerId, setCustomerId] = useState('');
-
-  const activeCustomers = useMemo(
-    () => customers.filter((item) => !item.isDeleted),
-    [customers]
+  const [rows, setRows] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [summary, setSummary] = useState({
+    amount: 0,
+    paid: 0,
+    remain: 0,
+    profit: 0,
+  });
+  const selectedCustomerName = useMemo(
+    () => customers.find((item) => item.id === customerId)?.name || '',
+    [customers, customerId]
   );
-  const customerMap = useMemo(() => buildCustomerMap(customers), [customers]);
-  const productMap = useMemo(() => buildProductMap(products), [products]);
-  const paymentsByInvoice = useMemo(() => buildPaymentsByInvoice(payments), [payments]);
-  const oldDebtByInvoice = useMemo(
-    () => buildOldDebtByInvoice(invoices, paymentsByInvoice),
-    [invoices, paymentsByInvoice]
-  );
+  const exportTitle = selectedCustomerName
+    ? `Báo cáo chi tiết bán hàng - Khách hàng: ${selectedCustomerName}`
+    : 'Báo cáo chi tiết bán hàng';
 
-  const filteredInvoices = useMemo(() => {
-    return invoices.filter((invoice) => {
-      const matchCustomer = customerId ? invoice.customerId === customerId : true;
-      const matchRange = range[0] && range[1]
-        ? !dayjs(invoice.date).isBefore(dayjs(range[0]).startOf('day')) &&
-          !dayjs(invoice.date).isAfter(dayjs(range[1]).endOf('day'))
-        : true;
-      return matchCustomer && matchRange;
-    });
-  }, [invoices, customerId, range]);
+  const fetchReport = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (range[0]) params.set('from', range[0]);
+    if (range[1]) params.set('to', range[1]);
+    if (customerId) params.set('customerId', customerId);
+    const query = params.toString();
 
-  const rows = useMemo(() => {
-    const sorted = [...filteredInvoices].sort((a, b) => new Date(b.date) - new Date(a.date));
-    return sorted.map((invoice) => ({
-      ...buildInvoiceSummary(invoice, {
-        customerMap,
-        productMap,
-        paymentsByInvoice,
-        oldDebtByInvoice,
-      }),
-      items: buildInvoiceItems(invoice, productMap),
-    }));
-  }, [filteredInvoices, customerMap, productMap, paymentsByInvoice, oldDebtByInvoice]);
+    const data = await apiRequest(`/reports/sales-details${query ? `?${query}` : ''}`);
+    const rawRows = Array.isArray(data?.rows) ? data.rows : [];
+    const rawCustomers = Array.isArray(data?.customers) ? data.customers : [];
+    const filteredRows = rawRows.filter((row) => !isRetailCustomer(row.customerName));
+    const filteredCustomers = rawCustomers.filter((item) => !isRetailCustomer(item.name));
 
-  const summary = useMemo(
-    () =>
-      rows.reduce(
-        (acc, row) => ({
-          amount: acc.amount + Number(row.amount || 0),
-          paid: acc.paid + Number(row.paid || 0),
-          remain: acc.remain + Number(row.remain || 0),
-          profit: acc.profit + Number(row.profit || 0),
-        }),
-        {
-          amount: 0,
-          paid: 0,
-          remain: 0,
-          profit: 0,
+    setRows(filteredRows);
+    setSummary(buildSummary(filteredRows));
+    setCustomers(filteredCustomers);
+  }, [range, customerId]);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        await fetchReport();
+      } catch (error) {
+        if (active) {
+          message.error(`Không thể tải chi tiết bán hàng: ${error.message || 'Lỗi không xác định'}`);
         }
-      ),
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, [fetchReport]);
+
+  const exportRows = useMemo(
+    () =>
+      rows.flatMap((row) => {
+        const items = row.items?.length ? row.items : [null];
+        return items.map((item, index) =>
+          buildDetailRow(row, item, { includeInvoiceInfo: index === 0 })
+        );
+      }),
+    [rows]
+  );
+
+  const pdfRows = useMemo(
+    () =>
+      rows.flatMap((row) => {
+        const items = row.items?.length ? row.items : [null];
+        return items.map((item, index) =>
+          buildDetailRow(row, item, { formatted: true, includeInvoiceInfo: index === 0 })
+        );
+      }),
     [rows]
   );
 
@@ -97,28 +169,61 @@ const ReportSalesDetailsTab = () => {
             placeholder="Chọn khách hàng"
             value={customerId || undefined}
             onChange={(value) => setCustomerId(value || '')}
-            options={activeCustomers.map((item) => ({ value: item.id, label: item.name }))}
+            options={customers.map((item) => ({ value: item.id, label: item.name }))}
             style={{ minWidth: 220 }}
             size="large"
             showSearch
             optionFilterProp="label"
           />
         </div>
+        <div style={{ display: 'flex', alignItems: 'end' }}>
+          <ExportActions
+            rows={exportRows}
+            pdfRows={pdfRows}
+            fileName="chi-tiet-ban-hang"
+            sheetName="ChiTiet"
+            title={exportTitle}
+          />
+        </div>
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-            marginLeft: "auto",
+            display: 'flex',
+            flexDirection: 'column',
+            marginLeft: 'auto',
+            justifyContent: 'flex-end',
+            gap: 8,
           }}
         >
-          <div style={{ display: "flex", gap: 40 }}>
-            <strong className="text-primary">Tiền hàng: {formatMoney(summary.amount)}</strong>
-            <strong className="text-primary">Đã thu: {formatMoney(summary.paid)}</strong>
+          <div style={{ display: 'flex', gap: 40 }}>
+            <span className="text-gray-600">
+              Tiền hàng:{' '}
+              <strong style={{ color: 'blue' }} className="text-lg font-bold">
+                {formatMoney(summary.amount)}
+              </strong>
+            </span>
+
+            <span className="text-gray-600">
+              Đã thu:{' '}
+              <strong style={{ color: 'green' }} className="text-lg font-bold">
+                {formatMoney(summary.paid)}
+              </strong>
+            </span>
           </div>
-          <div style={{ display: "flex", gap: 40 }}>
-            <strong className="text-primary">Còn nợ: {formatMoney(summary.remain)}</strong>
-            <strong className="text-primary">Lợi nhuận: {formatMoney(summary.profit)}</strong>
+
+          <div style={{ display: 'flex', gap: 40 }}>
+            <span className="text-gray-600">
+              Còn nợ:{' '}
+              <strong style={{ color: 'red' }} className="text-lg font-bold">
+                {formatMoney(summary.remain)}
+              </strong>
+            </span>
+
+            <span className="text-gray-600">
+              Lợi nhuận:{' '}
+              <strong style={{ color: 'purple' }} className="text-lg font-bold">
+                {formatMoney(summary.profit)}
+              </strong>
+            </span>
           </div>
         </div>
       </div>
@@ -127,91 +232,111 @@ const ReportSalesDetailsTab = () => {
         <table>
           <thead>
             <tr>
+              <th colSpan={15} style={{ textAlign: 'center' }}>
+                Thông tin hóa đơn
+              </th>
+              <th colSpan={7} style={{ textAlign: 'center' }}>
+                Chi tiết hàng hóa
+              </th>
+            </tr>
+            <tr>
               <th>Số HĐ</th>
               <th>Ngày</th>
               <th>Nhân viên</th>
-              <th>MH</th>
-              <th>SL</th>
-              <th>Tiền hàng</th>
-              <th>Đã thu</th>
-              <th>Lợi nhuận</th>
-              <th>Nợ cũ</th>
-              <th>Tổng cộng</th>
-              <th>Còn nợ</th>
               <th>Khách hàng</th>
               <th>Điện thoại</th>
               <th>Địa chỉ</th>
+              <th>MH</th>
+              <th>Tổng SL</th>
+              <th>Tiền hàng</th>
+              <th>Đã thu</th>
+              <th>Nợ cũ</th>
+              <th>Tổng cộng</th>
+              <th>Còn nợ</th>
+              <th>Lợi nhuận</th>
               <th>Ghi chú</th>
+              <th>Tên hàng</th>
+              <th>ĐVT</th>
+              <th>SL</th>
+              <th>Đơn giá</th>
+              <th>Thành tiền</th>
+              <th>Ghi chú hàng</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <Fragment key={row.id}>
-                <tr>
-                  <td>{row.code}</td>
-                  <td>{dayjs(row.date).format('DD/MM/YY HH:mm')}</td>
-                  <td>{row.staff}</td>
-                  <td>{row.itemsCount}</td>
-                  <td>{row.qtySum}</td>
-                  <td>{formatMoney(row.amount)}</td>
-                  <td className={row.paid > 0 ? 'text-success' : ''}>{formatMoney(row.paid)}</td>
-                  <td className={row.profit >= 0 ? 'text-success' : 'text-danger'}>
-                    {formatMoney(row.profit)}
-                  </td>
-                  <td className="text-danger">{formatMoney(row.oldDebt)}</td>
-                  <td>{formatMoney(row.totalPay)}</td>
-                  <td className={row.remain > 0 ? 'text-danger' : 'text-success'}>
-                    {formatMoney(row.remain)}
-                  </td>
-                  <td>{row.customerName}</td>
-                  <td>{row.phone}</td>
-                  <td>{row.address}</td>
-                  <td>{row.note}</td>
-                </tr>
-                <tr>
-                  <td colSpan={15} style={{ padding: 0 , paddingLeft: 100 }}>
-                    <div className="table-wrapper" style={{ padding: 12 }}>
-                      <table className="invoice-items-table">
-                        <thead>
-                          <tr>
-                            <th>Tên hàng</th>
-                            <th>ĐVT</th>
-                            <th>Quy cách</th>
-                            <th>T.SL</th>
-                            <th>Đơn giá</th>
-                            <th>Thành tiền</th>
-                            <th>Ghi chú</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {row.items.map((item) => (
-                            <tr key={item.key}>
-                              <td>{item.name}</td>
-                              <td>{item.unit}</td>
-                              <td>{item.spec}</td>
-                              <td>{item.qty}</td>
-                              <td>{formatMoney(item.unitPrice)}</td>
-                              <td>{formatMoney(item.lineTotal)}</td>
-                              <td>{item.note}</td>
-                            </tr>
-                          ))}
-                          {!row.items.length && (
-                            <tr>
-                              <td colSpan={7} style={{ textAlign: 'center' }}>
-                                Chưa có hàng hóa.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </td>
-                </tr>
-              </Fragment>
-            ))}
+            {rows.map((row) => {
+              const items = row.items.length ? row.items : [null];
+              const rowSpan = items.length;
+              const invoiceCellProps = {
+                rowSpan,
+                style: { verticalAlign: 'top', background: '#f9fbfb' },
+              };
+
+              return (
+                <Fragment key={row.id}>
+                  {items.map((item, index) => {
+                    const isFirst = index === 0;
+                    return (
+                      <tr key={item?.key ?? `${row.id}-empty-${index}`}>
+                        {isFirst && (
+                          <>
+                            <td {...invoiceCellProps}>{row.code}</td>
+                            <td {...invoiceCellProps}>{dayjs(row.date).format('DD/MM/YY HH:mm')}</td>
+                            <td {...invoiceCellProps}>{row.staff}</td>
+                            <td {...invoiceCellProps}>{row.customerName}</td>
+                            <td {...invoiceCellProps}>{row.phone}</td>
+                            <td {...invoiceCellProps}>{row.address}</td>
+                            <td {...invoiceCellProps}>{row.itemsCount}</td>
+                            <td {...invoiceCellProps}>{row.qtySum}</td>
+                            <td {...invoiceCellProps}>{formatMoney(row.amount)}</td>
+                            <td
+                              {...invoiceCellProps}
+                              className={row.paid > 0 ? 'text-success' : ''}
+                            >
+                              {formatMoney(row.paid)}
+                            </td>
+                            <td {...invoiceCellProps} className="text-danger">
+                              {formatMoney(row.oldDebt)}
+                            </td>
+                            <td {...invoiceCellProps}>{formatMoney(row.totalPay)}</td>
+                            <td
+                              {...invoiceCellProps}
+                              className={row.remain > 0 ? 'text-danger' : 'text-success'}
+                            >
+                              {formatMoney(row.remain)}
+                            </td>
+                            <td
+                              {...invoiceCellProps}
+                              className={row.profit >= 0 ? 'text-success' : 'text-danger'}
+                            >
+                              {formatMoney(row.profit)}
+                            </td>
+                            <td {...invoiceCellProps}>{row.note}</td>
+                          </>
+                        )}
+                        {item ? (
+                          <>
+                            <td>{item.name}</td>
+                            <td>{item.unit}</td>
+                            <td>{item.qty}</td>
+                            <td>{formatMoney(item.unitPrice)}</td>
+                            <td>{formatMoney(item.lineTotal)}</td>
+                            <td>{item.note}</td>
+                          </>
+                        ) : (
+                          <td colSpan={7} style={{ textAlign: 'center', color: '#7a8f8d' }}>
+                            Chưa có hàng hóa.
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </Fragment>
+              );
+            })}
             {!rows.length && (
               <tr>
-                <td colSpan={15} style={{ textAlign: 'center' }}>
+                <td colSpan={22} style={{ textAlign: 'center' }}>
                   Chưa có hóa đơn.
                 </td>
               </tr>

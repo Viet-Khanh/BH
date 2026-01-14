@@ -1,7 +1,6 @@
 import { Button, Input, InputNumber } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
 import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
-import { isGlassProduct } from './invoiceUtils.js';
 
 const InvoiceItemsTable = ({
   items,
@@ -33,7 +32,6 @@ const InvoiceItemsTable = ({
       <tbody>
         {items.map((item, index) => {
           const product = products.find((p) => p.id === item.productId);
-          const isGlass = showDimensions && isGlassProduct(product);
           return (
             <tr key={`${item.productId}-${index}`}>
               <td>{index + 1}</td>
@@ -44,30 +42,22 @@ const InvoiceItemsTable = ({
               <td>{product?.unit || ''}</td>
               {showDimensions && (
                 <td>
-                  {isGlass ? (
-                    <InputNumber
-                      min={0}
-                      value={item.length ?? undefined}
-                      onChange={(value) => onUpdateItem(index, 'length', value)}
-                      disabled={readOnly}
-                    />
-                  ) : (
-                    '-'
-                  )}
+                  <InputNumber
+                    min={0}
+                    value={item.length ?? undefined}
+                    onChange={(value) => onUpdateItem(index, 'length', value)}
+                    disabled={readOnly}
+                  />
                 </td>
               )}
               {showDimensions && (
                 <td>
-                  {isGlass ? (
-                    <InputNumber
-                      min={0}
-                      value={item.width ?? undefined}
-                      onChange={(value) => onUpdateItem(index, 'width', value)}
-                      disabled={readOnly}
-                    />
-                  ) : (
-                    '-'
-                  )}
+                  <InputNumber
+                    min={0}
+                    value={item.width ?? undefined}
+                    onChange={(value) => onUpdateItem(index, 'width', value)}
+                    disabled={readOnly}
+                  />
                 </td>
               )}
               <td>

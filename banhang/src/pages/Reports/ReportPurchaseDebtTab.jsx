@@ -5,12 +5,7 @@ import ExportActions from '../../components/ExportActions.jsx';
 import { apiRequest } from '../../db/repository.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const isRetailCustomer = (name) => {
-  const normalized = String(name || '').trim().toLowerCase();
-  return normalized === 'khách lẻ' || normalized === 'khach le';
-};
-
-const ReportDebtTab = () => {
+const ReportPurchaseDebtTab = () => {
   const [rows, setRows] = useState([]);
   const [debtDetail, setDebtDetail] = useState(null);
 
@@ -18,15 +13,12 @@ const ReportDebtTab = () => {
     let active = true;
     const load = async () => {
       try {
-        const data = await apiRequest('/reports/debt');
+        const data = await apiRequest('/reports/supplier-debt');
         if (!active) return;
-        const nextRows = (data?.rows || []).filter(
-          (row) => !isRetailCustomer(row.customer?.name)
-        );
-        setRows(nextRows);
+        setRows(data?.rows || []);
       } catch (error) {
         if (active) {
-          message.error(`Không thể tải công nợ: ${error.message || 'Lỗi không xác định'}`);
+          message.error(`Không thể tải công nợ nhà cung cấp: ${error.message || 'Lỗi không xác định'}`);
         }
       }
     };
@@ -39,18 +31,18 @@ const ReportDebtTab = () => {
   const debtExport = useMemo(
     () =>
       rows.map((row) => ({
-        Khach_hang: row.customer?.name || '',
-        Tong_ban: row.total,
-        Da_thu: row.paid,
+        Nha_cung_cap: row.supplier?.name || '',
+        Tong_nhap: row.total,
+        Da_tra: row.paid,
         Con_no: row.debt,
       })),
     [rows]
   );
 
   const handleView = async (row) => {
-    if (!row?.customer?.id) return;
+    if (!row?.supplier?.id) return;
     try {
-      const data = await apiRequest(`/reports/debt/${row.customer.id}`);
+      const data = await apiRequest(`/reports/supplier-debt/${row.supplier.id}`);
       setDebtDetail(data);
     } catch (error) {
       message.error(`Không thể tải chi tiết công nợ: ${error.message || 'Lỗi không xác định'}`);
@@ -60,23 +52,28 @@ const ReportDebtTab = () => {
   return (
     <div>
       <div className="action-row">
-        <ExportActions rows={debtExport} fileName="cong-no" sheetName="CongNo" title="Công nợ" />
+        <ExportActions
+          rows={debtExport}
+          fileName="cong-no-nha-cung-cap"
+          sheetName="CongNoNCC"
+          title="Công nợ nhà cung cấp"
+        />
       </div>
       <div className="table-wrapper">
         <table className="invoice-items-table">
           <thead>
             <tr>
-              <th>Khách hàng</th>
-              <th>Tổng bán</th>
-              <th>Đã thu</th>
+              <th>Nhà cung cấp</th>
+              <th>Tổng nhập</th>
+              <th>Đã trả</th>
               <th>Còn nợ</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.customer?.id || row.customer?.name}>
-                <td>{row.customer?.name}</td>
+              <tr key={row.supplier?.id || row.supplier?.name}>
+                <td>{row.supplier?.name}</td>
                 <td>{formatMoney(row.total)}</td>
                 <td>{formatMoney(row.paid)}</td>
                 <td>{formatMoney(row.debt)}</td>
@@ -95,34 +92,34 @@ const ReportDebtTab = () => {
       </div>
 
       <Modal
-        title="Chi tiết công nợ"
+        title="Chi tiết công nợ nhà cung cấp"
         open={!!debtDetail}
         onCancel={() => setDebtDetail(null)}
         footer={null}
       >
         {debtDetail && (
           <div>
-            <div className="section-title">{debtDetail.customer?.name}</div>
+            <div className="section-title">{debtDetail.supplier?.name}</div>
             <div className="table-wrapper">
               <table className="invoice-items-table">
                 <thead>
                   <tr>
-                    <th>Mã HĐ</th>
+                    <th>Mã phiếu</th>
                     <th>Ngày</th>
                     <th>Tổng</th>
                     <th>Còn nợ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {debtDetail.invoices?.map((inv) => (
-                    <tr key={inv.id}>
-                      <td>{inv.code}</td>
-                      <td>{dayjs(inv.date).format('DD/MM/YYYY')}</td>
-                      <td>{formatMoney(inv.total)}</td>
-                      <td>{formatMoney(inv.remain)}</td>
+                  {debtDetail.purchases?.map((purchase) => (
+                    <tr key={purchase.id}>
+                      <td>{purchase.code}</td>
+                      <td>{dayjs(purchase.date).format('DD/MM/YYYY')}</td>
+                      <td>{formatMoney(purchase.total)}</td>
+                      <td>{formatMoney(purchase.remain)}</td>
                     </tr>
                   ))}
-                  {!debtDetail.invoices?.length && (
+                  {!debtDetail.purchases?.length && (
                     <tr>
                       <td colSpan={4}>Chưa có dữ liệu.</td>
                     </tr>
@@ -137,4 +134,4 @@ const ReportDebtTab = () => {
   );
 };
 
-export default ReportDebtTab;
+export default ReportPurchaseDebtTab;

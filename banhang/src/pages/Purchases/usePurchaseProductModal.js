@@ -1,26 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
 import { hasSearchMatch, normalizeSearchText } from '../../utils/searchText.js';
-import { isGlassProduct } from '../../components/invoice/invoiceUtils.js';
 
 const getValidDimension = (value) => {
   const numeric = Number(value || 0);
   return numeric > 0 ? numeric : null;
 };
 
-const getLineTotal = ({ qty, unitCost, length, width }, product) => {
+const getLineTotal = ({ qty, unitCost, length, width }) => {
   let total = Number(qty || 0) * Number(unitCost || 0);
-  if (product && isGlassProduct(product)) {
-    const lengthValue = Number(length || 0);
-    const widthValue = Number(width || 0);
-    if (lengthValue > 0 && widthValue > 0) {
-      total *= lengthValue * widthValue;
-    }
+  const lengthValue = Number(length || 0);
+  const widthValue = Number(width || 0);
+  if (lengthValue > 0 && widthValue > 0) {
+    total *= lengthValue * widthValue;
   }
   return total;
 };
 
-const usePurchaseProductModal = ({ activeProducts, setItems, isEdit }) => {
+const usePurchaseProductModal = ({ activeProducts, setItems, isEdit, onSearchProducts }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [pendingProduct, setPendingProduct] = useState(null);
@@ -38,6 +35,16 @@ const usePurchaseProductModal = ({ activeProducts, setItems, isEdit }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isEdit]);
+
+  useEffect(() => {
+    if (!onSearchProducts) return;
+    const keyword = searchKeyword.trim();
+    if (!keyword) return;
+    const timer = setTimeout(() => {
+      onSearchProducts(keyword);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchKeyword, onSearchProducts]);
 
   const openAddModal = (product) => {
     if (!product) return;
@@ -95,17 +102,14 @@ const usePurchaseProductModal = ({ activeProducts, setItems, isEdit }) => {
       return false;
     }
 
-    let lengthValue = null;
-    let widthValue = null;
-    if (isGlassProduct(pendingProduct)) {
-      lengthValue = getValidDimension(pendingLength);
-      widthValue = getValidDimension(pendingWidth);
+    const lengthValue = getValidDimension(pendingLength);
+    const widthValue = getValidDimension(pendingWidth);
+    if ((lengthValue && !widthValue) || (!lengthValue && widthValue)) {
+      message.error('Vui lòng nhập đủ chiều dài và chiều rộng.');
+      return false;
     }
 
-    const lineTotal = getLineTotal(
-      { qty, unitCost, length: lengthValue, width: widthValue },
-      pendingProduct
-    );
+    const lineTotal = getLineTotal({ qty, unitCost, length: lengthValue, width: widthValue });
 
     setItems((prev) => [
       ...prev,

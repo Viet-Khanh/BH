@@ -1,12 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Modal, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { useSupplierStore } from '../../store/supplierStore.js';
-import { useProductStore } from '../../store/productStore.js';
-import { usePurchaseStore } from '../../store/purchaseStore.js';
-import { useInvoiceStore } from '../../store/invoiceStore.js';
-import { usePaymentStore } from '../../store/paymentStore.js';
 import InvoiceHeader from '../../components/invoice/InvoiceHeader.jsx';
 import InvoiceTopSection from '../../components/invoice/InvoiceTopSection.jsx';
 import InvoicePaymentModal from '../../components/invoice/InvoicePaymentModal.jsx';
@@ -16,25 +12,35 @@ import InvoiceSearchBar from '../../components/invoice/InvoiceSearchBar.jsx';
 import InvoiceProductModal from '../../components/invoice/InvoiceProductModal.jsx';
 import PurchaseRecentModal from './PurchaseRecentModal.jsx';
 import PurchaseDetailModal from './PurchaseDetailModal.jsx';
-import usePurchaseFilters from './usePurchaseFilters.js';
 import usePurchaseItems from './usePurchaseItems.js';
 import usePurchasePayments from './usePurchasePayments.js';
 import usePurchaseProductModal from './usePurchaseProductModal.js';
-import { computeStock } from '../../utils/computeStock.js';
-import { computeAvgCost } from '../../utils/computeAvgCost.js';
 import { generateCode } from '../../utils/codeGenerator.js';
+import { addItem, apiRequest, deleteItem, updateItem } from '../../db/repository.js';
 const buildPurchaseItems = (purchase) =>
   (purchase?.items || []).map((item) => ({
     ...item,
     lineNote: item.lineNote || '',
   }));
+
+const mergeProducts = (current = [], incoming = []) => {
+  const map = new Map();
+  incoming.forEach((item) => {
+    if (item?.id) map.set(item.id, item);
+  });
+  current.forEach((item) => {
+    if (item?.id && !map.has(item.id)) map.set(item.id, item);
+  });
+  return Array.from(map.values());
+};
 const Purchases = () => {
   const navigate = useNavigate();
-  const { items: suppliers } = useSupplierStore();
-  const { items: products, update: updateProduct } = useProductStore();
-  const { items: purchases, add: addPurchase } = usePurchaseStore();
-  const { items: invoices } = useInvoiceStore();
-  const { items: payments, add: addPayment, update: updatePayment, remove: removePayment } = usePaymentStore();
+  const { items: suppliers, load: loadSuppliers } = useSupplierStore();
+  const [products, setProducts] = useState([]);
+  const [recentPurchases, setRecentPurchases] = useState([]);
+  const [exportRows, setExportRows] = useState([]);
+  const [purchasePayments, setPurchasePayments] = useState([]);
+  const [supplierDebt, setSupplierDebt] = useState(0);
   const [supplierId, setSupplierId] = useState('');
   const [date, setDate] = useState(new Date().toISOString());
   const [note, setNote] = useState('');
@@ -50,6 +56,28 @@ const Purchases = () => {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentNote, setPaymentNote] = useState('');
+
+  useEffect(() => {
+    const bootstrap = async () => {
+      await loadSuppliers();
+    };
+    bootstrap();
+  }, [loadSuppliers]);
+
+  const handleSearchProducts = useCallback(async (keyword = '') => {
+    const params = new URLSearchParams();
+    if (keyword) params.set('search', keyword);
+    params.set('limit', '30');
+    try {
+      const data = await apiRequest(`/sales/products?${params.toString()}`);
+      if (Array.isArray(data)) {
+        setProducts((prev) => mergeProducts(prev, data));
+      }
+    } catch (error) {
+      message.error('Không thể tải danh sách sản phẩm.');
+    }
+  }, []);
+
   const activeSuppliers = useMemo(() => suppliers.filter((item) => !item.isDeleted), [suppliers]);
   const supplierOptions = useMemo(
     () => activeSuppliers.map((item) => ({ value: item.id, label: item.name })),
@@ -58,6 +86,52 @@ const Purchases = () => {
   const activeProducts = useMemo(() => products.filter((item) => !item.isDeleted), [products]);
   const supplier = suppliers.find((item) => item.id === supplierId);
   const isEdit = Boolean(editing);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadDebt = async () => {
+      if (!supplierId) {
+        setSupplierDebt(0);
+        return;
+      }
+      const params = new URLSearchParams({ supplierId });
+      if (editing?.id) params.set('excludePurchaseId', editing.id);
+      try {
+        const data = await apiRequest(`/purchases-tools/supplier-debt?${params.toString()}`);
+        if (!cancelled) {
+          setSupplierDebt(Number(data?.debt || 0));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSupplierDebt(0);
+          message.error('Không thể tải công nợ nhà cung cấp.');
+        }
+      }
+    };
+    loadDebt();
+    return () => {
+      cancelled = true;
+    };
+  }, [supplierId, editing?.id]);
+
+  const loadRecentPurchases = useCallback(async () => {
+    const params = new URLSearchParams({ limit: '200' });
+    if (filterSupplier) params.set('supplierId', filterSupplier);
+    if (filterRange[0]) params.set('from', filterRange[0]);
+    if (filterRange[1]) params.set('to', filterRange[1]);
+    try {
+      const data = await apiRequest(`/purchases-tools/recent?${params.toString()}`);
+      setRecentPurchases(Array.isArray(data?.rows) ? data.rows : []);
+      setExportRows(Array.isArray(data?.exportRows) ? data.exportRows : []);
+    } catch (error) {
+      message.error('Không thể tải phiếu nhập.');
+    }
+  }, [filterRange, filterSupplier]);
+
+  useEffect(() => {
+    if (!recentOpen) return;
+    loadRecentPurchases();
+  }, [recentOpen, loadRecentPurchases]);
 
   const applyEditingValues = (purchase) => {
     setSupplierId(purchase?.supplierId || '');
@@ -90,6 +164,7 @@ const Purchases = () => {
     activeProducts,
     setItems,
     isEdit,
+    onSearchProducts: handleSearchProducts,
   });
   const { updateItem, removeItem } = usePurchaseItems({
     items,
@@ -102,13 +177,6 @@ const Purchases = () => {
     applyEditingValues(editing);
     resetSearchState();
   }, [editing, resetSearchState]);
-  const { filteredPurchases, exportRows } = usePurchaseFilters({
-    purchases,
-    filterSupplier,
-    filterRange,
-    suppliers,
-    products,
-  });
   const totals = useMemo(
     () => items.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0),
     [items]
@@ -116,6 +184,8 @@ const Purchases = () => {
   const totalQty = useMemo(() => items.reduce((sum, item) => sum + Number(item.qty || 0), 0), [items]);
   const resetForm = () => {
     setEditing(null);
+    setPurchasePayments([]);
+    setSupplierDebt(0);
     setSupplierId('');
     setDate(new Date().toISOString());
     setNote('');
@@ -141,7 +211,7 @@ const Purchases = () => {
       message.error('Số lượng > 0 và đơn giá >= 0.');
       return null;
     }
-    const purchase = {
+    const purchasePayload = {
       id: uuid(),
       code: draftCode,
       supplierId,
@@ -149,18 +219,20 @@ const Purchases = () => {
       items,
       total: totals,
       note,
-      appliedToStock: true,
     };
-    for (const item of items) {
-      const product = products.find((p) => p.id === item.productId);
-      if (!product) continue;
-      const oldQty = computeStock(product.id, purchases, invoices, null, products);
-      const newAvgCost = computeAvgCost(oldQty, product.avgCost || 0, item.qty, item.unitCost);
-      const nextOpeningStock = Number(product.openingStock || 0) + Number(item.qty || 0);
-      await updateProduct(product.id, { avgCost: newAvgCost, openingStock: nextOpeningStock });
+    try {
+      const data = await apiRequest('/purchases-tools', {
+        method: 'POST',
+        body: purchasePayload,
+      });
+      if (Array.isArray(data?.products)) {
+        setProducts((prev) => mergeProducts(prev, data.products));
+      }
+      return data?.purchase || purchasePayload;
+    } catch (error) {
+      message.error('Không thể lưu phiếu nhập.');
+      return null;
     }
-    await addPurchase(purchase);
-    return purchase;
   };
   const handleCancelTicket = () => {
     Modal.confirm({
@@ -177,16 +249,35 @@ const Purchases = () => {
       },
     });
   };
+
+  const handleAddPayment = async (payment) => {
+    const created = await addItem('payments', payment);
+    const nextPayment = created || payment;
+    setPurchasePayments((prev) => [...prev, nextPayment]);
+  };
+
+  const handleUpdatePayment = async (paymentId, data) => {
+    const saved = await updateItem('payments', paymentId, data);
+    const nextPayment = saved || data;
+    setPurchasePayments((prev) =>
+      prev.map((payment) => (payment.id === paymentId ? nextPayment : payment))
+    );
+  };
+
+  const handleRemovePayment = async (paymentId) => {
+    await deleteItem('payments', paymentId);
+    setPurchasePayments((prev) => prev.filter((payment) => payment.id !== paymentId));
+  };
   const {
-    supplierDebt,
+    supplierDebt: currentSupplierDebt,
     totalPayment,
     remainingPayment,
-    purchasePayments,
+    purchasePayments: currentPurchasePayments,
     handleCheckout,
   } = usePurchasePayments({
     editing,
-    payments,
-    purchases,
+    payments: purchasePayments,
+    supplierDebtOverride: supplierDebt,
     supplierId,
     totals,
     paymentAmount,
@@ -199,10 +290,44 @@ const Purchases = () => {
     setPaymentModalOpen,
     persistPurchase,
     resetForm,
-    addPayment,
-    updatePayment,
-    removePayment,
+    addPayment: handleAddPayment,
+    updatePayment: handleUpdatePayment,
+    removePayment: handleRemovePayment,
   });
+
+  const fetchPurchaseDetail = useCallback(
+    async (purchaseId) => {
+      const data = await apiRequest(`/purchases-tools/detail/${purchaseId}`);
+      if (Array.isArray(data?.products)) {
+        setProducts((prev) => mergeProducts(prev, data.products));
+      }
+      return data;
+    },
+    []
+  );
+
+  const handleSelectDetail = async (purchase) => {
+    try {
+      const data = await fetchPurchaseDetail(purchase.id);
+      setDetail(data?.purchase || purchase);
+      setDetailOpen(true);
+    } catch (error) {
+      message.error('Không thể tải chi tiết phiếu nhập.');
+    }
+  };
+
+  const handleSelectPayment = async (purchase) => {
+    try {
+      const data = await fetchPurchaseDetail(purchase.id);
+      const nextPurchase = data?.purchase || purchase;
+      setEditing(nextPurchase);
+      setPurchasePayments(Array.isArray(data?.payments) ? data.payments : []);
+      setRecentOpen(false);
+      setPaymentModalOpen(true);
+    } catch (error) {
+      message.error('Không thể tải phiếu nhập.');
+    }
+  };
 
   return (
     <div className="page-card pos-shell">
@@ -227,7 +352,7 @@ const Purchases = () => {
         showRecent={false}
         itemsCount={items.length}
         totalQty={totalQty}
-        customerDebt={supplierDebt}
+        customerDebt={currentSupplierDebt}
         total={totals}
         customerId={supplierId}
         onCustomerChange={setSupplierId}
@@ -268,7 +393,7 @@ const Purchases = () => {
       />
       <InvoicePaymentsSection
         isEdit={isEdit}
-        payments={purchasePayments}
+        payments={currentPurchasePayments}
         changeLog={[]}
         title="Thanh toán"
         emptyText="Chưa có lần trả tiền."
@@ -278,6 +403,7 @@ const Purchases = () => {
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
         products={activeProducts}
+        onSearchProducts={handleSearchProducts}
         pendingProduct={pendingProduct}
         pendingQty={pendingQty}
         pendingPrice={pendingPrice}
@@ -289,13 +415,12 @@ const Purchases = () => {
         onChangeLength={setPendingLength}
         onChangeWidth={setPendingWidth}
         onConfirmAdd={handleConfirmAdd}
-        showDimensions={false}
       />
 
       <PurchaseRecentModal
         open={recentOpen}
         onClose={() => setRecentOpen(false)}
-        filteredPurchases={filteredPurchases}
+        filteredPurchases={recentPurchases}
         suppliers={suppliers}
         supplierOptions={supplierOptions}
         filterRange={filterRange}
@@ -303,15 +428,8 @@ const Purchases = () => {
         filterSupplier={filterSupplier}
         onFilterSupplierChange={setFilterSupplier}
         exportRows={exportRows}
-        onSelectDetail={(purchase) => {
-          setDetail(purchase);
-          setDetailOpen(true);
-        }}
-        onSelectPayment={(purchase) => {
-          setEditing(purchase);
-          setRecentOpen(false);
-          setPaymentModalOpen(true);
-        }}
+        onSelectDetail={handleSelectDetail}
+        onSelectPayment={handleSelectPayment}
       />
 
       <PurchaseDetailModal
@@ -328,7 +446,7 @@ const Purchases = () => {
         paymentLabel="Đã trả"
         customerName={supplier?.name || ''}
         total={totals}
-        customerDebt={supplierDebt}
+        customerDebt={currentSupplierDebt}
         totalPayment={totalPayment}
         remainingPayment={remainingPayment}
         paymentAmount={paymentAmount}

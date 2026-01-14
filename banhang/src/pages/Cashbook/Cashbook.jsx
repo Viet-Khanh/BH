@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, DatePicker, Input, InputNumber, Select, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -11,8 +11,8 @@ import { formatMoney } from '../../utils/moneyFormat.js';
 
 const Cashbook = () => {
   const navigate = useNavigate();
-  const { items: cashbook, add: addEntry } = useCashbookStore();
-  const { items: invoices } = useInvoiceStore();
+  const { items: cashbook, load: loadCashbook, add: addEntry } = useCashbookStore();
+  const { items: invoices, load: loadInvoices } = useInvoiceStore();
 
   const [mode, setMode] = useState('list');
   const [date, setDate] = useState(new Date().toISOString());
@@ -22,6 +22,14 @@ const Cashbook = () => {
   const [note, setNote] = useState('');
   const [invoiceId, setInvoiceId] = useState('');
   const [filterRange, setFilterRange] = useState([null, null]);
+
+  useEffect(() => {
+    const bootstrap = async () => {
+      await Promise.all([loadCashbook(), loadInvoices()]);
+    };
+    bootstrap();
+  }, [loadCashbook, loadInvoices]);
+
 
   const filtered = useMemo(() => {
     return cashbook.filter((entry) => {

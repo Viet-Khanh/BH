@@ -14,10 +14,11 @@ const getPaymentsByPurchaseId = (payments, purchaseId) =>
 
 const usePurchasePayments = ({
   editing,
-  payments,
-  purchases,
+  payments = [],
+  purchases = [],
   supplierId,
   totals,
+  supplierDebtOverride,
   paymentAmount,
   setPaymentAmount,
   paymentMethod,
@@ -41,7 +42,7 @@ const usePurchasePayments = ({
       0
     );
   }, [payments, editing]);
-  const supplierDebt = useMemo(() => {
+  const computedSupplierDebt = useMemo(() => {
     if (!supplierId) return 0;
     return purchases
       .filter((purchase) => purchase.supplierId === supplierId && purchase.id !== editing?.id)
@@ -50,6 +51,10 @@ const usePurchasePayments = ({
         return sum + Number(purchase.total || 0) - paid;
       }, 0);
   }, [supplierId, purchases, paymentsByPurchase, editing]);
+  const supplierDebt =
+    supplierDebtOverride !== undefined && supplierDebtOverride !== null
+      ? Number(supplierDebtOverride || 0)
+      : computedSupplierDebt;
   const totalPayment = totals + supplierDebt;
   const remainingPayment = totalPayment - Number(paymentAmount || 0);
 

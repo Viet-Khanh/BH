@@ -59,6 +59,7 @@ export const buildInvoiceViewProps = ({
   previewOpen,
   setPreviewOpen,
   previewHtml,
+  onSearchProducts,
 }) => {
   const headerProps = {
     onCancel,
@@ -134,6 +135,7 @@ export const buildInvoiceViewProps = ({
     open: searchOpen,
     onClose: () => setSearchOpen(false),
     products: activeProducts,
+    onSearchProducts,
     pendingProduct,
     pendingQty,
     pendingPrice,

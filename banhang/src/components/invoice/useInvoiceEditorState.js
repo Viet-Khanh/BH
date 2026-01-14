@@ -24,6 +24,7 @@ const useInvoiceEditorState = ({
   payments = [],
   allPayments = [],
   invoices = [],
+  customerDebtOverride,
   settings,
   onSave,
   onAddPayment,
@@ -34,6 +35,8 @@ const useInvoiceEditorState = ({
   onShowRecent,
   onShowTemplate,
   onNewInvoice,
+  onCustomerChange,
+  onSearchProducts,
 }) => {
   const isEdit = Boolean(invoice);
   const defaultCustomerId = useMemo(() => buildDefaultCustomerId(customers), [customers]);
@@ -70,6 +73,21 @@ const useInvoiceEditorState = ({
     setDraftCode(generateCode('INV'));
     setItems([]);
   }, [invoice, defaultCustomerId]);
+
+  useEffect(() => {
+    if (!onCustomerChange || !customerId) return;
+    onCustomerChange(customerId, invoice?.id || null);
+  }, [customerId, invoice?.id, onCustomerChange]);
+
+  useEffect(() => {
+    if (!onSearchProducts) return;
+    const keyword = searchKeyword.trim();
+    if (!keyword) return;
+    const timer = setTimeout(() => {
+      onSearchProducts(keyword);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchKeyword, onSearchProducts]);
   const paidTotal = useMemo(
     () => payments.reduce((sum, p) => sum + Number(p.amount || 0), 0),
     [payments]
@@ -117,7 +135,7 @@ const useInvoiceEditorState = ({
     [products]
   );
 
-  const customerDebt = useMemo(() => {
+  const computedCustomerDebt = useMemo(() => {
     if (!customerId) return 0;
     const related = invoices.filter(
       (inv) => inv.customerId === customerId && inv.id !== invoice?.id
@@ -131,6 +149,11 @@ const useInvoiceEditorState = ({
     }, 0);
     return total - paid;
   }, [customerId, invoices, allPayments, invoice]);
+
+  const customerDebt =
+    customerDebtOverride !== undefined && customerDebtOverride !== null
+      ? Number(customerDebtOverride || 0)
+      : computedCustomerDebt;
 
   const openAddModal = createOpenAddModal({
     setPendingProduct,
@@ -195,7 +218,7 @@ const useInvoiceEditorState = ({
       products,
       settings,
     });
-  }, [settings, invoice, items, totals.total, date, customer, payments, products, draftCode]);
+  }, [settings, invoice, items, totals.total, date, customer, payments, products, draftCode, customerDebt]);
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
@@ -343,6 +366,7 @@ const useInvoiceEditorState = ({
     previewOpen,
     setPreviewOpen,
     previewHtml,
+    onSearchProducts,
   });
 };
 

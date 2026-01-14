@@ -1,15 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, Modal, Select, message } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
-import { useInvoiceStore } from '../../store/invoiceStore.js';
-import { usePaymentStore } from '../../store/paymentStore.js';
-import { useCustomerStore } from '../../store/customerStore.js';
-import { useProductStore } from '../../store/productStore.js';
 import { useSettingsStore } from '../../store/settingsStore.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
+import { apiRequest } from '../../db/repository.js';
 
 const SalesRecent = () => {
   const navigate = useNavigate();
@@ -17,110 +14,85 @@ const SalesRecent = () => {
   const params = new URLSearchParams(location.search);
   const initialFilter = params.get('debt') === '1' ? 'debt' : 'all';
 
-  const invoiceStore = useInvoiceStore();
-  const paymentStore = usePaymentStore();
-  const { items: invoices } = invoiceStore;
-  const { items: payments } = paymentStore;
-  const { items: customers } = useCustomerStore();
-  const { items: products } = useProductStore();
-  const { settings } = useSettingsStore();
+  const { settings, load: loadSettings } = useSettingsStore();
 
   const [filterMode, setFilterMode] = useState(initialFilter);
+  const [rows, setRows] = useState([]);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
+  const [selectedInvoiceData, setSelectedInvoiceData] = useState(null);
 
-  const paymentsByInvoice = useMemo(() => {
-    const map = {};
-    payments.forEach((payment) => {
-      map[payment.invoiceId] = (map[payment.invoiceId] || 0) + Number(payment.amount || 0);
-    });
-    return map;
-  }, [payments]);
+  useEffect(() => {
+    const bootstrap = async () => {
+      await loadSettings();
+    };
+    bootstrap();
+  }, [loadSettings]);
 
-  const todayKey = dayjs().format('YYYY-MM-DD');
+  const todayRange = useMemo(() => {
+    const now = dayjs();
+    return {
+      from: now.startOf('day').toISOString(),
+      to: now.endOf('day').toISOString(),
+    };
+  }, []);
 
-  const rows = useMemo(() => {
-    const sorted = [...invoices].sort((a, b) => new Date(b.date) - new Date(a.date));
-    return sorted
-      .filter((invoice) => dayjs(invoice.date).format('YYYY-MM-DD') === todayKey)
-      .map((invoice) => {
-        const customer = customers.find((c) => c.id === invoice.customerId);
-        const paid = paymentsByInvoice[invoice.id] || 0;
-        const itemsCount = invoice.items?.length || 0;
-        const qtySum = (invoice.items || []).reduce(
-          (sum, item) => sum + Number(item.qty || 0),
-          0
-        );
+  useEffect(() => {
+    let cancelled = false;
+    const loadRows = async () => {
+      const params = new URLSearchParams({
+        from: todayRange.from,
+        to: todayRange.to,
+      });
+      try {
+        const data = await apiRequest(`/reports/sales-invoices?${params.toString()}`);
+        if (cancelled) return;
+        setRows(Array.isArray(data?.rows) ? data.rows : []);
+      } catch (error) {
+        if (!cancelled) {
+          message.error('Không thể tải hóa đơn hôm nay.');
+        }
+      }
+    };
+    loadRows();
+    return () => {
+      cancelled = true;
+    };
+  }, [todayRange.from, todayRange.to]);
 
-        const oldDebt = sorted
-          .filter(
-            (inv) =>
-              inv.customerId === invoice.customerId &&
-              dayjs(inv.date).isBefore(dayjs(invoice.date))
-          )
-          .reduce((sum, inv) => {
-            const invPaid = paymentsByInvoice[inv.id] || 0;
-            return sum + (Number(inv.total || 0) - invPaid);
-          }, 0);
+  useEffect(() => {
+    if (!selectedInvoiceId) {
+      setSelectedInvoiceData(null);
+      return;
+    }
+    let cancelled = false;
+    const loadInvoice = async () => {
+      try {
+        const data = await apiRequest(`/reports/invoices/${selectedInvoiceId}`);
+        if (!cancelled) {
+          setSelectedInvoiceData(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          message.error('Không thể tải chi tiết hóa đơn.');
+        }
+      }
+    };
+    loadInvoice();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedInvoiceId]);
 
-        const totalPay = Number(invoice.total || 0) + oldDebt;
-        const remain = totalPay - paid;
-
-        return {
-          id: invoice.id,
-          code: invoice.code,
-          date: invoice.date,
-          staff: 'admin',
-          itemsCount,
-          qtySum,
-          amount: Number(invoice.total || 0),
-          oldDebt,
-          totalPay,
-          paid,
-          remain,
-          customerName: customer?.name || '',
-          phone: customer?.phone || '',
-          address: customer?.address || '',
-          note: invoice.note || '',
-          status: invoice.paymentStatus,
-        };
-      })
-      .filter((row) => (filterMode === 'debt' ? row.remain > 0 : true));
-  }, [invoices, customers, paymentsByInvoice, filterMode, todayKey]);
-
-  const selectedInvoice = useMemo(
-    () => invoices.find((inv) => inv.id === selectedInvoiceId) || null,
-    [invoices, selectedInvoiceId]
+  const filteredRows = useMemo(
+    () => rows.filter((row) => (filterMode === 'debt' ? row.remain > 0 : true)),
+    [rows, filterMode]
   );
 
-  const selectedCustomer = useMemo(() => {
-    if (!selectedInvoice) return null;
-    return customers.find((c) => c.id === selectedInvoice.customerId) || null;
-  }, [customers, selectedInvoice]);
-
-  const selectedPayments = useMemo(() => {
-    if (!selectedInvoiceId) return [];
-    return payments.filter((payment) => payment.invoiceId === selectedInvoiceId);
-  }, [payments, selectedInvoiceId]);
-
-  const selectedItems = useMemo(() => {
-    if (!selectedInvoice) return [];
-    return (selectedInvoice.items || []).map((item, index) => {
-      const product = products.find((p) => p.id === item.productId);
-      const qty = Number(item.qty || 0);
-      const unitPrice = Number(item.unitPrice || 0);
-      const lineTotal = Number(item.lineTotal || qty * unitPrice);
-      return {
-        key: `${selectedInvoice.id}-${index}`,
-        name: product?.name || 'Sản phẩm',
-        unit: product?.unit || '',
-        spec: product?.spec || '',
-        qty,
-        unitPrice,
-        lineTotal,
-        note: item.lineNote || '',
-      };
-    });
-  }, [selectedInvoice, products]);
+  const selectedInvoice = selectedInvoiceData?.invoice || null;
+  const selectedCustomer = selectedInvoiceData?.customer || null;
+  const selectedPayments = selectedInvoiceData?.payments || [];
+  const selectedItems = selectedInvoiceData?.items || [];
+  const selectedProducts = selectedInvoiceData?.products || [];
 
   const previewHtml = useMemo(() => {
     if (!selectedInvoice || !settings) return '';
@@ -129,10 +101,10 @@ const SalesRecent = () => {
       invoice: selectedInvoice,
       customer: selectedCustomer || { name: 'Khách lẻ' },
       payments: selectedPayments,
-      products,
+      products: selectedProducts,
       settings,
     });
-  }, [selectedInvoice, selectedCustomer, selectedPayments, products, settings]);
+  }, [selectedInvoice, selectedCustomer, selectedPayments, selectedProducts, settings]);
 
   const handlePrint = () => {
     if (!previewHtml) return;
@@ -174,9 +146,8 @@ const SalesRecent = () => {
       okText: 'Xóa',
       cancelText: 'Hủy',
       onOk: async () => {
-        const relatedPayments = payments.filter((p) => p.invoiceId === selectedInvoice.id);
-        await Promise.all(relatedPayments.map((payment) => paymentStore.remove(payment.id)));
-        await invoiceStore.remove(selectedInvoice.id);
+        await apiRequest(`/reports/invoices/${selectedInvoice.id}`, { method: 'DELETE' });
+        setRows((prev) => prev.filter((row) => row.id !== selectedInvoice.id));
         setSelectedInvoiceId(null);
         message.success('Đã xóa hóa đơn.');
       },
@@ -197,7 +168,9 @@ const SalesRecent = () => {
         </Button>
         <div className="pos-header-title">HÓA ĐƠN BÁN HÀNG GẦN ĐÂY</div>
         <div className="pos-header-actions">
-          <Button size="large">Lịch sử sửa xóa</Button>
+          <Button size="large" onClick={() => navigate('/sales/history')}>
+            Lịch sử sửa xóa
+          </Button>
         </div>
       </div>
 
@@ -233,7 +206,7 @@ const SalesRecent = () => {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {filteredRows.map((row) => (
               <tr
                 key={row.id}
                 onClick={() => setSelectedInvoiceId(row.id)}
@@ -255,7 +228,7 @@ const SalesRecent = () => {
                 <td>{row.note}</td>
               </tr>
             ))}
-            {!rows.length && (
+            {!filteredRows.length && (
               <tr>
                 <td colSpan={14} style={{ textAlign: 'center' }}>
                   Chưa có hóa đơn.
@@ -286,7 +259,6 @@ const SalesRecent = () => {
                   <tr>
                     <th>Tên hàng</th>
                     <th>ĐVT</th>
-                    <th>Quy cách</th>
                     <th>T.SL</th>
                     <th>Đơn giá</th>
                     <th>Thành tiền</th>
@@ -298,7 +270,6 @@ const SalesRecent = () => {
                     <tr key={item.key}>
                       <td>{item.name}</td>
                       <td>{item.unit}</td>
-                      <td>{item.spec}</td>
                       <td>{item.qty}</td>
                       <td>{formatMoney(item.unitPrice)}</td>
                       <td>{formatMoney(item.lineTotal)}</td>

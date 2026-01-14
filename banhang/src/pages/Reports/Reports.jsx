@@ -1,16 +1,17 @@
 import { Button, Tabs } from 'antd';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ReportStockTab from './ReportStockTab.jsx';
-import ReportDebtTab from './ReportDebtTab.jsx';
-import ReportProfitTab from './ReportProfitTab.jsx';
-import ReportCashTab from './ReportCashTab.jsx';
-import ReportSalesInvoicesTab from './ReportSalesInvoicesTab.jsx';
-import ReportSalesDetailsTab from './ReportSalesDetailsTab.jsx';
+
+const ReportDebtTab = lazy(() => import('./ReportDebtTab.jsx'));
+const ReportProfitTab = lazy(() => import('./ReportProfitTab.jsx'));
+const ReportCashTab = lazy(() => import('./ReportCashTab.jsx'));
+const ReportSalesInvoicesTab = lazy(() => import('./ReportSalesInvoicesTab.jsx'));
+const ReportSalesDetailsTab = lazy(() => import('./ReportSalesDetailsTab.jsx'));
 
 const Reports = () => {
   const navigate = useNavigate();
   const [profitRange, setProfitRange] = useState([null, null]);
+  const tabFallback = <div style={{ padding: 16 }}>Đang tải...</div>;
 
   return (
     <div className="page-card">
@@ -21,20 +22,54 @@ const Reports = () => {
 
       <Tabs
         type="card"
+        className="page-tabs"
+        tabPosition="top"
+        tabBarGutter={8}
         items={[
-          { key: 'stock', label: 'Tồn kho', children: <ReportStockTab /> },
-          { key: 'debt', label: 'Công nợ', children: <ReportDebtTab /> },
-          { key: 'sales', label: 'Hoá đơn bán hàng', children: <ReportSalesInvoicesTab /> },
-          { key: 'sales-detail', label: 'Chi tiết bán hàng', children: <ReportSalesDetailsTab /> },
+          {
+            key: 'debt',
+            label: 'Công nợ',
+            children: (
+              <Suspense fallback={tabFallback}>
+                <ReportDebtTab />
+              </Suspense>
+            ),
+          },
+          {
+            key: 'sales',
+            label: 'Hoá đơn bán hàng',
+            children: (
+              <Suspense fallback={tabFallback}>
+                <ReportSalesInvoicesTab />
+              </Suspense>
+            ),
+          },
+          {
+            key: 'sales-detail',
+            label: 'Chi tiết bán hàng',
+            children: (
+              <Suspense fallback={tabFallback}>
+                <ReportSalesDetailsTab />
+              </Suspense>
+            ),
+          },
           {
             key: 'profit',
             label: 'Doanh thu & Lãi',
-            children: <ReportProfitTab range={profitRange} onRangeChange={setProfitRange} />,
+            children: (
+              <Suspense fallback={tabFallback}>
+                <ReportProfitTab range={profitRange} onRangeChange={setProfitRange} />
+              </Suspense>
+            ),
           },
           {
             key: 'summary',
             label: 'Thu/Chi',
-            children: <ReportCashTab range={profitRange} onRangeChange={setProfitRange} />,
+            children: (
+              <Suspense fallback={tabFallback}>
+                <ReportCashTab range={profitRange} onRangeChange={setProfitRange} />
+              </Suspense>
+            ),
           },
         ]}
       />

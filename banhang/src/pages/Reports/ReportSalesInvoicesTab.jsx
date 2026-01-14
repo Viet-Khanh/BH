@@ -1,130 +1,161 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal, Select, message } from "antd";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
-import { useInvoiceStore } from "../../store/invoiceStore.js";
-import { usePaymentStore } from "../../store/paymentStore.js";
-import { useCustomerStore } from "../../store/customerStore.js";
-import { useProductStore } from "../../store/productStore.js";
-import { useSettingsStore } from "../../store/settingsStore.js";
 import DateRangeFilter from "../../components/DateRangeFilter.jsx";
+import ExportActions from "../../components/ExportActions.jsx";
+import { apiRequest } from "../../db/repository.js";
 import { formatMoney } from "../../utils/moneyFormat.js";
 import { renderInvoiceTemplate } from "../../utils/renderTemplate.js";
 import ReportSalesInvoiceModal from "./ReportSalesInvoiceModal.jsx";
-import {
-  buildCustomerMap,
-  buildInvoiceItems,
-  buildInvoiceSummary,
-  buildOldDebtByInvoice,
-  buildPaymentsByInvoice,
-  buildProductMap,
-} from "./reportSalesUtils.js";
+import { useSettingsStore } from "../../store/settingsStore.js";
+
+const isRetailCustomer = (name) => {
+  const normalized = String(name || "").trim().toLowerCase();
+  return normalized === "khách lẻ" || normalized === "khach le";
+};
+
+const buildSummary = (items = []) =>
+  items.reduce(
+    (acc, row) => ({
+      amount: acc.amount + Number(row.amount || 0),
+      paid: acc.paid + Number(row.paid || 0),
+      remain: acc.remain + Number(row.remain || 0),
+      profit: acc.profit + Number(row.profit || 0),
+    }),
+    {
+      amount: 0,
+      paid: 0,
+      remain: 0,
+      profit: 0,
+    }
+  );
+
+const buildExportRow = (row, { formatted = false } = {}) => ({
+  'Số HĐ': row.code,
+  Ngày: row.date ? dayjs(row.date).format('DD/MM/YYYY HH:mm') : '',
+  'Nhân viên': row.staff,
+  'Mặt hàng': row.itemsCount,
+  'Số lượng': row.qtySum,
+  'Tiền hàng': formatted ? formatMoney(row.amount) : row.amount,
+  'Đã thu': formatted ? formatMoney(row.paid) : row.paid,
+  'Lợi nhuận': formatted ? formatMoney(row.profit) : row.profit,
+  'Nợ cũ': formatted ? formatMoney(row.oldDebt) : row.oldDebt,
+  'Tổng cộng': formatted ? formatMoney(row.totalPay) : row.totalPay,
+  'Còn nợ': formatted ? formatMoney(row.remain) : row.remain,
+  'Khách hàng': row.customerName,
+  'Điện thoại': row.phone,
+  'Địa chỉ': row.address,
+  'Ghi chú': row.note,
+});
 
 const ReportSalesInvoicesTab = () => {
   const navigate = useNavigate();
-  const invoiceStore = useInvoiceStore();
-  const paymentStore = usePaymentStore();
-  const { items: invoices } = invoiceStore;
-  const { items: payments } = paymentStore;
-  const { items: customers } = useCustomerStore();
-  const { items: products } = useProductStore();
-  const { settings } = useSettingsStore();
+  const { settings, load: loadSettings } = useSettingsStore();
 
   const [range, setRange] = useState(() => [
     dayjs().startOf("day").toISOString(),
     dayjs().endOf("day").toISOString(),
   ]);
   const [customerId, setCustomerId] = useState("");
+  const [rows, setRows] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [summary, setSummary] = useState({
+    amount: 0,
+    paid: 0,
+    remain: 0,
+    profit: 0,
+  });
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedPayments, setSelectedPayments] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState([]);
 
-  const activeCustomers = useMemo(
-    () => customers.filter((item) => !item.isDeleted),
-    [customers]
+  const selectedCustomerName = useMemo(
+    () => customers.find((item) => item.id === customerId)?.name || '',
+    [customers, customerId]
   );
-  const customerMap = useMemo(() => buildCustomerMap(customers), [customers]);
-  const productMap = useMemo(() => buildProductMap(products), [products]);
-  const paymentsByInvoice = useMemo(
-    () => buildPaymentsByInvoice(payments),
-    [payments]
-  );
-  const oldDebtByInvoice = useMemo(
-    () => buildOldDebtByInvoice(invoices, paymentsByInvoice),
-    [invoices, paymentsByInvoice]
-  );
+  const exportTitle = selectedCustomerName
+    ? `Báo cáo hóa đơn bán hàng - Khách hàng: ${selectedCustomerName}`
+    : 'Báo cáo hóa đơn bán hàng';
 
-  const filteredInvoices = useMemo(() => {
-    return invoices.filter((invoice) => {
-      const matchCustomer = customerId
-        ? invoice.customerId === customerId
-        : true;
-      const matchRange =
-        range[0] && range[1]
-          ? !dayjs(invoice.date).isBefore(dayjs(range[0]).startOf("day")) &&
-            !dayjs(invoice.date).isAfter(dayjs(range[1]).endOf("day"))
-          : true;
-      return matchCustomer && matchRange;
-    });
-  }, [invoices, customerId, range]);
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
-  const rows = useMemo(() => {
-    const sorted = [...filteredInvoices].sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
-    );
-    return sorted.map((invoice) =>
-      buildInvoiceSummary(invoice, {
-        customerMap,
-        productMap,
-        paymentsByInvoice,
-        oldDebtByInvoice,
-      })
-    );
-  }, [
-    filteredInvoices,
-    customerMap,
-    productMap,
-    paymentsByInvoice,
-    oldDebtByInvoice,
-  ]);
+  const fetchReport = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (range[0]) params.set("from", range[0]);
+    if (range[1]) params.set("to", range[1]);
+    if (customerId) params.set("customerId", customerId);
+    const query = params.toString();
 
-  const summary = useMemo(
-    () =>
-      rows.reduce(
-        (acc, row) => ({
-          amount: acc.amount + Number(row.amount || 0),
-          paid: acc.paid + Number(row.paid || 0),
-          remain: acc.remain + Number(row.remain || 0),
-          profit: acc.profit + Number(row.profit || 0),
-        }),
-        {
-          amount: 0,
-          paid: 0,
-          remain: 0,
-          profit: 0,
+    const data = await apiRequest(`/reports/sales-invoices${query ? `?${query}` : ""}`);
+    const rawRows = Array.isArray(data?.rows) ? data.rows : [];
+    const rawCustomers = Array.isArray(data?.customers) ? data.customers : [];
+    const filteredRows = rawRows.filter((row) => !isRetailCustomer(row.customerName));
+    const filteredCustomers = rawCustomers.filter((item) => !isRetailCustomer(item.name));
+
+    setRows(filteredRows);
+    setSummary(buildSummary(filteredRows));
+    setCustomers(filteredCustomers);
+  }, [range, customerId]);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        await fetchReport();
+      } catch (error) {
+        if (active) {
+          message.error(`Không thể tải hóa đơn: ${error.message || "Lỗi không xác định"}`);
         }
-      ),
-    [rows]
-  );
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, [fetchReport]);
 
-  const selectedInvoice = useMemo(
-    () => invoices.find((inv) => inv.id === selectedInvoiceId) || null,
-    [invoices, selectedInvoiceId]
-  );
+  useEffect(() => {
+    if (!selectedInvoiceId) {
+      setSelectedInvoice(null);
+      setSelectedCustomer(null);
+      setSelectedItems([]);
+      setSelectedPayments([]);
+      setSelectedProducts([]);
+      return;
+    }
 
-  const selectedCustomer = useMemo(() => {
-    if (!selectedInvoice) return null;
-    return customerMap[selectedInvoice.customerId] || null;
-  }, [selectedInvoice, customerMap]);
+    let active = true;
+    const load = async () => {
+      try {
+        const data = await apiRequest(`/reports/invoices/${selectedInvoiceId}`);
+        if (!active) return;
+        setSelectedInvoice(data?.invoice || null);
+        setSelectedCustomer(data?.customer || null);
+        setSelectedItems(data?.items || []);
+        setSelectedPayments(data?.payments || []);
+        setSelectedProducts(data?.products || []);
+      } catch (error) {
+        if (active) {
+          message.error(`Không thể tải chi tiết hóa đơn: ${error.message || "Lỗi không xác định"}`);
+        }
+      }
+    };
+    load();
 
-  const selectedPayments = useMemo(() => {
-    if (!selectedInvoiceId) return [];
-    return payments.filter((payment) => payment.invoiceId === selectedInvoiceId);
-  }, [payments, selectedInvoiceId]);
+    return () => {
+      active = false;
+    };
+  }, [selectedInvoiceId]);
 
-  const selectedItems = useMemo(() => {
-    if (!selectedInvoice) return [];
-    return buildInvoiceItems(selectedInvoice, productMap);
-  }, [selectedInvoice, productMap]);
+  const exportRows = useMemo(() => rows.map((row) => buildExportRow(row)), [rows]);
+  const pdfRows = useMemo(() => rows.map((row) => buildExportRow(row, { formatted: true })), [rows]);
 
   const previewHtml = useMemo(() => {
     if (!selectedInvoice || !settings) return "";
@@ -133,10 +164,10 @@ const ReportSalesInvoicesTab = () => {
       invoice: selectedInvoice,
       customer: selectedCustomer || { name: "Khách lẻ" },
       payments: selectedPayments,
-      products,
+      products: selectedProducts,
       settings,
     });
-  }, [selectedInvoice, selectedCustomer, selectedPayments, products, settings]);
+  }, [selectedInvoice, selectedCustomer, selectedPayments, selectedProducts, settings]);
 
   const handlePrint = () => {
     if (!previewHtml) return;
@@ -178,15 +209,14 @@ const ReportSalesInvoicesTab = () => {
       okText: "Xóa",
       cancelText: "Hủy",
       onOk: async () => {
-        const relatedPayments = payments.filter(
-          (payment) => payment.invoiceId === selectedInvoice.id
-        );
-        await Promise.all(
-          relatedPayments.map((payment) => paymentStore.remove(payment.id))
-        );
-        await invoiceStore.remove(selectedInvoice.id);
-        setSelectedInvoiceId(null);
-        message.success("Đã xóa hóa đơn.");
+        try {
+          await apiRequest(`/reports/invoices/${selectedInvoice.id}`, { method: "DELETE" });
+          setSelectedInvoiceId(null);
+          await fetchReport();
+          message.success("Đã xóa hóa đơn.");
+        } catch (error) {
+          message.error(`Không thể xóa hóa đơn: ${error.message || "Lỗi không xác định"}`);
+        }
       },
     });
   };
@@ -211,7 +241,7 @@ const ReportSalesInvoicesTab = () => {
             placeholder="Chọn khách hàng"
             value={customerId || undefined}
             onChange={(value) => setCustomerId(value || "")}
-            options={activeCustomers.map((item) => ({
+            options={customers.map((item) => ({
               value: item.id,
               label: item.name,
             }))}
@@ -221,21 +251,54 @@ const ReportSalesInvoicesTab = () => {
             optionFilterProp="label"
           />
         </div>
+        <div style={{ display: "flex", alignItems: "end" }}>
+          <ExportActions
+            rows={exportRows}
+            pdfRows={pdfRows}
+            fileName="hoa-don-ban-hang"
+            sheetName="HoaDon"
+            title={exportTitle}
+          />
+        </div>
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 12,
             marginLeft: "auto",
+            justifyContent: "flex-end",
+            gap: 8,
           }}
         >
           <div style={{ display: "flex", gap: 40 }}>
-            <strong className="text-primary">Tiền hàng: {formatMoney(summary.amount)}</strong>
-            <strong className="text-primary">Đã thu: {formatMoney(summary.paid)}</strong>
+            <span className="text-gray-600">
+              Tiền hàng:{" "}
+              <strong style={{ color: "blue" }} className="text-lg font-bold">
+                {formatMoney(summary.amount)}
+              </strong>
+            </span>
+
+            <span className="text-gray-600">
+              Đã thu:{" "}
+              <strong style={{ color: "green" }} className="text-lg font-bold">
+                {formatMoney(summary.paid)}
+              </strong>
+            </span>
           </div>
+
           <div style={{ display: "flex", gap: 40 }}>
-            <strong className="text-primary">Còn nợ: {formatMoney(summary.remain)}</strong>
-            <strong className="text-primary">Lợi nhuận: {formatMoney(summary.profit)}</strong>
+            <span className="text-gray-600">
+              Còn nợ:{" "}
+              <strong style={{ color: "red" }} className="text-lg font-bold">
+                {formatMoney(summary.remain)}
+              </strong>
+            </span>
+
+            <span className="text-gray-600">
+              Lợi nhuận:{" "}
+              <strong style={{ color: "purple" }} className="text-lg font-bold">
+                {formatMoney(summary.profit)}
+              </strong>
+            </span>
           </div>
         </div>
       </div>

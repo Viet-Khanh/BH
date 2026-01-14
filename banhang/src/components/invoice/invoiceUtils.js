@@ -21,12 +21,10 @@ export const getLineBase = (item, product) => {
   const qty = Number(item.qty || 0);
   const unitPrice = Number(item.unitPrice || 0);
   let base = qty * unitPrice;
-  if (isGlassProduct(product)) {
-    const length = Number(item.length || 0);
-    const width = Number(item.width || 0);
-    if (length > 0 && width > 0) {
-      base *= length * width;
-    }
+  const length = Number(item.length || 0);
+  const width = Number(item.width || 0);
+  if (length > 0 && width > 0) {
+    base *= length * width;
   }
   return base;
 };

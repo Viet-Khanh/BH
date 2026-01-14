@@ -1,65 +1,51 @@
-import { useMemo, useState } from 'react';
-import { Button, Col, Form, Input, InputNumber, Modal, Row, Select, Table, Tabs, message } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import { Button, Form, Modal, Tabs, message } from 'antd';
 import { v4 as uuid } from 'uuid';
 import { useNavigate } from 'react-router-dom';
 import { useProductStore } from '../../store/productStore.js';
 import { useCustomerStore } from '../../store/customerStore.js';
 import { useSupplierStore } from '../../store/supplierStore.js';
 import { useUnitStore } from '../../store/unitStore.js';
-import { formatMoney } from '../../utils/moneyFormat.js';
-
-const normalizeSearchText = (value) =>
-  String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/đ/g, 'd')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-
-const buildSearchText = (record) =>
-  Object.values(record ?? {})
-    .filter((value) => value !== null && value !== undefined)
-    .join(' ');
-
-const hasSearchMatch = (record, keyword) => {
-  const normalizedKeyword = normalizeSearchText(keyword);
-  if (!normalizedKeyword) return true;
-  const haystack = normalizeSearchText(buildSearchText(record));
-  return normalizedKeyword.split(' ').every((term) => haystack.includes(term));
-};
-
-const buildCodeFromName = (name = '') => {
-  const cleaned = name
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
-  if (!cleaned) return '';
-  return cleaned
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((word) => word[0]?.toUpperCase())
-    .join('');
-};
-
-const parseNumberInput = (value) => {
-  if (!value) return '';
-  return String(value).replace(/\./g, '').replace(/,/g, '');
-};
-
-const formatNumberInput = (value) => {
-  if (value === null || value === undefined || value === '') return '';
-  const numeric = typeof value === 'number' ? value : Number(parseNumberInput(value));
-  if (Number.isNaN(numeric)) return '';
-  return formatMoney(numeric);
-};
+import CatalogFormModal from './CatalogFormModal.jsx';
+import CatalogTabContent from './CatalogTabContent.jsx';
+import { buildCodeFromName, hasSearchMatch } from './catalogUtils.js';
+import { getColumns, getExportConfig } from './catalogViewConfigs.jsx';
+import useCatalogImport from './useCatalogImport.js';
 
 const Catalog = () => {
   const navigate = useNavigate();
-  const { items: products, add: addProduct, update: updateProduct, remove: removeProduct } = useProductStore();
-  const { items: customers, add: addCustomer, update: updateCustomer, remove: removeCustomer } = useCustomerStore();
-  const { items: suppliers, add: addSupplier, update: updateSupplier, remove: removeSupplier } = useSupplierStore();
-  const { items: units, add: addUnit, update: updateUnit, remove: removeUnit } = useUnitStore();
+  const {
+    items: products,
+    add: addProduct,
+    update: updateProduct,
+    remove: removeProduct,
+    bulkAdd: bulkAddProducts,
+    load: loadProducts,
+  } = useProductStore();
+  const {
+    items: customers,
+    add: addCustomer,
+    update: updateCustomer,
+    remove: removeCustomer,
+    bulkAdd: bulkAddCustomers,
+    load: loadCustomers,
+  } = useCustomerStore();
+  const {
+    items: suppliers,
+    add: addSupplier,
+    update: updateSupplier,
+    remove: removeSupplier,
+    bulkAdd: bulkAddSuppliers,
+    load: loadSuppliers,
+  } = useSupplierStore();
+  const {
+    items: units,
+    add: addUnit,
+    update: updateUnit,
+    remove: removeUnit,
+    bulkAdd: bulkAddUnits,
+    load: loadUnits,
+  } = useUnitStore();
 
   const [activeKey, setActiveKey] = useState('products');
   const [modalOpen, setModalOpen] = useState(false);
@@ -68,15 +54,34 @@ const Catalog = () => {
   const [searchText, setSearchText] = useState('');
   const [form] = Form.useForm();
 
+  useEffect(() => {
+    const bootstrap = async () => {
+      await Promise.all([loadProducts(), loadCustomers(), loadSuppliers(), loadUnits()]);
+    };
+    bootstrap();
+  }, [loadProducts, loadCustomers, loadSuppliers, loadUnits]);
+
+
+  const {
+    importing,
+    importTarget,
+    fileInputRef,
+    handleDownloadTemplate,
+    triggerImport,
+    handleFileChange,
+    resetImportState,
+  } = useCatalogImport({
+    activeKey,
+    bulkAddProducts,
+    bulkAddCustomers,
+    bulkAddSuppliers,
+    bulkAddUnits,
+  });
+
   const activeProducts = useMemo(() => products.filter((item) => !item.isDeleted), [products]);
   const activeCustomers = useMemo(() => customers.filter((item) => !item.isDeleted), [customers]);
   const activeSuppliers = useMemo(() => suppliers.filter((item) => !item.isDeleted), [suppliers]);
   const activeUnits = useMemo(() => units.filter((item) => !item.isDeleted), [units]);
-
-  const unitOptions = useMemo(
-    () => activeUnits.map((unit) => ({ value: unit.name, label: unit.name })),
-    [activeUnits]
-  );
 
   const dataSource = useMemo(() => {
     let source = activeProducts;
@@ -90,6 +95,10 @@ const Catalog = () => {
   const handleTabChange = (key) => {
     setActiveKey(key);
     setSearchText('');
+    setModalOpen(false);
+    setEditing(null);
+    setCodeEdited(false);
+    resetImportState();
   };
 
   const openCreate = () => {
@@ -175,67 +184,14 @@ const Catalog = () => {
     setModalOpen(false);
   };
 
-  const columns = useMemo(() => {
-    if (activeKey === 'products') {
-      return [
-        { title: 'STT', render: (_, __, index) => index + 1, width: 60 },
-        { title: 'Mã hàng', dataIndex: 'code' },
-        { title: 'Tên hàng', dataIndex: 'name' },
-        { title: 'ĐVT', dataIndex: 'unit' },
-        { title: 'Đơn giá lẻ', dataIndex: 'sellPriceDefault', render: (val) => formatMoney(val) },
-        { title: 'Đơn giá sỉ', dataIndex: 'sellPriceWholesale', render: (val) => formatMoney(val) },
-        { title: 'Nhóm hàng', dataIndex: 'group' },
-        { title: 'Giá vốn', dataIndex: 'avgCost', render: (val) => formatMoney(val) },
-        { title: 'Tồn đầu', dataIndex: 'openingStock' },
-        {
-          title: 'Hành động',
-          render: (_, record) => (
-            <div className="flex-row">
-              <Button onClick={() => openEdit(record)}>Sửa</Button>
-              <Button danger onClick={() => handleDelete(record)}>
-                Xóa
-              </Button>
-            </div>
-          ),
-        },
-      ];
-    }
-
-    if (activeKey === 'units') {
-      return [
-        { title: 'STT', render: (_, __, index) => index + 1, width: 60 },
-        { title: 'ĐVT', dataIndex: 'name' },
-        {
-          title: 'Hành động',
-          render: (_, record) => (
-            <div className="flex-row">
-              <Button onClick={() => openEdit(record)}>Sửa</Button>
-              <Button danger onClick={() => handleDelete(record)}>
-                Xóa
-              </Button>
-            </div>
-          ),
-        },
-      ];
-    }
-
-    return [
-      { title: 'Tên', dataIndex: 'name' },
-      { title: 'SĐT', dataIndex: 'phone' },
-      { title: 'Địa chỉ', dataIndex: 'address' },
-      {
-        title: 'Hành động',
-        render: (_, record) => (
-          <div className="flex-row">
-            <Button onClick={() => openEdit(record)}>Sửa</Button>
-            <Button danger onClick={() => handleDelete(record)}>
-              Xóa
-            </Button>
-          </div>
-        ),
-      },
-    ];
-  }, [activeKey, units]);
+  const columns = useMemo(
+    () => getColumns({ activeKey, onEdit: openEdit, onDelete: handleDelete }),
+    [activeKey]
+  );
+  const exportConfig = useMemo(
+    () => getExportConfig({ activeKey, dataSource }),
+    [activeKey, dataSource]
+  );
 
   return (
     <div className="page-card">
@@ -248,153 +204,89 @@ const Catalog = () => {
       </div>
 
       <Tabs
-        type='card'
+        type="card"
+        className="page-tabs"
+        tabPosition="top"
+        tabBarGutter={8}
         activeKey={activeKey}
         onChange={handleTabChange}
         items={[
-          { key: 'products', label: 'Sản phẩm' },
-          { key: 'units', label: 'ĐVT' },
-          { key: 'customers', label: 'Khách hàng/Đại lý' },
-          { key: 'suppliers', label: 'Nhà cung cấp' },
+          {
+            key: 'products',
+            label: 'Sản phẩm',
+            children: (
+              <CatalogTabContent
+                tabKey="products"
+                activeKey={activeKey}
+                searchText={searchText}
+                onSearchTextChange={setSearchText}
+                onDownloadTemplate={handleDownloadTemplate}
+                onTriggerImport={triggerImport}
+                importing={importing}
+                importTarget={importTarget}
+                exportConfig={exportConfig}
+                dataSource={dataSource}
+                columns={columns}
+                onFileChange={handleFileChange}
+                fileInputRef={fileInputRef}
+              />
+            ),
+          },
+          {
+            key: 'customers',
+            label: 'Khách hàng/Đại lý',
+            children: (
+              <CatalogTabContent
+                tabKey="customers"
+                activeKey={activeKey}
+                searchText={searchText}
+                onSearchTextChange={setSearchText}
+                onDownloadTemplate={handleDownloadTemplate}
+                onTriggerImport={triggerImport}
+                importing={importing}
+                importTarget={importTarget}
+                exportConfig={exportConfig}
+                dataSource={dataSource}
+                columns={columns}
+                onFileChange={handleFileChange}
+                fileInputRef={fileInputRef}
+              />
+            ),
+          },
+          {
+            key: 'suppliers',
+            label: 'Nhà cung cấp',
+            children: (
+              <CatalogTabContent
+                tabKey="suppliers"
+                activeKey={activeKey}
+                searchText={searchText}
+                onSearchTextChange={setSearchText}
+                onDownloadTemplate={handleDownloadTemplate}
+                onTriggerImport={triggerImport}
+                importing={importing}
+                importTarget={importTarget}
+                exportConfig={exportConfig}
+                dataSource={dataSource}
+                columns={columns}
+                onFileChange={handleFileChange}
+                fileInputRef={fileInputRef}
+              />
+            ),
+          },
         ]}
       />
 
-      {activeKey !== 'units' && (
-        <div className="action-row">
-          <Input
-            allowClear
-            placeholder="Tìm kiếm..."
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            style={{ maxWidth: 360 }}
-          />
-        </div>
-      )}
-
-      <div className="table-wrapper">
-        <Table
-          rowKey="id"
-          dataSource={dataSource}
-          columns={columns}
-          pagination={activeKey === 'units' ? { pageSize: 8 } : false}
-          scroll={{ x: 1100 }}
-        />
-      </div>
-
-      <Modal
-        title={editing ? 'Sửa dữ liệu' : 'Tạo mới'}
+      <CatalogFormModal
         open={modalOpen}
+        editing={editing}
+        activeKey={activeKey}
+        form={form}
         onCancel={() => setModalOpen(false)}
-        onOk={handleSave}
-        okText="Lưu"
-        cancelText="Hủy"
-      >
-        {activeKey === 'products' && (
-          <Form form={form} layout="vertical">
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item label="Tên hàng" name="name" rules={[{ required: true }]}> 
-                  <Input onChange={handleNameChange} />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item label="Mã hàng" name="code" rules={[{ required: true }]}> 
-                  <Input onChange={handleCodeChange} />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item label="ĐVT" name="unit" rules={[{ required: true }]}> 
-                  <Select
-                    showSearch
-                    optionFilterProp="label"
-                    options={unitOptions}
-                    placeholder="Chọn ĐVT"
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item label="Nhóm hàng" name="group" rules={[{ required: true }]}> 
-                  <Select
-                    options={[
-                      { value: 'Nhôm', label: 'Nhôm' },
-                      { value: 'Sắt', label: 'Sắt' },
-                      { value: 'Kính', label: 'Kính' },
-                    ]}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item label="Đơn giá lẻ" name="sellPriceDefault">
-                  <InputNumber
-                    min={0}
-                    style={{ width: '100%' }}
-                    formatter={formatNumberInput}
-                    parser={parseNumberInput}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item label="Đơn giá sỉ" name="sellPriceWholesale">
-                  <InputNumber
-                    min={0}
-                    style={{ width: '100%' }}
-                    formatter={formatNumberInput}
-                    parser={parseNumberInput}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item label="Giá vốn" name="avgCost">
-                  <InputNumber
-                    min={0}
-                    style={{ width: '100%' }}
-                    formatter={formatNumberInput}
-                    parser={parseNumberInput}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item label="Tồn đầu" name="openingStock">
-                  <InputNumber
-                    min={0}
-                    style={{ width: '100%' }}
-                    formatter={formatNumberInput}
-                    parser={parseNumberInput}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-          </Form>
-        )}
-
-        {activeKey === 'units' && (
-          <Form form={form} layout="vertical">
-            <Form.Item label="ĐVT" name="name" rules={[{ required: true }]}>
-              <Input />
-            </Form.Item>
-          </Form>
-        )}
-
-        {activeKey !== 'products' && activeKey !== 'units' && (
-          <Form form={form} layout="vertical">
-            <Form.Item label="Tên" name="name" rules={[{ required: true }]}> 
-              <Input />
-            </Form.Item>
-            <Form.Item label="Số điện thoại" name="phone">
-              <Input />
-            </Form.Item>
-            <Form.Item label="Địa chỉ" name="address">
-              <Input />
-            </Form.Item>
-          </Form>
-        )}
-      </Modal>
+        onSave={handleSave}
+        onNameChange={handleNameChange}
+        onCodeChange={handleCodeChange}
+      />
     </div>
   );
 };

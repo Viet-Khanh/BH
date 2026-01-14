@@ -1,78 +1,69 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { useInvoiceStore } from '../../store/invoiceStore.js';
-import { useCashbookStore } from '../../store/cashbookStore.js';
+import { message } from 'antd';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
-import ExportButton from '../../components/ExportButton.jsx';
-import { computeProfitByDay } from '../../utils/computeProfitByDay.js';
+import ExportActions from '../../components/ExportActions.jsx';
+import { apiRequest } from '../../db/repository.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
 const ReportProfitTab = ({ range, onRangeChange }) => {
-  const { items: invoices } = useInvoiceStore();
-  const { items: cashbook } = useCashbookStore();
+  const [rows, setRows] = useState([]);
+  const [summary, setSummary] = useState({
+    revenue: 0,
+    cost: 0,
+    profit: 0,
+    cashIn: 0,
+    cashOut: 0,
+  });
 
-  const filteredInvoices = useMemo(() => {
-    if (!range[0] || !range[1]) return invoices;
-    return invoices.filter((invoice) =>
-      !dayjs(invoice.date).isBefore(dayjs(range[0]).startOf('day')) &&
-      !dayjs(invoice.date).isAfter(dayjs(range[1]).endOf('day'))
-    );
-  }, [invoices, range]);
-
-  const profitRows = useMemo(() => computeProfitByDay(filteredInvoices), [filteredInvoices]);
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (range[0]) params.set('from', range[0]);
+        if (range[1]) params.set('to', range[1]);
+        const query = params.toString();
+        const data = await apiRequest(`/reports/profit${query ? `?${query}` : ''}`);
+        if (!active) return;
+        setRows(data?.rows || []);
+        setSummary({
+          revenue: data?.summary?.revenue || 0,
+          cost: data?.summary?.cost || 0,
+          profit: data?.summary?.profit || 0,
+          cashIn: data?.summary?.cashIn || 0,
+          cashOut: data?.summary?.cashOut || 0,
+        });
+      } catch (error) {
+        if (active) {
+          message.error(`Không thể tải doanh thu: ${error.message || 'Lỗi không xác định'}`);
+        }
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, [range]);
 
   const profitExport = useMemo(
     () =>
-      profitRows.map((row) => ({
+      rows.map((row) => ({
         Ngay: dayjs(row.date).format('DD/MM/YYYY'),
         Doanh_thu: row.revenue,
         Gia_von: row.cost,
         Lai: row.profit,
       })),
-    [profitRows]
+    [rows]
   );
-
-  const summary = useMemo(() => {
-    const revenue = filteredInvoices.reduce((sum, inv) => sum + Number(inv.total || 0), 0);
-    const cost = filteredInvoices.reduce((sum, inv) => {
-      const invCost = (inv.items || []).reduce((acc, item) => {
-        const qty = Number(item.qty || 0);
-        const unitCost = Number(item.costPriceSnapshot || 0);
-        const length = Number(item.length || 0);
-        const width = Number(item.width || 0);
-        const area = length > 0 && width > 0 ? length * width : 1;
-        return acc + qty * unitCost * area;
-      }, 0);
-      return sum + invCost;
-    }, 0);
-    const profit = revenue - cost;
-
-    const cashIn = cashbook.reduce((sum, entry) => {
-      const inRange = range[0] && range[1]
-        ? !dayjs(entry.date).isBefore(dayjs(range[0]).startOf('day')) &&
-          !dayjs(entry.date).isAfter(dayjs(range[1]).endOf('day'))
-        : true;
-      if (!inRange || entry.type !== 'in') return sum;
-      return sum + Number(entry.amount || 0);
-    }, 0);
-
-    const cashOut = cashbook.reduce((sum, entry) => {
-      const inRange = range[0] && range[1]
-        ? !dayjs(entry.date).isBefore(dayjs(range[0]).startOf('day')) &&
-          !dayjs(entry.date).isAfter(dayjs(range[1]).endOf('day'))
-        : true;
-      if (!inRange || entry.type !== 'out') return sum;
-      return sum + Number(entry.amount || 0);
-    }, 0);
-
-    return { revenue, cost, profit, cashIn, cashOut };
-  }, [filteredInvoices, cashbook, range]);
 
   return (
     <div>
       <div className="action-row">
         <DateRangeFilter value={range} onChange={onRangeChange} />
-        <ExportButton rows={profitExport} fileName="doanh-thu" sheetName="DoanhThu" />
+        <div style={{ marginLeft: 'auto' }}>
+          <ExportActions rows={profitExport} fileName="doanh-thu" sheetName="DoanhThu" title="Doanh thu" />
+        </div>
       </div>
       <div className="section-title">Tổng hợp</div>
       <div className="invoice-summary">
@@ -93,7 +84,7 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
             </tr>
           </thead>
           <tbody>
-            {profitRows.map((row) => (
+            {rows.map((row) => (
               <tr key={row.date}>
                 <td>{dayjs(row.date).format('DD/MM/YYYY')}</td>
                 <td>{formatMoney(row.revenue)}</td>
@@ -101,7 +92,7 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
                 <td>{formatMoney(row.profit)}</td>
               </tr>
             ))}
-            {!profitRows.length && (
+            {!rows.length && (
               <tr>
                 <td colSpan={4}>Chưa có dữ liệu.</td>
               </tr>
