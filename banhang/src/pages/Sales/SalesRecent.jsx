@@ -7,6 +7,8 @@ import { useSettingsStore } from '../../store/settingsStore.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
 import { apiRequest } from '../../db/repository.js';
+import { saveWorkbook } from '../../utils/excelExport.js';
+import { printHtml } from '../../utils/printUtils.js';
 
 const SalesRecent = () => {
   const navigate = useNavigate();
@@ -106,17 +108,13 @@ const SalesRecent = () => {
     });
   }, [selectedInvoice, selectedCustomer, selectedPayments, selectedProducts, settings]);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!previewHtml) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(previewHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
+    await printHtml(previewHtml, { copies: printCopies });
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!selectedInvoice) return;
     const rowsToExport = selectedItems.map((item, index) => ({
       STT: index + 1,
@@ -135,7 +133,7 @@ const SalesRecent = () => {
     const worksheet = XLSX.utils.json_to_sheet(rowsToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Hoa_don');
-    XLSX.writeFile(workbook, `${selectedInvoice.code || 'hoa-don'}.xlsx`);
+    await saveWorkbook(workbook, selectedInvoice.code || 'hoa-don');
   };
 
   const handleDelete = () => {

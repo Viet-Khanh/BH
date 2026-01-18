@@ -61,7 +61,19 @@ export const DEFAULT_SETTINGS = {
   shopAddress: '123 Đường ABC, Quận 1',
   allowNegativeStock: false,
   lowStockThreshold: 5,
+  printCopies: 1,
   invoiceTemplateHtml: DEFAULT_TEMPLATE,
+};
+
+const normalizeSettings = (data) => {
+  const normalized = { ...DEFAULT_SETTINGS, ...(data || {}) };
+  if (!normalized.invoiceTemplateHtml) {
+    normalized.invoiceTemplateHtml = DEFAULT_TEMPLATE;
+  }
+  const copies = Number(normalized.printCopies || 0);
+  normalized.printCopies =
+    Number.isFinite(copies) && copies > 0 ? Math.round(copies) : DEFAULT_SETTINGS.printCopies;
+  return normalized;
 };
 
 export const useSettingsStore = create((set, get) => ({
@@ -69,11 +81,7 @@ export const useSettingsStore = create((set, get) => ({
   load: async () => {
     const data = await getSettings();
     if (data) {
-      const normalized = { ...DEFAULT_SETTINGS, ...data };
-      if (!normalized.invoiceTemplateHtml) {
-        normalized.invoiceTemplateHtml = DEFAULT_TEMPLATE;
-      }
-      set({ settings: normalized });
+      set({ settings: normalizeSettings(data) });
     }
   },
   ensureDefaults: async () => {
@@ -84,10 +92,7 @@ export const useSettingsStore = create((set, get) => ({
     }
   },
   update: async (partial) => {
-    const next = { ...get().settings, ...partial };
-    if (!next.invoiceTemplateHtml) {
-      next.invoiceTemplateHtml = DEFAULT_TEMPLATE;
-    }
+    const next = normalizeSettings({ ...get().settings, ...partial });
     await saveSettings(next);
     set({ settings: next });
   },

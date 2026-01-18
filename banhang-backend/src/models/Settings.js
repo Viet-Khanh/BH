@@ -8,6 +8,7 @@ const SettingsSchema = new mongoose.Schema(
     shopAddress: String,
     allowNegativeStock: Boolean,
     lowStockThreshold: Number,
+    printCopies: { type: Number, default: 1 },
     invoiceTemplateHtml: String,
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,

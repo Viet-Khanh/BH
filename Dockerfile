@@ -8,6 +8,5 @@ FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=backend /app/banhang-backend /app/banhang-backend
-COPY banhang/dist /app/banhang/dist
 EXPOSE 5000
 CMD ["node", "/app/banhang-backend/src/index.js"]

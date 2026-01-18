@@ -1,5 +1,9 @@
+import { useEffect } from 'react';
 import { Button, Dropdown, message } from 'antd';
 import * as XLSX from 'xlsx';
+import { useSettingsStore } from '../store/settingsStore.js';
+import { saveWorkbook } from '../utils/excelExport.js';
+import { printHtml } from '../utils/printUtils.js';
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -47,22 +51,17 @@ const buildPrintHtml = ({ title, rows }) => {
     </html>`;
 };
 
-const openPrintWindow = (html) => {
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    message.warning('Trình duyệt chặn cửa sổ in.');
-    return null;
-  }
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.focus();
-  return printWindow;
-};
-
 const ExportActions = ({ rows = [], pdfRows, fileName = 'du-lieu', sheetName = 'Data', title }) => {
   const rowsForPdf = pdfRows && pdfRows.length ? pdfRows : rows;
+  const { settings, load: loadSettings } = useSettingsStore();
 
-  const handleExcel = () => {
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
+
+  const handleExcel = async () => {
     if (!rows.length) {
       message.warning('Không có dữ liệu để xuất.');
       return;
@@ -70,31 +69,25 @@ const ExportActions = ({ rows = [], pdfRows, fileName = 'du-lieu', sheetName = '
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    XLSX.writeFile(workbook, `${fileName}.xlsx`);
+    await saveWorkbook(workbook, fileName);
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!rowsForPdf.length) {
       message.warning('Không có dữ liệu để in.');
       return;
     }
     const html = buildPrintHtml({ title: title || fileName, rows: rowsForPdf });
-    const printWindow = openPrintWindow(html);
-    if (!printWindow) return;
-    printWindow.print();
-    printWindow.onafterprint = () => printWindow.close();
+    await printHtml(html, { copies: printCopies });
   };
 
-  const handlePdf = () => {
+  const handlePdf = async () => {
     if (!rowsForPdf.length) {
       message.warning('Không có dữ liệu để xuất.');
       return;
     }
     const html = buildPrintHtml({ title: title || fileName, rows: rowsForPdf });
-    const printWindow = openPrintWindow(html);
-    if (!printWindow) return;
-    printWindow.print();
-    printWindow.onafterprint = () => printWindow.close();
+    await printHtml(html, { copies: printCopies, forceDialog: true });
   };
 
   const exportItems = [
@@ -103,8 +96,8 @@ const ExportActions = ({ rows = [], pdfRows, fileName = 'du-lieu', sheetName = '
   ];
 
   const handleMenuClick = ({ key }) => {
-    if (key === 'excel') handleExcel();
-    if (key === 'pdf') handlePdf();
+    if (key === 'excel') void handleExcel();
+    if (key === 'pdf') void handlePdf();
   };
 
   return (

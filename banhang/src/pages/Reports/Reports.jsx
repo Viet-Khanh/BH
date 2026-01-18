@@ -1,16 +1,22 @@
 import { Button, Tabs } from 'antd';
+import dayjs from 'dayjs';
 import { lazy, Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const ReportDebtTab = lazy(() => import('./ReportDebtTab.jsx'));
 const ReportProfitTab = lazy(() => import('./ReportProfitTab.jsx'));
+const ReportStockOutTab = lazy(() => import('./ReportStockOutTab.jsx'));
 const ReportCashTab = lazy(() => import('./ReportCashTab.jsx'));
 const ReportSalesInvoicesTab = lazy(() => import('./ReportSalesInvoicesTab.jsx'));
 const ReportSalesDetailsTab = lazy(() => import('./ReportSalesDetailsTab.jsx'));
 
 const Reports = () => {
   const navigate = useNavigate();
-  const [profitRange, setProfitRange] = useState([null, null]);
+  const [profitRange, setProfitRange] = useState(() => {
+    const end = dayjs().endOf('day');
+    const start = end.subtract(30, 'day').startOf('day');
+    return [start.toISOString(), end.toISOString()];
+  });
   const tabFallback = <div style={{ padding: 16 }}>Đang tải...</div>;
 
   return (
@@ -54,6 +60,15 @@ const Reports = () => {
             ),
           },
           {
+            key: 'stock-out',
+            label: 'Báo cáo xuất kho',
+            children: (
+              <Suspense fallback={tabFallback}>
+                <ReportStockOutTab />
+              </Suspense>
+            ),
+          },
+          {
             key: 'profit',
             label: 'Doanh thu & Lãi',
             children: (
@@ -62,15 +77,15 @@ const Reports = () => {
               </Suspense>
             ),
           },
-          {
-            key: 'summary',
-            label: 'Thu/Chi',
-            children: (
-              <Suspense fallback={tabFallback}>
-                <ReportCashTab range={profitRange} onRangeChange={setProfitRange} />
-              </Suspense>
-            ),
-          },
+          // {
+          //   key: 'summary',
+          //   label: 'Thu/Chi',
+          //   children: (
+          //     <Suspense fallback={tabFallback}>
+          //       <ReportCashTab range={profitRange} onRangeChange={setProfitRange} />
+          //     </Suspense>
+          //   ),
+          // },
         ]}
       />
     </div>

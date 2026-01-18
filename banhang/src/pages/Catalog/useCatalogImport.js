@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { message } from 'antd';
 import * as XLSX from 'xlsx';
+import { saveWorkbook } from '../../utils/excelExport.js';
 import {
   buildTemplateRow,
   IMPORT_CONFIGS,
@@ -25,7 +26,7 @@ const useCatalogImport = ({
     importTargetRef.current = null;
   };
 
-  const handleDownloadTemplate = (tabKey) => {
+  const handleDownloadTemplate = async (tabKey) => {
     const config = TEMPLATE_CONFIGS[tabKey];
     if (!config) {
       message.warning('Chưa hỗ trợ tải mẫu cho tab này.');
@@ -34,7 +35,7 @@ const useCatalogImport = ({
     const worksheet = XLSX.utils.json_to_sheet([buildTemplateRow(config.headers)]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, config.sheetName);
-    XLSX.writeFile(workbook, `${config.fileName}.xlsx`);
+    await saveWorkbook(workbook, config.fileName);
   };
 
   const readWorkbook = (file) =>

@@ -49,10 +49,10 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
   const profitExport = useMemo(
     () =>
       rows.map((row) => ({
-        Ngay: dayjs(row.date).format('DD/MM/YYYY'),
-        Doanh_thu: row.revenue,
-        Gia_von: row.cost,
-        Lai: row.profit,
+        'Ngày': dayjs(row.date).format('DD/MM/YYYY'),
+        'Doanh thu': row.revenue,
+        'Giá vốn': row.cost,
+        'Lãi': row.profit,
       })),
     [rows]
   );
@@ -67,10 +67,23 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
       </div>
       <div className="section-title">Tổng hợp</div>
       <div className="invoice-summary">
-        <span>Doanh thu: {formatMoney(summary.revenue)}</span>
-        <span>Giá vốn: {formatMoney(summary.cost)}</span>
-        <span>Lãi: {formatMoney(summary.profit)}</span>
-        <span>Thu/Chi: {formatMoney(summary.cashIn)} / {formatMoney(summary.cashOut)}</span>
+        <span>
+          Doanh thu: <span className="text-success">{formatMoney(summary.revenue)}</span>
+        </span>
+        <span>
+          Giá vốn: <span className="text-danger">{formatMoney(summary.cost)}</span>
+        </span>
+        <span>
+          Lãi:{' '}
+          <span className={summary.profit >= 0 ? 'text-success' : 'text-danger'}>
+            {formatMoney(summary.profit)}
+          </span>
+        </span>
+        <span>
+          Thu/Chi:{' '}
+          <span className="text-success">{formatMoney(summary.cashIn)}</span> /{' '}
+          <span className="text-danger">{formatMoney(summary.cashOut)}</span>
+        </span>
       </div>
       <div className="section-title">Theo ngày</div>
       <div className="table-wrapper">
@@ -87,9 +100,11 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
             {rows.map((row) => (
               <tr key={row.date}>
                 <td>{dayjs(row.date).format('DD/MM/YYYY')}</td>
-                <td>{formatMoney(row.revenue)}</td>
-                <td>{formatMoney(row.cost)}</td>
-                <td>{formatMoney(row.profit)}</td>
+                <td className="text-success">{formatMoney(row.revenue)}</td>
+                <td className="text-danger">{formatMoney(row.cost)}</td>
+                <td className={row.profit >= 0 ? 'text-success' : 'text-danger'}>
+                  {formatMoney(row.profit)}
+                </td>
               </tr>
             ))}
             {!rows.length && (

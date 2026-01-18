@@ -116,6 +116,9 @@ const System = () => {
           <Form.Item label="Ngưỡng cảnh báo tồn thấp" name="lowStockThreshold">
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
+          <Form.Item label="Số bản in" name="printCopies">
+            <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+          </Form.Item>
         </div>
       </Form>
 
@@ -134,7 +137,7 @@ const System = () => {
       <div className="section-title">Dữ liệu mẫu</div>
       <div className="action-row">
         <Button size="large" onClick={handleSeed}>Nạp dữ liệu mẫu</Button>
-        <Button size="large" danger onClick={handleReset}>Reset dữ liệu</Button>
+        {/* <Button size="large" danger onClick={handleReset}>Reset dữ liệu</Button> */}
       </div>
     </div>
   );

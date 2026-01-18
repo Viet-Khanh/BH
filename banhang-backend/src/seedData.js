@@ -251,6 +251,7 @@ export const buildSeedData = () => {
     shopAddress: '123 Duong ABC, Quan 1',
     allowNegativeStock: true,
     lowStockThreshold: 5,
+    printCopies: 1,
     invoiceTemplateHtml: '',
     isDeleted: false,
     deletedAt: null,

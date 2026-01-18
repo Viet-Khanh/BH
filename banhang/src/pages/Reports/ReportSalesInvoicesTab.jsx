@@ -7,6 +7,8 @@ import DateRangeFilter from "../../components/DateRangeFilter.jsx";
 import ExportActions from "../../components/ExportActions.jsx";
 import { apiRequest } from "../../db/repository.js";
 import { formatMoney } from "../../utils/moneyFormat.js";
+import { saveWorkbook } from "../../utils/excelExport.js";
+import { printHtml } from "../../utils/printUtils.js";
 import { renderInvoiceTemplate } from "../../utils/renderTemplate.js";
 import ReportSalesInvoiceModal from "./ReportSalesInvoiceModal.jsx";
 import { useSettingsStore } from "../../store/settingsStore.js";
@@ -169,17 +171,13 @@ const ReportSalesInvoicesTab = () => {
     });
   }, [selectedInvoice, selectedCustomer, selectedPayments, selectedProducts, settings]);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!previewHtml) return;
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    printWindow.document.write(previewHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
+    await printHtml(previewHtml, { copies: printCopies });
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!selectedInvoice) return;
     const rowsToExport = selectedItems.map((item, index) => ({
       STT: index + 1,
@@ -198,7 +196,7 @@ const ReportSalesInvoicesTab = () => {
     const worksheet = XLSX.utils.json_to_sheet(rowsToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Hoa_don");
-    XLSX.writeFile(workbook, `${selectedInvoice.code || "hoa-don"}.xlsx`);
+    await saveWorkbook(workbook, selectedInvoice.code || "hoa-don");
   };
 
   const handleDelete = () => {

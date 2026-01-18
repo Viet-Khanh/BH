@@ -13,6 +13,7 @@ import {
 } from './invoiceProductHandlers.js';
 import { buildInvoiceItems, createCancelTicketHandler, createNewTicketHandler } from './invoiceTicketHandlers.js';
 import { buildInvoiceViewProps } from './invoiceViewProps.js';
+import { printHtml } from '../../utils/printUtils.js';
 const buildDefaultCustomerId = (customers) =>
   customers.find(
     (item) => !item.isDeleted && (item.name === 'Khách lẻ' || item.name === 'Khach le')
@@ -220,13 +221,10 @@ const useInvoiceEditorState = ({
     });
   }, [settings, invoice, items, totals.total, date, customer, payments, products, draftCode, customerDebt]);
 
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(previewHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+  const handlePrint = async () => {
+    if (!previewHtml) return;
+    const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
+    await printHtml(previewHtml, { copies: printCopies });
   };
 
   const handleCancelTicket = createCancelTicketHandler({
