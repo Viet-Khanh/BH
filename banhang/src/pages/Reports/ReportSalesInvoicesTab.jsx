@@ -161,6 +161,7 @@ const ReportSalesInvoicesTab = () => {
 
   const previewHtml = useMemo(() => {
     if (!selectedInvoice || !settings) return "";
+    
     return renderInvoiceTemplate({
       template: settings.invoiceTemplateHtml,
       invoice: selectedInvoice,
