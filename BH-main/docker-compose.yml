@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - banhang-mongo:/data/db
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: "5000"
+      MONGODB_URI: "mongodb://mongo:27017/banhang"
+      SERVE_FRONTEND: "false"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+volumes:
+  banhang-mongo:
