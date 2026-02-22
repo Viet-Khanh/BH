@@ -11,7 +11,11 @@ import 'antd/dist/reset.css';
 
 dayjs.locale('vi');
 
-const isElectron = typeof window !== 'undefined' && Boolean(window.electronAPI);
+const isElectron =
+  typeof window !== 'undefined' &&
+  (Boolean(window.electronAPI) ||
+    window.location?.protocol === 'file:' ||
+    navigator.userAgent.toLowerCase().includes(' electron/'));
 const Router = isElectron ? HashRouter : BrowserRouter;
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -31,3 +35,4 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator && !isElectron) {
     });
   });
 }
+

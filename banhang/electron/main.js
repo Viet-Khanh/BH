@@ -10,7 +10,7 @@ const createMainWindow = async () => {
     width: 1280,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -108,3 +108,4 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
