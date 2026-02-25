@@ -25,6 +25,10 @@ const TemplateEditor = ({
 
   const sampleInvoice = useMemo(() => {
     const product = products[0];
+    const sampleQty = 1;
+    const sampleLength = 2.4;
+    const sampleWidth = 1.2;
+    const sampleUnitPrice = product?.sellPriceDefault || 50000;
     return {
       code: 'INV-20240101-001',
       date: dayjs().toISOString(),
@@ -32,14 +36,16 @@ const TemplateEditor = ({
         ? [
             {
               productId: product.id,
-              qty: 2,
-              unitPrice: product.sellPriceDefault || 50000,
+              qty: sampleQty,
+              unitPrice: sampleUnitPrice,
               discount: 0,
-              lineTotal: (product.sellPriceDefault || 50000) * 2,
+              length: sampleLength,
+              width: sampleWidth,
+              lineTotal: sampleUnitPrice * sampleQty * sampleLength * sampleWidth,
             },
           ]
         : [],
-      total: product ? (product.sellPriceDefault || 50000) * 2 : 0,
+      total: product ? sampleUnitPrice * sampleQty * sampleLength * sampleWidth : 0,
     };
   }, [products]);
 

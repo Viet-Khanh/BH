@@ -97,23 +97,24 @@ const ReportStockTab = () => {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                onClick={() => openEditor(row)}
-                style={{
-                  background: row.stock <= lowStockThreshold ? '#fff2e8' : 'transparent',
-                  cursor: 'pointer',
-                }}
-              >
-                <td>{row.name}</td>
-                <td>{row.group}</td>
-                <td>{row.unit}</td>
-                <td>{row.stock}</td>
-                <td>{formatMoney(row.avgCost)}</td>
-                <td>{formatMoney(row.value)}</td>
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const isLowStock = Number(row.stock || 0) <= Number(lowStockThreshold || 0);
+              const lowStockCellStyle = isLowStock ? { background: '#fff59d' } : undefined;
+              return (
+                <tr
+                  key={row.id}
+                  onClick={() => openEditor(row)}
+                  style={{ cursor: 'pointer', ...lowStockCellStyle }}
+                >
+                  <td>{row.name}</td>
+                  <td>{row.group}</td>
+                  <td>{row.unit}</td>
+                  <td>{row.stock}</td>
+                  <td>{formatMoney(row.avgCost)}</td>
+                  <td>{formatMoney(row.value)}</td>
+                </tr>
+              );
+            })}
             {!rows.length && (
               <tr>
                 <td colSpan={6}>Chưa có dữ liệu.</td>

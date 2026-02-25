@@ -1,34 +1,57 @@
 import dayjs from 'dayjs';
 import { formatMoney } from './moneyFormat.js';
 
+const escapeHtml = (value) =>
+  String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
+const formatMeasure = (value, { blankOnZero = false } = {}) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '';
+  if (blankOnZero && number === 0) return '';
+  return new Intl.NumberFormat('vi-VN', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  }).format(number);
+};
+
 export const buildItemsHtml = (items = [], products = []) => {
-  let lastProductKey = null;
   const rows = items
     .map((item, index) => {
       const product = products.find((p) => p.id === item.productId);
       const name = product ? product.name : 'Sản phẩm';
       const code = product?.code || '';
       const unit = product?.unit || '';
-      const productKey = item.productId ?? name;
-      const showName = productKey !== lastProductKey;
-      lastProductKey = productKey;
-      const nameCell = showName
-        ? `<div><strong>${name}</strong></div><div>${code}</div>`
-        : '';
-      const length = item.length === null || item.length === undefined || item.length === '' ? '-' : item.length;
-      const width = item.width === null || item.width === undefined || item.width === '' ? '-' : item.width;
+      const qty = Number(item.qty || 0);
+      const length = Number(item.length || 0);
+      const width = Number(item.width || 0);
+      const hasDimensions = length > 0 && width > 0;
+      const qtyDisplay = hasDimensions ? formatMeasure(qty, { blankOnZero: true }) : '';
+      const lengthDisplay = hasDimensions ? formatMeasure(length, { blankOnZero: true }) : '';
+      const widthDisplay = hasDimensions ? formatMeasure(width, { blankOnZero: true }) : '';
+      const areaQty = hasDimensions ? qty * length * width : qty;
+      const areaQtyDisplay = formatMeasure(areaQty, { blankOnZero: true });
       const note = item.lineNote || '';
+      const noteCell = note ? `<div class="item-note">${escapeHtml(note)}</div>` : '';
       return `
         <tr>
           <td>${index + 1}</td>
-          <td>${nameCell}</td>
-          <td>${unit}</td>
-          <td>${length}</td>
-          <td>${width}</td>
-          <td>${item.qty}</td>
+          <td>
+            <div><strong>${escapeHtml(name)}</strong></div>
+            ${code ? `<div class="item-code">${escapeHtml(code)}</div>` : ''}
+            ${noteCell}
+          </td>
+          <td>${escapeHtml(unit)}</td>
+          <td>${qtyDisplay}</td>
+          <td>${lengthDisplay}</td>
+          <td>${widthDisplay}</td>
+          <td>${areaQtyDisplay}</td>
           <td>${formatMoney(item.unitPrice)}</td>
           <td>${formatMoney(item.lineTotal)}</td>
-          <td>${note}</td>
         </tr>
       `;
     })
@@ -38,15 +61,15 @@ export const buildItemsHtml = (items = [], products = []) => {
     <table class="items">
       <thead>
         <tr>
-          <th>STT</th>
+          <th>TT</th>
           <th>Tên hàng</th>
           <th>ĐVT</th>
-          <th>Dài</th>
-          <th>Rộng</th>
-          <th>SL/m2</th>
+          <th>Số lượng</th>
+          <th>D</th>
+          <th>R</th>
+          <th>SL / M2</th>
           <th>Đơn giá</th>
           <th>Thành tiền</th>
-          <th>Ghi chú</th>
         </tr>
       </thead>
       <tbody>
@@ -69,9 +92,12 @@ export const renderInvoiceTemplate = ({
   const totalQty = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
   const totalQtyLabel = Number.isFinite(totalQty) ? totalQty.toFixed(1) : '0.0';
   const paid = (payments || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
-  const debt = Number(invoice.total || 0) - paid;
+  const invoiceTotal = Number(invoice.total || 0);
+  const debt = invoiceTotal - paid;
   const itemsHtml = buildItemsHtml(items, products || []);
   const customerDebt = Number(invoice.customerDebt || 0);
+  const grandTotal = invoiceTotal + customerDebt;
+  const remaining = grandTotal - paid;
   const staff = invoice.staff || 'admin';
 
   const replacements = {
@@ -83,9 +109,12 @@ export const renderInvoiceTemplate = ({
     '{{items}}': itemsHtml,
     '{{items.count}}': String(itemsCount),
     '{{items.qty}}': totalQtyLabel,
-    '{{total}}': formatMoney(invoice.total || 0),
+    '{{total}}': formatMoney(invoiceTotal),
     '{{paid}}': formatMoney(paid),
+    '{{paid.text}}': paid > 0 ? formatMoney(paid) : '-',
     '{{debt}}': formatMoney(debt),
+    '{{grand.total}}': formatMoney(grandTotal),
+    '{{remaining}}': formatMoney(remaining),
     '{{date}}': dayjs(invoice.date).format('DD/MM/YYYY'),
     '{{note}}': invoice.note || '',
     '{{staff}}': staff,

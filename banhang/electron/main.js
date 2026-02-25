@@ -5,6 +5,17 @@ import fs from 'fs/promises';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const normalizePageSize = (value) => {
+  const normalized = String(value || '').trim().toUpperCase();
+  if (!normalized) return '';
+  const supported = ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'LEGAL', 'LETTER', 'TABLOID'];
+  if (!supported.includes(normalized)) return '';
+  if (normalized === 'LEGAL') return 'Legal';
+  if (normalized === 'LETTER') return 'Letter';
+  if (normalized === 'TABLOID') return 'Tabloid';
+  return normalized;
+};
+
 const createMainWindow = async () => {
   const win = new BrowserWindow({
     width: 1280,
@@ -54,24 +65,27 @@ ipcMain.handle('print-html', async (event, payload = {}) => {
 
   const copies = Math.max(1, Math.round(Number(options.copies) || 1));
   const silent = options.silent !== false;
+  const pageSize = normalizePageSize(options.pageSize);
   const printWindow = await createPrintWindow(html, !silent);
 
   try {
+    const printOptions = {
+      silent,
+      printBackground: true,
+      copies,
+    };
+    if (pageSize) {
+      printOptions.pageSize = pageSize;
+    }
+
     await new Promise((resolve, reject) => {
-      printWindow.webContents.print(
-        {
-          silent,
-          printBackground: true,
-          copies,
-        },
-        (success, failureReason) => {
-          if (!success) {
-            reject(new Error(failureReason || 'Print failed'));
-            return;
-          }
-          resolve();
+      printWindow.webContents.print(printOptions, (success, failureReason) => {
+        if (!success) {
+          reject(new Error(failureReason || 'Print failed'));
+          return;
         }
-      );
+        resolve();
+      });
     });
     return { ok: true };
   } finally {
@@ -108,4 +122,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
