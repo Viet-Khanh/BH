@@ -33,7 +33,7 @@ function Test-BackendRunning {
 
 $taskName = "BanHangBackend"
 $psExe = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
-$taskCommand = "`"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$startScript`""
+$taskCommand = "`"$psExe`" -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$startScript`""
 
 $taskExists = $false
 try {
@@ -46,6 +46,8 @@ try {
 
 if (-not $taskExists) {
   schtasks /Create /TN $taskName /SC ONLOGON /RL LIMITED /F /TR $taskCommand | Out-Null
+} else {
+  schtasks /Change /TN $taskName /TR $taskCommand | Out-Null
 }
 
 if (-not (Test-BackendRunning $port)) {
