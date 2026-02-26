@@ -18,7 +18,7 @@ if (-not (Test-Path $indexFile)) {
 Push-Location $backendDir
 try {
   $env:NODE_ENV = "production"
-  & yarn start
+  & npm start
 } finally {
   Pop-Location
 }
