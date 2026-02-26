@@ -35,18 +35,13 @@ $taskName = "BanHangBackend"
 $psExe = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
 $taskCommand = "`"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$startScript`""
 
-# Avoid PowerShell 7 stopping on a non-zero exit code from native commands.
-$restoreNativeErrorPref = $null
-if (Get-Variable -Name PSNativeCommandUseErrorActionPreference -Scope Global -ErrorAction SilentlyContinue) {
-  $restoreNativeErrorPref = $PSNativeCommandUseErrorActionPreference
-  $PSNativeCommandUseErrorActionPreference = $false
-}
-
-schtasks /Query /TN $taskName > $null 2>&1
-$taskExists = $LASTEXITCODE -eq 0
-
-if ($null -ne $restoreNativeErrorPref) {
-  $PSNativeCommandUseErrorActionPreference = $restoreNativeErrorPref
+$taskExists = $false
+try {
+  $queryCmd = "schtasks /Query /TN `"$taskName`" >nul 2>&1"
+  & cmd /c $queryCmd | Out-Null
+  $taskExists = $LASTEXITCODE -eq 0
+} catch {
+  $taskExists = $false
 }
 
 if (-not $taskExists) {
