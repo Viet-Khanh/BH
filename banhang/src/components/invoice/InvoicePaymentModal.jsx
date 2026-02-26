@@ -1,5 +1,6 @@
 import { Button, Input, InputNumber, Modal, Select } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import { formatNumberInput, parseNumberInput } from '../../pages/Catalog/catalogUtils.js';
 
 const InvoicePaymentModal = ({
   open,
@@ -57,6 +58,8 @@ const InvoicePaymentModal = ({
             style={{ width: '100%' }}
             value={paymentAmount}
             onChange={onPaymentAmountChange}
+            formatter={formatNumberInput}
+            parser={parseNumberInput}
           />
           <Button onClick={onPayFull}>Trả đủ</Button>
         </div>

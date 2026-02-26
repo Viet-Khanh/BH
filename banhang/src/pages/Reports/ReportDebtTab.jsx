@@ -20,9 +20,7 @@ const ReportDebtTab = () => {
       try {
         const data = await apiRequest('/reports/debt');
         if (!active) return;
-        const nextRows = (data?.rows || []).filter(
-          (row) => !isRetailCustomer(row.customer?.name)
-        );
+        const nextRows = (data?.rows || []);
         setRows(nextRows);
       } catch (error) {
         if (active) {

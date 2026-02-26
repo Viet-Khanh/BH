@@ -8,6 +8,7 @@ import { useInvoiceStore } from '../../store/invoiceStore.js';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportButton from '../../components/ExportButton.jsx';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import { formatNumberInput, parseNumberInput } from '../Catalog/catalogUtils.js';
 
 const Cashbook = () => {
   const navigate = useNavigate();
@@ -165,6 +166,8 @@ const Cashbook = () => {
               value={amount}
               onChange={setAmount}
               style={{ width: '100%' }}
+              formatter={formatNumberInput}
+              parser={parseNumberInput}
             />
           </div>
           <div>

@@ -108,8 +108,8 @@ const ReportSalesDetailsTab = () => {
     const data = await apiRequest(`/reports/sales-details${query ? `?${query}` : ''}`);
     const rawRows = Array.isArray(data?.rows) ? data.rows : [];
     const rawCustomers = Array.isArray(data?.customers) ? data.customers : [];
-    const filteredRows = rawRows.filter((row) => !isRetailCustomer(row.customerName));
-    const filteredCustomers = rawCustomers.filter((item) => !isRetailCustomer(item.name));
+    const filteredRows = rawRows;
+    const filteredCustomers = rawCustomers;
 
     setRows(filteredRows);
     setSummary(buildSummary(filteredRows));
