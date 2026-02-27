@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { message } from 'antd';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DatePicker, Input, InputNumber, Modal, Select, message } from 'antd';
+import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { useCustomerStore } from '../../store/customerStore.js';
@@ -8,6 +9,7 @@ import InvoiceEditor from '../../components/InvoiceEditor.jsx';
 import { formatMoney } from '../../utils/moneyFormat.js';
 import { generateCode } from '../../utils/codeGenerator.js';
 import { addItem, apiRequest, deleteItem, updateItem } from '../../db/repository.js';
+import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
 
 const computeStatus = (total, paid) => {
   if (paid <= 0) return 'CHUA THU';
@@ -40,7 +42,19 @@ const Sales = () => {
   const [products, setProducts] = useState([]);
   const [invoicePayments, setInvoicePayments] = useState([]);
   const [customerDebt, setCustomerDebt] = useState(0);
+  const [debtReceiptOpen, setDebtReceiptOpen] = useState(false);
+  const [debtReceiptCustomerId, setDebtReceiptCustomerId] = useState('');
+  const [debtReceiptDate, setDebtReceiptDate] = useState(new Date().toISOString());
+  const [debtReceiptAmount, setDebtReceiptAmount] = useState(0);
+  const [debtReceiptMethod, setDebtReceiptMethod] = useState('cash');
+  const [debtReceiptNote, setDebtReceiptNote] = useState('');
+  const [debtReceiptDebt, setDebtReceiptDebt] = useState(0);
+  const [savingDebtReceipt, setSavingDebtReceipt] = useState(false);
   const editingRef = useRef(null);
+  const activeCustomers = useMemo(
+    () => customers.filter((customer) => !customer.isDeleted),
+    [customers]
+  );
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -165,7 +179,12 @@ const Sales = () => {
   const handleAddPayment = async (payment) => {
     const invoiceId = payment.invoiceId || editingRef.current?.id;
     if (!invoiceId) return;
-    const payload = { ...payment, invoiceId };
+    const payload = {
+      ...payment,
+      invoiceId,
+      paymentType: payment.paymentType || 'invoice_payment',
+      customerId: payment.customerId || editingRef.current?.customerId || '',
+    };
     const created = await addItem('payments', payload);
     const nextPayment = created || payload;
     const nextPayments = [...invoicePayments, nextPayment];
@@ -178,7 +197,13 @@ const Sales = () => {
     const existing = invoicePayments.find((payment) => payment.id === paymentId);
     const invoiceId = data.invoiceId || existing?.invoiceId || editingRef.current?.id;
     if (!existing || !invoiceId) return;
-    const nextPayment = { ...existing, ...data, invoiceId };
+    const nextPayment = {
+      ...existing,
+      ...data,
+      invoiceId,
+      paymentType: data.paymentType || existing.paymentType || 'invoice_payment',
+      customerId: data.customerId || existing.customerId || editingRef.current?.customerId || '',
+    };
     const saved = await updateItem('payments', paymentId, nextPayment);
     const updated = saved || nextPayment;
     const nextPayments = invoicePayments.map((payment) =>
@@ -200,6 +225,77 @@ const Sales = () => {
     message.success('Đã cập nhật thanh toán.');
   };
 
+  const handleOpenDebtReceipt = () => {
+    setDebtReceiptCustomerId(editingRef.current?.customerId || '');
+    setDebtReceiptDate(new Date().toISOString());
+    setDebtReceiptAmount(0);
+    setDebtReceiptMethod('cash');
+    setDebtReceiptNote('');
+    setDebtReceiptDebt(0);
+    setDebtReceiptOpen(true);
+  };
+
+  useEffect(() => {
+    if (!debtReceiptOpen || !debtReceiptCustomerId) {
+      setDebtReceiptDebt(0);
+      return;
+    }
+    let active = true;
+    const loadDebt = async () => {
+      try {
+        const params = new URLSearchParams({ customerId: debtReceiptCustomerId });
+        const data = await apiRequest(`/sales/customer-debt?${params.toString()}`);
+        if (active) {
+          setDebtReceiptDebt(Number(data?.debt || 0));
+        }
+      } catch (error) {
+        if (active) {
+          setDebtReceiptDebt(0);
+          message.error('Không thể tải công nợ khách hàng.');
+        }
+      }
+    };
+    loadDebt();
+    return () => {
+      active = false;
+    };
+  }, [debtReceiptOpen, debtReceiptCustomerId]);
+
+  const handleCreateDebtReceipt = async () => {
+    if (!debtReceiptCustomerId) {
+      message.error('Chọn khách hàng.');
+      return;
+    }
+    const amount = Number(debtReceiptAmount || 0);
+    if (amount <= 0) {
+      message.error('Số tiền thu nợ phải lớn hơn 0.');
+      return;
+    }
+
+    setSavingDebtReceipt(true);
+    try {
+      const payload = {
+        id: uuid(),
+        customerId: debtReceiptCustomerId,
+        paymentType: 'debt_receipt',
+        date: debtReceiptDate || new Date().toISOString(),
+        method: debtReceiptMethod,
+        amount,
+        note: debtReceiptNote || '',
+      };
+      await addItem('payments', payload);
+      setDebtReceiptOpen(false);
+      message.success('Đã tạo phiếu thu nợ.');
+      if (editingRef.current?.customerId === debtReceiptCustomerId) {
+        await handleCustomerChange(debtReceiptCustomerId, editingRef.current?.id || null);
+      }
+    } catch (error) {
+      message.error(`Không thể tạo phiếu thu nợ: ${error.message || 'Lỗi không xác định'}`);
+    } finally {
+      setSavingDebtReceipt(false);
+    }
+  };
+
   return (
     <div>
       <InvoiceEditor
@@ -213,6 +309,7 @@ const Sales = () => {
         onCustomerChange={handleCustomerChange}
         onSave={handleSaveInvoice}
         onCancel={() => navigate('/')}
+        onOpenDebtReceipt={handleOpenDebtReceipt}
         onAddPayment={handleAddPayment}
         onUpdatePayment={handleUpdatePayment}
         onRemovePayment={handleRemovePayment}
@@ -229,6 +326,78 @@ const Sales = () => {
           setInvoicePayments([]);
         }}
       />
+      <Modal
+        title="Phiếu thu nợ"
+        open={debtReceiptOpen}
+        onCancel={() => setDebtReceiptOpen(false)}
+        onOk={handleCreateDebtReceipt}
+        okText="Lưu phiếu thu"
+        cancelText="Hủy"
+        confirmLoading={savingDebtReceipt}
+      >
+        <div className="pos-payment">
+          <div className="pos-payment-row">
+            <span>Khách hàng:</span>
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder="Chọn khách hàng"
+              value={debtReceiptCustomerId || undefined}
+              onChange={(value) => setDebtReceiptCustomerId(value || '')}
+              options={activeCustomers.map((customer) => ({
+                value: customer.id,
+                label: customer.name || 'Khách hàng',
+              }))}
+            />
+          </div>
+          <div className="pos-payment-row">
+            <span>Ngày thu:</span>
+            <DatePicker
+              style={{ width: '100%' }}
+              value={dayjs(debtReceiptDate)}
+              onChange={(value) =>
+                setDebtReceiptDate(value ? value.endOf('day').toISOString() : new Date().toISOString())
+              }
+              format="DD/MM/YYYY"
+            />
+          </div>
+          <div className="pos-payment-row total">
+            <span>Công nợ hiện tại:</span>
+            <strong>{formatMoney(debtReceiptDebt)}</strong>
+          </div>
+          <div className="pos-payment-row">
+            <span>Số tiền thu:</span>
+            <InputNumber
+              style={{ width: '100%' }}
+              min={0}
+              value={debtReceiptAmount}
+              onChange={(value) => setDebtReceiptAmount(Number(value || 0))}
+              formatter={formatNumberInput}
+              parser={parseNumberInput}
+            />
+          </div>
+          <div className="pos-payment-row">
+            <span>Phương thức:</span>
+            <Select
+              value={debtReceiptMethod}
+              onChange={(value) => setDebtReceiptMethod(value)}
+              options={[
+                { value: 'cash', label: 'Tiền mặt' },
+                { value: 'bank', label: 'Chuyển khoản' },
+                { value: 'other', label: 'Khác' },
+              ]}
+            />
+          </div>
+          <div className="pos-payment-row">
+            <span>Ghi chú:</span>
+            <Input
+              value={debtReceiptNote}
+              onChange={(event) => setDebtReceiptNote(event.target.value)}
+              placeholder="Nội dung thu nợ"
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

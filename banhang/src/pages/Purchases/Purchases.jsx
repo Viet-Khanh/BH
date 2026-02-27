@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Modal, message } from 'antd';
+import { Button, DatePicker, Input, InputNumber, Modal, Select, message } from 'antd';
+import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { useSupplierStore } from '../../store/supplierStore.js';
@@ -16,7 +17,9 @@ import usePurchaseItems from './usePurchaseItems.js';
 import usePurchasePayments from './usePurchasePayments.js';
 import usePurchaseProductModal from './usePurchaseProductModal.js';
 import { generateCode } from '../../utils/codeGenerator.js';
+import { formatMoney } from '../../utils/moneyFormat.js';
 import { addItem, apiRequest, deleteItem, updateItem as updateRecord } from '../../db/repository.js';
+import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
 const buildPurchaseItems = (purchase) =>
   (purchase?.items || []).map((item) => ({
     ...item,
@@ -71,6 +74,14 @@ const Purchases = () => {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentNote, setPaymentNote] = useState('');
+  const [supplierDebtPaymentOpen, setSupplierDebtPaymentOpen] = useState(false);
+  const [supplierDebtPaymentSupplierId, setSupplierDebtPaymentSupplierId] = useState('');
+  const [supplierDebtPaymentDate, setSupplierDebtPaymentDate] = useState(new Date().toISOString());
+  const [supplierDebtPaymentAmount, setSupplierDebtPaymentAmount] = useState(0);
+  const [supplierDebtPaymentMethod, setSupplierDebtPaymentMethod] = useState('cash');
+  const [supplierDebtPaymentNote, setSupplierDebtPaymentNote] = useState('');
+  const [supplierDebtPaymentDebt, setSupplierDebtPaymentDebt] = useState(0);
+  const [savingSupplierDebtPayment, setSavingSupplierDebtPayment] = useState(false);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -306,14 +317,26 @@ const Purchases = () => {
   };
 
   const handleAddPayment = async (payment) => {
-    const created = await addItem('payments', payment);
-    const nextPayment = created || payment;
+    const payload = {
+      ...payment,
+      paymentType: payment.paymentType || 'purchase_payment',
+      supplierId: payment.supplierId || editing?.supplierId || supplierId || '',
+    };
+    const created = await addItem('payments', payload);
+    const nextPayment = created || payload;
     setPurchasePayments((prev) => [...prev, nextPayment]);
   };
 
   const handleUpdatePayment = async (paymentId, data) => {
-    const saved = await updateRecord('payments', paymentId, data);
-    const nextPayment = saved || data;
+    const existing = purchasePayments.find((payment) => payment.id === paymentId);
+    const payload = {
+      ...existing,
+      ...data,
+      paymentType: data.paymentType || existing?.paymentType || 'purchase_payment',
+      supplierId: data.supplierId || existing?.supplierId || editing?.supplierId || supplierId || '',
+    };
+    const saved = await updateRecord('payments', paymentId, payload);
+    const nextPayment = saved || payload;
     setPurchasePayments((prev) =>
       prev.map((payment) => (payment.id === paymentId ? nextPayment : payment))
     );
@@ -413,11 +436,88 @@ const Purchases = () => {
     }
   };
 
+  const handleOpenSupplierDebtPayment = () => {
+    setSupplierDebtPaymentSupplierId(supplierId || editing?.supplierId || '');
+    setSupplierDebtPaymentDate(new Date().toISOString());
+    setSupplierDebtPaymentAmount(0);
+    setSupplierDebtPaymentMethod('cash');
+    setSupplierDebtPaymentNote('');
+    setSupplierDebtPaymentDebt(0);
+    setSupplierDebtPaymentOpen(true);
+  };
+
+  useEffect(() => {
+    if (!supplierDebtPaymentOpen || !supplierDebtPaymentSupplierId) {
+      setSupplierDebtPaymentDebt(0);
+      return;
+    }
+    let active = true;
+    const loadDebt = async () => {
+      try {
+        const params = new URLSearchParams({ supplierId: supplierDebtPaymentSupplierId });
+        const data = await apiRequest(`/purchases-tools/supplier-debt?${params.toString()}`);
+        if (active) {
+          setSupplierDebtPaymentDebt(Number(data?.debt || 0));
+        }
+      } catch (error) {
+        if (active) {
+          setSupplierDebtPaymentDebt(0);
+          message.error('Không thể tải công nợ nhà cung cấp.');
+        }
+      }
+    };
+    loadDebt();
+    return () => {
+      active = false;
+    };
+  }, [supplierDebtPaymentOpen, supplierDebtPaymentSupplierId]);
+
+  const handleCreateSupplierDebtPayment = async () => {
+    if (!supplierDebtPaymentSupplierId) {
+      message.error('Chọn nhà cung cấp.');
+      return;
+    }
+    const amount = Number(supplierDebtPaymentAmount || 0);
+    if (amount <= 0) {
+      message.error('Số tiền trả nợ phải lớn hơn 0.');
+      return;
+    }
+    setSavingSupplierDebtPayment(true);
+    try {
+      const payload = {
+        id: uuid(),
+        supplierId: supplierDebtPaymentSupplierId,
+        paymentType: 'supplier_debt_payment',
+        date: supplierDebtPaymentDate || new Date().toISOString(),
+        method: supplierDebtPaymentMethod,
+        amount,
+        note: supplierDebtPaymentNote || '',
+      };
+      await addItem('payments', payload);
+      setSupplierDebtPaymentOpen(false);
+      message.success('Đã tạo phiếu trả nợ nhà cung cấp.');
+
+      if (supplierId && supplierId === supplierDebtPaymentSupplierId) {
+        const params = new URLSearchParams({ supplierId });
+        if (editing?.id) params.set('excludePurchaseId', editing.id);
+        const data = await apiRequest(`/purchases-tools/supplier-debt?${params.toString()}`);
+        setSupplierDebt(Number(data?.debt || 0));
+      }
+    } catch (error) {
+      message.error(`Không thể tạo phiếu trả nợ: ${error.message || 'Lỗi không xác định'}`);
+    } finally {
+      setSavingSupplierDebtPayment(false);
+    }
+  };
+
   return (
     <div className="page-card pos-shell">
       <InvoiceHeader
         onCancel={() => navigate('/')}
         onOpenPayment={() => setPaymentModalOpen(true)}
+        onOpenDebtReceipt={handleOpenSupplierDebtPayment}
+        showDebtReceipt
+        debtReceiptLabel="Trả nợ NCC"
         title="NHẬP HÀNG"
         showPreview={false}
         extraActions={(
@@ -543,6 +643,78 @@ const Purchases = () => {
         onCheckoutPrint={handleCheckout}
         onCheckout={handleCheckout}
       />
+      <Modal
+        title="Phiếu trả nợ nhà cung cấp"
+        open={supplierDebtPaymentOpen}
+        onCancel={() => setSupplierDebtPaymentOpen(false)}
+        onOk={handleCreateSupplierDebtPayment}
+        okText="Lưu phiếu trả nợ"
+        cancelText="Hủy"
+        confirmLoading={savingSupplierDebtPayment}
+      >
+        <div className="pos-payment">
+          <div className="pos-payment-row">
+            <span>Nhà cung cấp:</span>
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder="Chọn nhà cung cấp"
+              value={supplierDebtPaymentSupplierId || undefined}
+              onChange={(value) => setSupplierDebtPaymentSupplierId(value || '')}
+              options={supplierOptions}
+            />
+          </div>
+          <div className="pos-payment-row">
+            <span>Ngày trả:</span>
+            <DatePicker
+              style={{ width: '100%' }}
+              value={dayjs(supplierDebtPaymentDate)}
+              onChange={(value) =>
+                setSupplierDebtPaymentDate(
+                  value ? value.endOf('day').toISOString() : new Date().toISOString()
+                )
+              }
+              format="DD/MM/YYYY"
+            />
+          </div>
+          <div className="pos-payment-row total">
+            <span>Công nợ hiện tại:</span>
+            <strong>{formatMoney(supplierDebtPaymentDebt)}</strong>
+          </div>
+          <div className="pos-payment-row">
+            <span>Số tiền trả:</span>
+            <InputNumber
+              style={{ width: '100%' }}
+              min={0}
+              value={supplierDebtPaymentAmount}
+              onChange={(value) => setSupplierDebtPaymentAmount(Number(value || 0))}
+              formatter={formatNumberInput}
+              parser={parseNumberInput}
+
+            />
+          </div>
+          <div className="pos-payment-row">
+            <span>Phương thức:</span>
+            <Select
+              value={supplierDebtPaymentMethod}
+              onChange={(value) => setSupplierDebtPaymentMethod(value)}
+              options={[
+                { value: 'cash', label: 'Tiền mặt' },
+                { value: 'bank', label: 'Chuyển khoản' },
+                { value: 'other', label: 'Khác' },
+              ]}
+            />
+          </div>
+          <div className="pos-payment-row">
+            <span>Ghi chú:</span>
+            <Input
+              value={supplierDebtPaymentNote}
+              onChange={(event) => setSupplierDebtPaymentNote(event.target.value)}
+              placeholder="Nội dung trả nợ"
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

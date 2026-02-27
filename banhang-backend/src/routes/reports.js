@@ -35,6 +35,8 @@ const inRange = (dateValue, from, to) => {
 const buildPaymentsByInvoice = (payments = []) => {
   const map = {};
   payments.forEach((payment) => {
+    if (!payment.invoiceId) return;
+    if (payment.paymentType === 'debt_receipt') return;
     map[payment.invoiceId] = (map[payment.invoiceId] || 0) + Number(payment.amount || 0);
   });
   return map;
@@ -44,7 +46,28 @@ const buildPaymentsByPurchase = (payments = []) => {
   const map = {};
   payments.forEach((payment) => {
     if (!payment.purchaseId) return;
+    if (payment.paymentType === 'supplier_debt_payment') return;
     map[payment.purchaseId] = (map[payment.purchaseId] || 0) + Number(payment.amount || 0);
+  });
+  return map;
+};
+
+const buildSupplierDebtPaymentsBySupplier = (payments = []) => {
+  const map = {};
+  payments.forEach((payment) => {
+    if (payment.paymentType !== 'supplier_debt_payment') return;
+    if (!payment.supplierId) return;
+    map[payment.supplierId] = (map[payment.supplierId] || 0) + Number(payment.amount || 0);
+  });
+  return map;
+};
+
+const buildDebtReceiptsByCustomer = (payments = []) => {
+  const map = {};
+  payments.forEach((payment) => {
+    if (payment.paymentType !== 'debt_receipt') return;
+    if (!payment.customerId) return;
+    map[payment.customerId] = (map[payment.customerId] || 0) + Number(payment.amount || 0);
   });
   return map;
 };
@@ -341,13 +364,16 @@ router.get(
     ]);
 
     const paymentsByInvoice = buildPaymentsByInvoice(payments);
+    const debtReceiptsByCustomer = buildDebtReceiptsByCustomer(payments);
     const rows = customers.map((customer) => {
       const customerInvoices = invoices.filter((inv) => inv.customerId === customer.id);
       const total = customerInvoices.reduce((sum, inv) => sum + Number(inv.total || 0), 0);
-      const paid = customerInvoices.reduce((sum, inv) => {
-        const invoicePaid = paymentsByInvoice[inv.id] || 0;
-        return sum + invoicePaid;
+      const invoicePaid = customerInvoices.reduce((sum, inv) => {
+        const invoicePaidValue = paymentsByInvoice[inv.id] || 0;
+        return sum + Number(invoicePaidValue || 0);
       }, 0);
+      const debtReceiptPaid = Number(debtReceiptsByCustomer[customer.id] || 0);
+      const paid = invoicePaid + debtReceiptPaid;
       const debt = total - paid;
       return {
         customer: {
@@ -357,6 +383,8 @@ router.get(
           address: customer.address,
         },
         total,
+        invoicePaid,
+        debtReceiptPaid,
         paid,
         debt,
       };
@@ -372,10 +400,14 @@ router.get(
     const [suppliers, purchases, payments] = await Promise.all([
       Supplier.find({ isDeleted: { $ne: true } }).lean(),
       Purchase.find({ isDeleted: { $ne: true } }).lean(),
-      Payment.find({ purchaseId: { $ne: null }, isDeleted: { $ne: true } }).lean(),
+      Payment.find({
+        isDeleted: { $ne: true },
+        $or: [{ purchaseId: { $ne: null } }, { paymentType: 'supplier_debt_payment' }],
+      }).lean(),
     ]);
 
     const paymentsByPurchase = buildPaymentsByPurchase(payments);
+    const debtPaymentsBySupplier = buildSupplierDebtPaymentsBySupplier(payments);
     const purchaseMap = purchases.reduce((acc, purchase) => {
       if (!purchase.supplierId) return acc;
       if (!acc[purchase.supplierId]) acc[purchase.supplierId] = [];
@@ -386,10 +418,12 @@ router.get(
     const rows = suppliers.map((supplier) => {
       const supplierPurchases = purchaseMap[supplier.id] || [];
       const total = supplierPurchases.reduce((sum, purchase) => sum + Number(purchase.total || 0), 0);
-      const paid = supplierPurchases.reduce(
+      const purchasePaid = supplierPurchases.reduce(
         (sum, purchase) => sum + (paymentsByPurchase[purchase.id] || 0),
         0
       );
+      const debtPaid = Number(debtPaymentsBySupplier[supplier.id] || 0);
+      const paid = purchasePaid + debtPaid;
       return {
         supplier: {
           id: supplier.id,
@@ -398,6 +432,8 @@ router.get(
           address: supplier.address,
         },
         total,
+        purchasePaid,
+        debtPaid,
         paid,
         debt: total - paid,
       };
@@ -424,9 +460,16 @@ router.get(
       isDeleted: { $ne: true },
     }).lean();
     const purchaseIds = purchases.map((purchase) => purchase.id);
-    const payments = purchaseIds.length
-      ? await Payment.find({ purchaseId: { $in: purchaseIds }, isDeleted: { $ne: true } }).lean()
-      : [];
+    const [payments, supplierDebtPayments] = await Promise.all([
+      purchaseIds.length
+        ? Payment.find({ purchaseId: { $in: purchaseIds }, isDeleted: { $ne: true } }).lean()
+        : Promise.resolve([]),
+      Payment.find({
+        supplierId: supplier.id,
+        paymentType: 'supplier_debt_payment',
+        isDeleted: { $ne: true },
+      }).lean(),
+    ]);
     const paymentsByPurchase = buildPaymentsByPurchase(payments);
 
     const openPurchases = purchases
@@ -443,6 +486,25 @@ router.get(
       })
       .filter((purchase) => purchase.remain > 0);
 
+    const debtPaymentRows = supplierDebtPayments
+      .map((payment) => ({
+        id: payment.id,
+        code: payment.code || '',
+        date: payment.date,
+        amount: Number(payment.amount || 0),
+        method: payment.method || '',
+        note: payment.note || '',
+      }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const purchaseTotal = purchases.reduce((sum, purchase) => sum + Number(purchase.total || 0), 0);
+    const purchasePaid = purchases.reduce(
+      (sum, purchase) => sum + Number(paymentsByPurchase[purchase.id] || 0),
+      0
+    );
+    const debtPaid = debtPaymentRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const totalPaid = purchasePaid + debtPaid;
+
     res.json({
       supplier: {
         id: supplier.id,
@@ -451,6 +513,14 @@ router.get(
         address: supplier.address,
       },
       purchases: openPurchases,
+      debtPayments: debtPaymentRows,
+      summary: {
+        purchaseTotal,
+        purchasePaid,
+        debtPaid,
+        totalPaid,
+        debt: purchaseTotal - totalPaid,
+      },
     });
   })
 );
@@ -472,15 +542,21 @@ router.get(
       isDeleted: { $ne: true },
     }).lean();
     const invoiceIds = invoices.map((inv) => inv.id);
-    const payments = invoiceIds.length
-      ? await Payment.find({ invoiceId: { $in: invoiceIds }, isDeleted: { $ne: true } }).lean()
-      : [];
-    const paymentsByInvoice = buildPaymentsByInvoice(payments);
+    const [invoicePayments, debtReceipts] = await Promise.all([
+      invoiceIds.length
+        ? Payment.find({ invoiceId: { $in: invoiceIds }, isDeleted: { $ne: true } }).lean()
+        : Promise.resolve([]),
+      Payment.find({
+        customerId: customer.id,
+        paymentType: 'debt_receipt',
+        isDeleted: { $ne: true },
+      }).lean(),
+    ]);
 
+    const paymentsByInvoice = buildPaymentsByInvoice(invoicePayments);
     const openInvoices = invoices
-      .filter((inv) => inv.paymentStatus !== 'DA THU')
       .map((inv) => {
-        const paid = paymentsByInvoice[inv.id] || 0;
+        const paid = Number(paymentsByInvoice[inv.id] || 0);
         const total = Number(inv.total || 0);
         return {
           id: inv.id,
@@ -489,7 +565,24 @@ router.get(
           total,
           remain: total - paid,
         };
-      });
+      })
+      .filter((inv) => inv.remain > 0);
+
+    const debtReceiptRows = debtReceipts
+      .map((payment) => ({
+        id: payment.id,
+        code: payment.code || '',
+        date: payment.date,
+        amount: Number(payment.amount || 0),
+        method: payment.method || '',
+        note: payment.note || '',
+      }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const invoiceTotal = invoices.reduce((sum, inv) => sum + Number(inv.total || 0), 0);
+    const invoicePaid = invoices.reduce((sum, inv) => sum + Number(paymentsByInvoice[inv.id] || 0), 0);
+    const debtReceiptPaid = debtReceiptRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const totalPaid = invoicePaid + debtReceiptPaid;
 
     res.json({
       customer: {
@@ -499,6 +592,14 @@ router.get(
         address: customer.address,
       },
       invoices: openInvoices,
+      debtReceipts: debtReceiptRows,
+      summary: {
+        invoiceTotal,
+        invoicePaid,
+        debtReceiptPaid,
+        totalPaid,
+        debt: invoiceTotal - totalPaid,
+      },
     });
   })
 );

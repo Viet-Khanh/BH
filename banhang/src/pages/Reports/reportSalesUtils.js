@@ -1,6 +1,8 @@
 export const buildPaymentsByInvoice = (payments = []) => {
   const map = {};
   payments.forEach((payment) => {
+    if (!payment.invoiceId) return;
+    if (payment.paymentType === 'debt_receipt') return;
     map[payment.invoiceId] = (map[payment.invoiceId] || 0) + Number(payment.amount || 0);
   });
   return map;

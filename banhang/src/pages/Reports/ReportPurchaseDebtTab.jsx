@@ -33,6 +33,8 @@ const ReportPurchaseDebtTab = () => {
       rows.map((row) => ({
         Nha_cung_cap: row.supplier?.name || '',
         Tong_nhap: row.total,
+        Tra_theo_phieu: row.purchasePaid,
+        Tra_no_doc_lap: row.debtPaid,
         Da_tra: row.paid,
         Con_no: row.debt,
       })),
@@ -100,6 +102,12 @@ const ReportPurchaseDebtTab = () => {
         {debtDetail && (
           <div>
             <div className="section-title">{debtDetail.supplier?.name}</div>
+            <div style={{ marginBottom: 12 }}>
+              <div>Tổng nhập: <strong>{formatMoney(debtDetail.summary?.purchaseTotal || 0)}</strong></div>
+              <div>Trả theo phiếu nhập: <strong>{formatMoney(debtDetail.summary?.purchasePaid || 0)}</strong></div>
+              <div>Trả nợ độc lập: <strong>{formatMoney(debtDetail.summary?.debtPaid || 0)}</strong></div>
+              <div>Còn nợ: <strong>{formatMoney(debtDetail.summary?.debt || 0)}</strong></div>
+            </div>
             <div className="table-wrapper">
               <table className="invoice-items-table">
                 <thead>
@@ -122,6 +130,34 @@ const ReportPurchaseDebtTab = () => {
                   {!debtDetail.purchases?.length && (
                     <tr>
                       <td colSpan={4}>Chưa có dữ liệu.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="section-title" style={{ marginTop: 16 }}>Phiếu trả nợ</div>
+            <div className="table-wrapper">
+              <table className="invoice-items-table">
+                <thead>
+                  <tr>
+                    <th>Ngày</th>
+                    <th>Số tiền</th>
+                    <th>Phương thức</th>
+                    <th>Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {debtDetail.debtPayments?.map((payment) => (
+                    <tr key={payment.id}>
+                      <td>{dayjs(payment.date).format('DD/MM/YYYY')}</td>
+                      <td>{formatMoney(payment.amount)}</td>
+                      <td>{payment.method}</td>
+                      <td>{payment.note}</td>
+                    </tr>
+                  ))}
+                  {!debtDetail.debtPayments?.length && (
+                    <tr>
+                      <td colSpan={4}>Chưa có phiếu trả nợ.</td>
                     </tr>
                   )}
                 </tbody>

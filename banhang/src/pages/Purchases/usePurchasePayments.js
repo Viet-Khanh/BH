@@ -5,6 +5,7 @@ import { v4 as uuid } from 'uuid';
 const buildPaymentsByPurchase = (payments = []) =>
   payments.reduce((acc, payment) => {
     if (!payment.purchaseId) return acc;
+    if (payment.paymentType === 'supplier_debt_payment') return acc;
     acc[payment.purchaseId] = (acc[payment.purchaseId] || 0) + Number(payment.amount || 0);
     return acc;
   }, {});

@@ -5,12 +5,15 @@ const InvoiceHeader = ({
   onPreview,
   onShowDebt,
   onOpenPayment,
+  onOpenDebtReceipt,
   title = 'BÁN HÀNG',
   backLabel = 'F5 - Quay lại',
   showPreview = true,
   previewLabel = 'Xem trước',
   showPayment = true,
   paymentLabel = 'F8 - Thanh toán',
+  showDebtReceipt = false,
+  debtReceiptLabel = 'Trả nợ',
   extraActions,
 }) => (
   <div className="pos-header">
@@ -25,11 +28,17 @@ const InvoiceHeader = ({
             {previewLabel}
           </Button>
         )}
+        {showDebtReceipt && onOpenDebtReceipt && (
+          <Button size="large" onClick={onOpenDebtReceipt}>
+            {debtReceiptLabel}
+          </Button>
+        )}
         {showPayment && onOpenPayment && (
           <Button size="large" className="btn-success" onClick={onOpenPayment}>
             {paymentLabel}
           </Button>
         )}
+
         {extraActions}
       </Space>
     </div>

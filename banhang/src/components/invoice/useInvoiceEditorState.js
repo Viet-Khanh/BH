@@ -63,6 +63,7 @@ const useInvoiceEditorState = ({
   onRemovePayment,
   onCancel,
   onShowDebt,
+  onOpenDebtReceipt,
   onShowRecent,
   onShowTemplate,
   onNewInvoice,
@@ -381,6 +382,7 @@ const useInvoiceEditorState = ({
   return buildInvoiceViewProps({
     onCancel,
     onShowDebt,
+    onOpenDebtReceipt,
     onShowRecent,
     onShowTemplate,
     showNewTicket: false,

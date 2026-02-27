@@ -59,16 +59,30 @@ router.get(
 
     const invoices = await Invoice.find(invoiceFilter).lean();
     const invoiceIds = invoices.map((inv) => inv.id);
-    const payments = invoiceIds.length
-      ? await Payment.find({ invoiceId: { $in: invoiceIds }, isDeleted: { $ne: true } }).lean()
-      : [];
+    const [invoicePayments, debtReceipts] = await Promise.all([
+      invoiceIds.length
+        ? Payment.find({ invoiceId: { $in: invoiceIds }, isDeleted: { $ne: true } }).lean()
+        : Promise.resolve([]),
+      Payment.find({
+        customerId,
+        paymentType: 'debt_receipt',
+        isDeleted: { $ne: true },
+      }).lean(),
+    ]);
     const total = invoices.reduce((sum, inv) => sum + Number(inv.total || 0), 0);
-    const paid = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const invoicePaid = invoicePayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const debtReceiptPaid = debtReceipts.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
+      0
+    );
+    const paid = invoicePaid + debtReceiptPaid;
 
     res.json({
       customerId,
       total,
       paid,
+      invoicePaid,
+      debtReceiptPaid,
       debt: total - paid,
     });
   })

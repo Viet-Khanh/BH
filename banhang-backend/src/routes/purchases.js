@@ -207,16 +207,27 @@ router.get(
     if (excludePurchaseId) filter.id = { $ne: excludePurchaseId };
     const purchases = await Purchase.find(filter).lean();
     const purchaseIds = purchases.map((purchase) => purchase.id);
-    const payments = purchaseIds.length
-      ? await Payment.find({ purchaseId: { $in: purchaseIds }, isDeleted: { $ne: true } }).lean()
-      : [];
+    const [payments, supplierDebtPayments] = await Promise.all([
+      purchaseIds.length
+        ? Payment.find({ purchaseId: { $in: purchaseIds }, isDeleted: { $ne: true } }).lean()
+        : Promise.resolve([]),
+      Payment.find({
+        supplierId,
+        paymentType: 'supplier_debt_payment',
+        isDeleted: { $ne: true },
+      }).lean(),
+    ]);
 
     const total = purchases.reduce((sum, purchase) => sum + Number(purchase.total || 0), 0);
-    const paid = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const purchasePaid = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const debtPaid = supplierDebtPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const paid = purchasePaid + debtPaid;
 
     res.json({
       supplierId,
       total,
+      purchasePaid,
+      debtPaid,
       paid,
       debt: total - paid,
     });

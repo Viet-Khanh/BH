@@ -1,6 +1,7 @@
 export const buildInvoiceViewProps = ({
   onCancel,
   onShowDebt,
+  onOpenDebtReceipt,
   onShowRecent,
   onShowTemplate,
   showNewTicket = true,
@@ -68,6 +69,8 @@ export const buildInvoiceViewProps = ({
     onPreview: () => setPreviewOpen(true),
     onShowDebt: () => onShowDebt?.(),
     onOpenPayment: () => setPaymentModalOpen(true),
+    onOpenDebtReceipt: () => onOpenDebtReceipt?.(),
+    showDebtReceipt: Boolean(onOpenDebtReceipt),
   };
 
   const topSectionProps = {
