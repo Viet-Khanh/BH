@@ -68,6 +68,36 @@ const buildQtyMapFromInvoices = (invoices = [], productIds = new Set()) => {
   return map;
 };
 
+const sanitizePurchaseItems = (items = []) =>
+  items.map((item) => {
+    const qty = Number(item.qty || 0);
+    const unitCost = Number(item.unitCost || 0);
+    return {
+      productId: item.productId,
+      qty,
+      unitCost,
+      lineNote: item.lineNote || '',
+      length: item.length ?? null,
+      width: item.width ?? null,
+      lineTotal: getLineTotal({
+        qty,
+        unitCost,
+        length: item.length,
+        width: item.width,
+      }),
+    };
+  });
+
+const findInvalidPurchaseItem = (items = []) =>
+  items.find((item) => !item.productId || item.qty <= 0 || item.unitCost < 0);
+
+const buildQtyMapFromItems = (items = []) =>
+  items.reduce((acc, item) => {
+    if (!item?.productId) return acc;
+    acc[item.productId] = (acc[item.productId] || 0) + Number(item.qty || 0);
+    return acc;
+  }, {});
+
 router.get(
   '/recent',
   asyncHandler(async (req, res) => {
@@ -193,6 +223,88 @@ router.get(
   })
 );
 
+router.put(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const existingPurchase = await Purchase.findOne({
+      id: req.params.id,
+      isDeleted: { $ne: true },
+    }).lean();
+    if (!existingPurchase) {
+      res.status(404).json({ message: 'Purchase not found' });
+      return;
+    }
+
+    const payload = req.body || {};
+    const supplierId = String(payload.supplierId || existingPurchase.supplierId || '').trim();
+    const items = Array.isArray(payload.items) ? payload.items : existingPurchase.items || [];
+    if (!supplierId) {
+      res.status(400).json({ message: 'supplierId is required' });
+      return;
+    }
+    if (!items.length) {
+      res.status(400).json({ message: 'items is required' });
+      return;
+    }
+
+    const sanitizedItems = sanitizePurchaseItems(items);
+    const invalid = findInvalidPurchaseItem(sanitizedItems);
+    if (invalid) {
+      res.status(400).json({ message: 'Invalid purchase item' });
+      return;
+    }
+
+    const oldQtyMap = buildQtyMapFromItems(existingPurchase.items || []);
+    const nextQtyMap = buildQtyMapFromItems(sanitizedItems);
+    const productIds = new Set([...Object.keys(oldQtyMap), ...Object.keys(nextQtyMap)]);
+    const products = productIds.size
+      ? await Product.find({
+          id: { $in: [...productIds] },
+          isDeleted: { $ne: true },
+        }).lean()
+      : [];
+    if (products.length !== productIds.size) {
+      res.status(400).json({ message: 'Product not found' });
+      return;
+    }
+
+    let updatedProducts = [];
+    if (existingPurchase.appliedToStock) {
+      const updateTasks = products.map((product) => {
+        const oldQty = Number(oldQtyMap[product.id] || 0);
+        const newQty = Number(nextQtyMap[product.id] || 0);
+        const deltaQty = newQty - oldQty;
+        if (deltaQty === 0) return null;
+        const nextOpeningStock = Number(product.openingStock || 0) + deltaQty;
+        return Product.findOneAndUpdate(
+          { id: product.id },
+          { $set: { openingStock: nextOpeningStock } },
+          { new: true }
+        ).lean();
+      });
+      updatedProducts = (await Promise.all(updateTasks.filter(Boolean))).filter(Boolean);
+    }
+
+    const total = sanitizedItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
+    const purchase = await Purchase.findOneAndUpdate(
+      { id: req.params.id, isDeleted: { $ne: true } },
+      {
+        $set: {
+          code: payload.code ?? existingPurchase.code ?? '',
+          supplierId,
+          date: payload.date || existingPurchase.date || new Date().toISOString(),
+          items: sanitizedItems,
+          total,
+          note: payload.note ?? existingPurchase.note ?? '',
+        },
+      },
+      { new: true }
+    ).lean();
+
+    res.json({ purchase, products: updatedProducts });
+  })
+);
+
 router.post(
   '/',
   asyncHandler(async (req, res) => {
@@ -208,28 +320,9 @@ router.post(
       return;
     }
 
-    const sanitizedItems = items.map((item) => {
-      const qty = Number(item.qty || 0);
-      const unitCost = Number(item.unitCost || 0);
-      return {
-        productId: item.productId,
-        qty,
-        unitCost,
-        lineNote: item.lineNote || '',
-        length: item.length ?? null,
-        width: item.width ?? null,
-        lineTotal: getLineTotal({
-          qty,
-          unitCost,
-          length: item.length,
-          width: item.width,
-        }),
-      };
-    });
+    const sanitizedItems = sanitizePurchaseItems(items);
 
-    const invalid = sanitizedItems.find(
-      (item) => !item.productId || item.qty <= 0 || item.unitCost < 0
-    );
+    const invalid = findInvalidPurchaseItem(sanitizedItems);
     if (invalid) {
       res.status(400).json({ message: 'Invalid purchase item' });
       return;

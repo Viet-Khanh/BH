@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Select, message } from 'antd';
+import { Modal, Select, message } from 'antd';
 import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportActions from '../../components/ExportActions.jsx';
-import PurchaseDetailModal from '../Purchases/PurchaseDetailModal.jsx';
+import ReportPurchaseInvoiceModal from './ReportPurchaseInvoiceModal.jsx';
 import { apiRequest } from '../../db/repository.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import { saveWorkbook } from '../../utils/excelExport.js';
+import { printHtml } from '../../utils/printUtils.js';
+import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
+import { useSettingsStore } from '../../store/settingsStore.js';
 
 const ReportPurchaseInvoicesTab = () => {
+  const navigate = useNavigate();
+  const { settings, load: loadSettings } = useSettingsStore();
+
   const [range, setRange] = useState(() => [
     dayjs().startOf('day').toISOString(),
     dayjs().endOf('day').toISOString(),
@@ -17,7 +26,13 @@ const ReportPurchaseInvoicesTab = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [selectedPurchaseId, setSelectedPurchaseId] = useState(null);
   const [selectedPurchase, setSelectedPurchase] = useState(null);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [selectedPayments, setSelectedPayments] = useState([]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   useEffect(() => {
     let active = true;
@@ -68,7 +83,9 @@ const ReportPurchaseInvoicesTab = () => {
   useEffect(() => {
     if (!selectedPurchaseId) {
       setSelectedPurchase(null);
+      setSelectedSupplier(null);
       setSelectedProducts([]);
+      setSelectedPayments([]);
       return;
     }
 
@@ -78,7 +95,9 @@ const ReportPurchaseInvoicesTab = () => {
         const data = await apiRequest(`/purchases-tools/detail/${selectedPurchaseId}`);
         if (!active) return;
         setSelectedPurchase(data?.purchase || null);
+        setSelectedSupplier(data?.supplier || null);
         setSelectedProducts(Array.isArray(data?.products) ? data.products : []);
+        setSelectedPayments(Array.isArray(data?.payments) ? data.payments : []);
       } catch (error) {
         if (active) {
           message.error('Không thể tải chi tiết phiếu nhập.');
@@ -107,6 +126,59 @@ const ReportPurchaseInvoicesTab = () => {
     ? `Hóa đơn nhập hàng - Nhà cung cấp: ${selectedSupplierName}`
     : 'Hóa đơn nhập hàng';
 
+  const selectedProductMap = useMemo(
+    () =>
+      selectedProducts.reduce((acc, item) => {
+        acc[item.id] = item;
+        return acc;
+      }, {}),
+    [selectedProducts]
+  );
+
+  const selectedItems = useMemo(
+    () =>
+      (selectedPurchase?.items || []).map((item, index) => {
+        const product = selectedProductMap[item.productId] || {};
+        return {
+          key: `${item.productId || 'item'}-${index}`,
+          productId: item.productId,
+          name: product.name || '',
+          unit: product.unit || '',
+          spec: product.spec || '',
+          qty: item.qty,
+          unitCost: item.unitCost,
+          lineTotal: item.lineTotal,
+          note: item.lineNote || '',
+        };
+      }),
+    [selectedPurchase, selectedProductMap]
+  );
+
+  const selectedPurchaseForPrint = useMemo(() => {
+    if (!selectedPurchase) return null;
+    return {
+      ...selectedPurchase,
+      customerDebt: 0,
+      items: (selectedPurchase.items || []).map((item) => ({
+        ...item,
+        unitPrice: item.unitCost,
+        note: item.lineNote || '',
+      })),
+    };
+  }, [selectedPurchase]);
+
+  const previewHtml = useMemo(() => {
+    if (!selectedPurchaseForPrint || !settings) return '';
+    return renderInvoiceTemplate({
+      template: settings.invoiceTemplateHtml,
+      invoice: selectedPurchaseForPrint,
+      customer: selectedSupplier || { name: '' },
+      payments: selectedPayments,
+      products: selectedProducts,
+      settings,
+    });
+  }, [selectedPurchaseForPrint, selectedSupplier, selectedPayments, selectedProducts, settings]);
+
   const exportRows = useMemo(
     () =>
       rows.map((row) => ({
@@ -118,6 +190,60 @@ const ReportPurchaseInvoicesTab = () => {
       })),
     [rows, supplierMap]
   );
+
+  const handleDelete = () => {
+    if (!selectedPurchase) return;
+    Modal.confirm({
+      title: 'Xóa phiếu nhập?',
+      content: 'Thao tác này không thể hoàn tác.',
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          await apiRequest(`/purchases/${selectedPurchase.id}`, { method: 'DELETE' });
+          setSelectedPurchaseId(null);
+          await fetchReport();
+          message.success('Đã xóa phiếu nhập.');
+        } catch (error) {
+          message.error(`Không thể xóa phiếu nhập: ${error.message || 'Lỗi không xác định'}`);
+        }
+      },
+    });
+  };
+
+  const handleEdit = () => {
+    if (!selectedPurchase) return;
+    setSelectedPurchaseId(null);
+    navigate('/purchases', { state: { editPurchaseId: selectedPurchase.id, editMode: 'full' } });
+  };
+
+  const handlePrint = async () => {
+    if (!previewHtml) return;
+    const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
+    await printHtml(previewHtml, { copies: printCopies, autoPageSize: true });
+  };
+
+  const handleExport = async () => {
+    if (!selectedPurchase) return;
+    const rowsToExport = selectedItems.map((item, index) => ({
+      STT: index + 1,
+      Ten_hang: item.name,
+      DVT: item.unit,
+      Quy_cach: item.spec,
+      So_luong: item.qty,
+      Don_gia: item.unitCost,
+      Thanh_tien: item.lineTotal,
+      Ghi_chu: item.note,
+    }));
+    if (!rowsToExport.length) {
+      message.warning('Không có dữ liệu để xuất.');
+      return;
+    }
+    const worksheet = XLSX.utils.json_to_sheet(rowsToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Hoa_don');
+    await saveWorkbook(workbook, selectedPurchase.code || 'hoa-don');
+  };
 
   return (
     <div>
@@ -159,27 +285,25 @@ const ReportPurchaseInvoicesTab = () => {
               <th>Nhà cung cấp</th>
               <th>Tổng tiền</th>
               <th>Ghi chú</th>
-              <th></th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.id}>
+              <tr
+                key={row.id}
+                onClick={() => setSelectedPurchaseId(row.id)}
+                style={{ cursor: 'pointer' }}
+              >
                 <td>{row.code}</td>
                 <td>{row.date ? dayjs(row.date).format('DD/MM/YYYY') : ''}</td>
                 <td>{supplierMap[row.supplierId]?.name || ''}</td>
                 <td>{formatMoney(row.total)}</td>
                 <td>{row.note}</td>
-                <td>
-                  <Button size="small" onClick={() => setSelectedPurchaseId(row.id)}>
-                    Xem
-                  </Button>
-                </td>
               </tr>
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center' }}>
+                <td colSpan={5} style={{ textAlign: 'center' }}>
                   Chưa có hóa đơn nhập hàng.
                 </td>
               </tr>
@@ -188,11 +312,16 @@ const ReportPurchaseInvoicesTab = () => {
         </table>
       </div>
 
-      <PurchaseDetailModal
+      <ReportPurchaseInvoiceModal
         open={!!selectedPurchase}
-        detail={selectedPurchase}
-        products={selectedProducts}
+        purchase={selectedPurchase}
+        supplier={selectedSupplier || supplierMap[selectedPurchase?.supplierId] || null}
+        items={selectedItems}
         onClose={() => setSelectedPurchaseId(null)}
+        onDelete={handleDelete}
+        onEdit={handleEdit}
+        onPrint={handlePrint}
+        onExport={handleExport}
       />
     </div>
   );

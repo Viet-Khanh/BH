@@ -10,9 +10,9 @@ const getLineTotal = (item, product) => {
   return lineTotal;
 };
 
-const usePurchaseItems = ({ items, setItems, products, isEdit }) => {
+const usePurchaseItems = ({ items, setItems, products, readOnly = false }) => {
   const updateItem = (index, field, value) => {
-    if (isEdit) return;
+    if (readOnly) return;
     const next = [...items];
     const item = { ...next[index], [field]: value };
     const product = products.find((productItem) => productItem.id === item.productId);
@@ -22,7 +22,7 @@ const usePurchaseItems = ({ items, setItems, products, isEdit }) => {
   };
 
   const removeItem = (index) => {
-    if (isEdit) return;
+    if (readOnly) return;
     const next = [...items];
     next.splice(index, 1);
     setItems(next);

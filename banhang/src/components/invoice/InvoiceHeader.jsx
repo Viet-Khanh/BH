@@ -25,9 +25,6 @@ const InvoiceHeader = ({
             {previewLabel}
           </Button>
         )}
-        {/* <Button size="large" onClick={onShowDebt}>
-          Trả nợ
-        </Button> */}
         {showPayment && onOpenPayment && (
           <Button size="large" className="btn-success" onClick={onOpenPayment}>
             {paymentLabel}

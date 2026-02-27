@@ -17,7 +17,7 @@ const getLineTotal = ({ qty, unitCost, length, width }) => {
   return total;
 };
 
-const usePurchaseProductModal = ({ activeProducts, setItems, isEdit, onSearchProducts }) => {
+const usePurchaseProductModal = ({ activeProducts, setItems, readOnly = false, onSearchProducts }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [pendingProduct, setPendingProduct] = useState(null);
@@ -28,13 +28,13 @@ const usePurchaseProductModal = ({ activeProducts, setItems, isEdit, onSearchPro
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key !== 'F2' || isEdit) return;
+      if (event.key !== 'F2' || readOnly) return;
       event.preventDefault();
       setSearchOpen(true);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEdit]);
+  }, [readOnly]);
 
   useEffect(() => {
     if (!onSearchProducts) return;
@@ -57,7 +57,7 @@ const usePurchaseProductModal = ({ activeProducts, setItems, isEdit, onSearchPro
   };
 
   const handleAddProduct = (productId) => {
-    if (isEdit) return;
+    if (readOnly) return;
     const product = activeProducts.find((item) => item.id === productId);
     openAddModal(product);
   };
@@ -79,7 +79,7 @@ const usePurchaseProductModal = ({ activeProducts, setItems, isEdit, onSearchPro
   }, [searchKeyword, activeProducts]);
 
   const handleQuickAdd = () => {
-    if (isEdit) return;
+    if (readOnly) return;
     if (!filteredQuick.length) {
       setSearchOpen(true);
       return;
@@ -89,7 +89,7 @@ const usePurchaseProductModal = ({ activeProducts, setItems, isEdit, onSearchPro
   };
 
   const handleConfirmAdd = ({ closeAfter = false } = {}) => {
-    if (isEdit) return false;
+    if (readOnly) return false;
     if (!pendingProduct) return false;
     const qty = Number(pendingQty || 0);
     const unitCost = Number(pendingPrice || 0);

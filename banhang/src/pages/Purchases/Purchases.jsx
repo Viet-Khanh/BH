@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Modal, message } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { useSupplierStore } from '../../store/supplierStore.js';
 import InvoiceHeader from '../../components/invoice/InvoiceHeader.jsx';
@@ -16,12 +16,24 @@ import usePurchaseItems from './usePurchaseItems.js';
 import usePurchasePayments from './usePurchasePayments.js';
 import usePurchaseProductModal from './usePurchaseProductModal.js';
 import { generateCode } from '../../utils/codeGenerator.js';
-import { addItem, apiRequest, deleteItem, updateItem } from '../../db/repository.js';
+import { addItem, apiRequest, deleteItem, updateItem as updateRecord } from '../../db/repository.js';
 const buildPurchaseItems = (purchase) =>
   (purchase?.items || []).map((item) => ({
     ...item,
     lineNote: item.lineNote || '',
   }));
+
+const getPurchaseLineTotal = (item = {}) => {
+  const qty = Number(item.qty || 0);
+  const unitCost = Number(item.unitCost || 0);
+  let lineTotal = qty * unitCost;
+  const length = Number(item.length || 0);
+  const width = Number(item.width || 0);
+  if (length > 0 && width > 0) {
+    lineTotal *= length * width;
+  }
+  return lineTotal;
+};
 
 const mergeProducts = (current = [], incoming = []) => {
   const map = new Map();
@@ -35,6 +47,8 @@ const mergeProducts = (current = [], incoming = []) => {
 };
 const Purchases = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const editPurchaseId = location.state?.editPurchaseId;
   const { items: suppliers, load: loadSuppliers } = useSupplierStore();
   const [products, setProducts] = useState([]);
   const [recentPurchases, setRecentPurchases] = useState([]);
@@ -52,6 +66,7 @@ const Purchases = () => {
   const [filterRange, setFilterRange] = useState([null, null]);
   const [filterSupplier, setFilterSupplier] = useState('');
   const [editing, setEditing] = useState(null);
+  const [editScope, setEditScope] = useState('payment');
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -86,6 +101,8 @@ const Purchases = () => {
   const activeProducts = useMemo(() => products.filter((item) => !item.isDeleted), [products]);
   const supplier = suppliers.find((item) => item.id === supplierId);
   const isEdit = Boolean(editing);
+  const isFullEdit = isEdit && editScope === 'full';
+  const readOnlyEdit = isEdit && !isFullEdit;
 
   useEffect(() => {
     let cancelled = false;
@@ -163,14 +180,14 @@ const Purchases = () => {
   } = usePurchaseProductModal({
     activeProducts,
     setItems,
-    isEdit,
+    readOnly: readOnlyEdit,
     onSearchProducts: handleSearchProducts,
   });
-  const { updateItem, removeItem } = usePurchaseItems({
+  const { updateItem: updatePurchaseItem, removeItem } = usePurchaseItems({
     items,
     setItems,
     products,
-    isEdit,
+    readOnly: readOnlyEdit,
   });
   useEffect(() => {
     if (!editing) return;
@@ -184,6 +201,7 @@ const Purchases = () => {
   const totalQty = useMemo(() => items.reduce((sum, item) => sum + Number(item.qty || 0), 0), [items]);
   const resetForm = () => {
     setEditing(null);
+    setEditScope('payment');
     setPurchasePayments([]);
     setSupplierDebt(0);
     setSupplierId('');
@@ -194,10 +212,7 @@ const Purchases = () => {
     resetSearchState();
   };
   const persistPurchase = async () => {
-    if (isEdit) {
-      message.warning('Phiếu đã lưu, không thể chỉnh sửa.');
-      return null;
-    }
+    if (isEdit && !isFullEdit) return editing;
     if (!supplierId) {
       message.error('Chọn nhà cung cấp.');
       return null;
@@ -206,18 +221,58 @@ const Purchases = () => {
       message.error('Chọn hàng hóa.');
       return null;
     }
-    const invalid = items.find((item) => Number(item.qty || 0) <= 0 || Number(item.unitCost || 0) < 0);
+    const normalizedItems = items.map((item) => ({
+      ...item,
+      qty: Number(item.qty || 0),
+      unitCost: Number(item.unitCost || 0),
+      length: Number(item.length || 0) > 0 ? Number(item.length) : null,
+      width: Number(item.width || 0) > 0 ? Number(item.width) : null,
+      lineNote: item.lineNote || '',
+      lineTotal: getPurchaseLineTotal(item),
+    }));
+    const invalid = normalizedItems.find(
+      (item) => !item.productId || Number(item.qty || 0) <= 0 || Number(item.unitCost || 0) < 0
+    );
     if (invalid) {
       message.error('Số lượng > 0 và đơn giá >= 0.');
       return null;
     }
+    const nextTotal = normalizedItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
+
+    if (isEdit && isFullEdit && editing?.id) {
+      const payload = {
+        code: draftCode,
+        supplierId,
+        date,
+        items: normalizedItems,
+        total: nextTotal,
+        note,
+      };
+      try {
+        const data = await apiRequest(`/purchases-tools/${editing.id}`, {
+          method: 'PUT',
+          body: payload,
+        });
+        if (Array.isArray(data?.products)) {
+          setProducts((prev) => mergeProducts(prev, data.products));
+        }
+        const nextPurchase = data?.purchase || { ...payload, id: editing.id };
+        setEditing(nextPurchase);
+        message.success('Đã cập nhật phiếu nhập.');
+        return nextPurchase;
+      } catch (error) {
+        message.error('Không thể cập nhật phiếu nhập.');
+        return null;
+      }
+    }
+
     const purchasePayload = {
       id: uuid(),
       code: draftCode,
       supplierId,
       date,
-      items,
-      total: totals,
+      items: normalizedItems,
+      total: nextTotal,
       note,
     };
     try {
@@ -257,7 +312,7 @@ const Purchases = () => {
   };
 
   const handleUpdatePayment = async (paymentId, data) => {
-    const saved = await updateItem('payments', paymentId, data);
+    const saved = await updateRecord('payments', paymentId, data);
     const nextPayment = saved || data;
     setPurchasePayments((prev) =>
       prev.map((payment) => (payment.id === paymentId ? nextPayment : payment))
@@ -289,6 +344,7 @@ const Purchases = () => {
     paymentModalOpen,
     setPaymentModalOpen,
     persistPurchase,
+    persistOnEdit: isFullEdit,
     resetForm,
     addPayment: handleAddPayment,
     updatePayment: handleUpdatePayment,
@@ -306,6 +362,33 @@ const Purchases = () => {
     []
   );
 
+  useEffect(() => {
+    if (!editPurchaseId) return;
+    let cancelled = false;
+    const loadEditingPurchase = async () => {
+      try {
+        const data = await fetchPurchaseDetail(editPurchaseId);
+        if (cancelled) return;
+        const nextPurchase = data?.purchase || null;
+        if (!nextPurchase) {
+          message.error('Không tìm thấy phiếu nhập.');
+          return;
+        }
+        setEditScope('full');
+        setEditing(nextPurchase);
+        setPurchasePayments(Array.isArray(data?.payments) ? data.payments : []);
+      } catch (error) {
+        if (!cancelled) {
+          message.error('Không thể tải phiếu nhập.');
+        }
+      }
+    };
+    loadEditingPurchase();
+    return () => {
+      cancelled = true;
+    };
+  }, [editPurchaseId, fetchPurchaseDetail]);
+
   const handleSelectDetail = async (purchase) => {
     try {
       const data = await fetchPurchaseDetail(purchase.id);
@@ -320,6 +403,7 @@ const Purchases = () => {
     try {
       const data = await fetchPurchaseDetail(purchase.id);
       const nextPurchase = data?.purchase || purchase;
+      setEditScope('payment');
       setEditing(nextPurchase);
       setPurchasePayments(Array.isArray(data?.payments) ? data.payments : []);
       setRecentOpen(false);
@@ -360,7 +444,7 @@ const Purchases = () => {
         customer={supplier}
         note={note}
         onNoteChange={setNote}
-        readOnly={isEdit}
+        readOnly={readOnlyEdit}
         codeLabel="Phiếu"
         partnerLabel="Nhà cung cấp"
         partnerPhoneLabel="SĐT"
@@ -379,14 +463,14 @@ const Purchases = () => {
         onQuickSelect={handleAddProduct}
         showInput
         showPrint={false}
-        disabled={isEdit}
+        disabled={readOnlyEdit}
       />
       <InvoiceItemsTable
         items={items}
         products={products}
-        onUpdateItem={updateItem}
+        onUpdateItem={updatePurchaseItem}
         onRemoveItem={removeItem}
-        readOnly={isEdit}
+        readOnly={readOnlyEdit}
         showDimensions={false}
         priceField="unitCost"
         qtyLabel="SL"

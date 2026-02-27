@@ -28,6 +28,7 @@ const usePurchasePayments = ({
   paymentModalOpen,
   setPaymentModalOpen,
   persistPurchase,
+  persistOnEdit = false,
   resetForm,
   addPayment,
   updatePayment,
@@ -71,7 +72,7 @@ const usePurchasePayments = ({
   }, [payments, editing]);
 
   const handleCheckout = async () => {
-    const target = editing || (await persistPurchase());
+    const target = editing && !persistOnEdit ? editing : await persistPurchase();
     if (!target) return;
     const existingPayments = getPaymentsByPurchaseId(payments, target.id);
     const existingPaid = existingPayments.reduce(

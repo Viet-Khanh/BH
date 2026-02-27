@@ -70,7 +70,8 @@ const ReportStockTab = () => {
     () =>
       rows.map((row) => ({
         San_pham: row.name,
-        Nhom: row.group,
+        // Nhom: row.group,
+        Ma_san_pham: row.code,
         Don_vi: row.unit,
         Ton: row.stock,
         Gia_von: row.avgCost,
@@ -88,8 +89,9 @@ const ReportStockTab = () => {
         <table className="invoice-items-table">
           <thead>
             <tr>
+              <th>Mã sản phẩm</th>
               <th>Sản phẩm</th>
-              <th>Nhóm</th>
+              {/* <th>Nhóm</th> */}
               <th>Đơn vị</th>
               <th>Tồn</th>
               <th>Giá vốn</th>
@@ -106,8 +108,9 @@ const ReportStockTab = () => {
                   onClick={() => openEditor(row)}
                   style={{ cursor: 'pointer', ...lowStockCellStyle }}
                 >
+                  <td>{row.code}</td>
                   <td>{row.name}</td>
-                  <td>{row.group}</td>
+                  {/* <td>{row.group}</td> */}
                   <td>{row.unit}</td>
                   <td>{row.stock}</td>
                   <td>{formatMoney(row.avgCost)}</td>

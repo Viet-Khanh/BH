@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
 import { generateCode } from '../../utils/codeGenerator.js';
 import { hasSearchMatch, normalizeSearchText } from '../../utils/searchText.js';
@@ -14,6 +14,36 @@ import {
 import { buildInvoiceItems, createCancelTicketHandler, createNewTicketHandler } from './invoiceTicketHandlers.js';
 import { buildInvoiceViewProps } from './invoiceViewProps.js';
 import { printHtml } from '../../utils/printUtils.js';
+
+const SALES_PRICE_CACHE_KEY = 'sales.tempProductPrices';
+
+const loadProductPriceCache = () => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(SALES_PRICE_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+    return Object.entries(parsed).reduce((acc, [productId, value]) => {
+      const price = Number(value);
+      if (!productId || !Number.isFinite(price) || price < 0) return acc;
+      acc[productId] = price;
+      return acc;
+    }, {});
+  } catch (error) {
+    return {};
+  }
+};
+
+const saveProductPriceCache = (cache) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SALES_PRICE_CACHE_KEY, JSON.stringify(cache || {}));
+  } catch (error) {
+    // ignore localStorage errors (private mode/quota)
+  }
+};
+
 const buildDefaultCustomerId = (customers) =>
   customers.find(
     (item) => !item.isDeleted && (item.name === 'Khách lẻ' || item.name === 'Khach le')
@@ -58,6 +88,20 @@ const useInvoiceEditorState = ({
   const [pendingPrice, setPendingPrice] = useState(0);
   const [pendingLength, setPendingLength] = useState(null);
   const [pendingWidth, setPendingWidth] = useState(null);
+  const [tempProductPrices, setTempProductPrices] = useState(() => loadProductPriceCache());
+
+  const setTempProductPrice = useCallback((productId, value) => {
+    if (!productId) return;
+    const price = Number(value);
+    if (!Number.isFinite(price) || price < 0) return;
+    setTempProductPrices((prev) => {
+      if (prev[productId] === price) return prev;
+      const next = { ...prev, [productId]: price };
+      saveProductPriceCache(next);
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     if (invoice) {
       setCustomerId(invoice.customerId || defaultCustomerId);
@@ -179,14 +223,37 @@ const useInvoiceEditorState = ({
     setPendingWidth,
   });
 
+  const handlePendingPriceChange = useCallback(
+    (value) => {
+      setPendingPrice(value);
+      if (!pendingProduct?.id) return;
+      setTempProductPrice(pendingProduct.id, value);
+    },
+    [pendingProduct, setTempProductPrice]
+  );
+
   const updateItem = (index, field, value) => {
     const next = [...items];
     const item = { ...next[index], [field]: value };
     const product = products.find((p) => p.id === item.productId);
     item.lineTotal = getLineBase(item, product);
+    if (field === 'unitPrice' && item.productId) {
+      setTempProductPrice(item.productId, value);
+    }
     next[index] = item;
     setItems(next);
   };
+
+  const pendingPreviousPrice = useMemo(() => {
+    if (!pendingProduct?.id) return null;
+    const price = tempProductPrices[pendingProduct.id];
+    return Number.isFinite(price) ? Number(price) : null;
+  }, [pendingProduct, tempProductPrices]);
+
+  const applyPendingPreviousPrice = useCallback(() => {
+    if (!Number.isFinite(pendingPreviousPrice)) return;
+    setPendingPrice(Number(pendingPreviousPrice));
+  }, [pendingPreviousPrice]);
 
   const removeItem = (index) => {
     const next = [...items];
@@ -287,7 +354,7 @@ const useInvoiceEditorState = ({
     setSearchKeyword('');
   };
 
-  const handleConfirmAdd = createConfirmAddHandler({
+  const confirmAdd = createConfirmAddHandler({
     pendingProduct,
     pendingQty,
     pendingPrice,
@@ -299,6 +366,14 @@ const useInvoiceEditorState = ({
     setPendingLength,
     setPendingWidth,
   });
+
+  const handleConfirmAdd = (options) => {
+    const added = confirmAdd(options);
+    if (added && pendingProduct?.id) {
+      setTempProductPrice(pendingProduct.id, pendingPrice);
+    }
+    return added;
+  };
 
   const totalPayment = totals.total + customerDebt;
   const remainingPayment = totalPayment - Number(paymentAmount || 0);
@@ -356,8 +431,10 @@ const useInvoiceEditorState = ({
     pendingLength,
     pendingWidth,
     handlePendingProductChange,
+    pendingPreviousPrice,
+    applyPendingPreviousPrice,
     setPendingQty,
-    setPendingPrice,
+    setPendingPrice: handlePendingPriceChange,
     setPendingLength,
     setPendingWidth,
     handleConfirmAdd,

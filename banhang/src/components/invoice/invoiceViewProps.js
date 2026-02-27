@@ -51,6 +51,8 @@ export const buildInvoiceViewProps = ({
   pendingLength,
   pendingWidth,
   handlePendingProductChange,
+  pendingPreviousPrice,
+  applyPendingPreviousPrice,
   setPendingQty,
   setPendingPrice,
   setPendingLength,
@@ -141,11 +143,13 @@ export const buildInvoiceViewProps = ({
     pendingPrice,
     pendingLength,
     pendingWidth,
+    previousPrice: pendingPreviousPrice,
     onChangeProduct: handlePendingProductChange,
     onChangeQty: setPendingQty,
     onChangePrice: setPendingPrice,
     onChangeLength: setPendingLength,
     onChangeWidth: setPendingWidth,
+    onApplyPreviousPrice: applyPendingPreviousPrice,
     onConfirmAdd: handleConfirmAdd,
   };
 

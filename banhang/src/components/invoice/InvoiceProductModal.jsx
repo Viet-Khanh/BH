@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, InputNumber, Modal, Space } from 'antd';
 import ProductPicker from '../ProductPicker.jsx';
 import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
+import { formatMoney } from '../../utils/moneyFormat.js';
 
 const InvoiceProductModal = ({
   open,
@@ -12,12 +13,14 @@ const InvoiceProductModal = ({
   pendingPrice,
   pendingLength,
   pendingWidth,
+  previousPrice,
   onSearchProducts,
   onChangeProduct,
   onChangeQty,
   onChangePrice,
   onChangeLength,
   onChangeWidth,
+  onApplyPreviousPrice,
   onConfirmAdd,
   showDimensions = true,
 }) => {
@@ -75,6 +78,10 @@ const InvoiceProductModal = ({
     return () => clearTimeout(timer);
   }, [open, searchKeyword, onSearchProducts]);
 
+  const hasPreviousPrice = Number.isFinite(previousPrice);
+  const isSamePrice =
+    hasPreviousPrice && Number(pendingPrice || 0) === Number(previousPrice || 0);
+
   return (
   <Modal
     title="Nhập hàng hóa"
@@ -112,14 +119,27 @@ const InvoiceProductModal = ({
             </div>
             <div>
               <div>Đơn giá</div>
-              <InputNumber
-                min={0}
-                style={{ width: '100%' }}
-                value={pendingPrice}
-                formatter={formatNumberInput}
-                parser={parseNumberInput}
-                onChange={onChangePrice}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <InputNumber
+                  min={0}
+                  style={{ width: '100%' }}
+                  value={pendingPrice}
+                  formatter={formatNumberInput}
+                  parser={parseNumberInput}
+                  onChange={onChangePrice}
+                />
+                {hasPreviousPrice && (
+                  <Button
+                    type="link"
+                    size="small"
+                    style={{ padding: 0, height: 'auto' }}
+                    disabled={isSamePrice}
+                    onClick={() => onApplyPreviousPrice?.()}
+                  >
+                    Giá trước: {formatMoney(previousPrice)}
+                  </Button>
+                )}
+              </div>
             </div>
             {showDimensions && (
               <>

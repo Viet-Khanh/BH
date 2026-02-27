@@ -227,6 +227,7 @@ router.get(
         name: product.name,
         group: product.group,
         unit: product.unit,
+        code: product.code,
         stock,
         openingStock: Number(product.openingStock || 0),
         avgCost: product.avgCost || 0,
