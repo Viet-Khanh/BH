@@ -22,6 +22,17 @@ const parseRange = (query) => {
   return { from, to };
 };
 
+const parsePagination = (query = {}) => {
+  const rawPage = Number(query.page || 1);
+  const rawPageSize = Number(query.pageSize || 20);
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+  const pageSize =
+    Number.isFinite(rawPageSize) && rawPageSize > 0
+      ? Math.min(Math.floor(rawPageSize), 200)
+      : 20;
+  return { page, pageSize };
+};
+
 const buildPaymentsByPurchase = (payments = []) =>
   payments.reduce((acc, payment) => {
     if (!payment.purchaseId) return acc;
@@ -42,7 +53,6 @@ const buildOldDebtByPurchase = (purchases = [], paymentsByPurchase = {}) => {
   });
   return map;
 };
-
 
 const buildByIdMap = (items = []) =>
   items.reduce((acc, item) => {
@@ -124,6 +134,8 @@ router.get(
   asyncHandler(async (req, res) => {
     const { from, to } = parseRange(req.query);
     const supplierId = String(req.query.supplierId || '').trim();
+    const hasPagination = req.query.page !== undefined || req.query.pageSize !== undefined;
+    const { page, pageSize } = parsePagination(req.query);
     const rawLimit = Number(req.query.limit || 200);
     const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 1000) : 200;
 
@@ -136,8 +148,10 @@ router.get(
       if (to) recentFilter.date.$lte = to.toISOString();
     }
 
-    const [purchases, purchasesForDebt] = await Promise.all([
-      Purchase.find(recentFilter).sort({ date: -1 }).limit(limit).lean(),
+    const [allFilteredPurchases, purchasesForDebt] = await Promise.all([
+      hasPagination
+        ? Purchase.find(recentFilter).sort({ date: -1 }).lean()
+        : Purchase.find(recentFilter).sort({ date: -1 }).limit(limit).lean(),
       Purchase.find(baseFilter).lean(),
     ]);
     const purchaseIdsForDebt = purchasesForDebt.map((purchase) => purchase.id);
@@ -149,6 +163,37 @@ router.get(
       : [];
     const paymentsByPurchase = buildPaymentsByPurchase(debtPayments);
     const oldDebtByPurchase = buildOldDebtByPurchase(purchasesForDebt, paymentsByPurchase);
+
+    const summary = allFilteredPurchases.reduce(
+      (acc, purchase) => {
+        const amount = Number(purchase.total || 0);
+        const paid = Number(paymentsByPurchase[purchase.id] || 0);
+        const oldDebt = Number(oldDebtByPurchase[purchase.id] || 0);
+        const totalPay = amount + oldDebt;
+        const remain = totalPay - paid;
+        return {
+          amount: acc.amount + amount,
+          paid: acc.paid + paid,
+          remain: acc.remain + remain,
+          totalPay: acc.totalPay + totalPay,
+        };
+      },
+      {
+        amount: 0,
+        paid: 0,
+        remain: 0,
+        totalPay: 0,
+      }
+    );
+
+    const total = allFilteredPurchases.length;
+    const totalPages = hasPagination ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+    const currentPage = hasPagination ? Math.min(page, totalPages) : 1;
+    const start = (currentPage - 1) * pageSize;
+    const purchases = hasPagination
+      ? allFilteredPurchases.slice(start, start + pageSize)
+      : allFilteredPurchases;
+    const effectivePageSize = hasPagination ? pageSize : purchases.length || limit;
 
     const supplierIds = new Set(purchases.map((purchase) => purchase.supplierId).filter(Boolean));
     const suppliers = supplierIds.size
@@ -209,7 +254,17 @@ router.get(
       note: purchase.note,
     }));
 
-    res.json({ rows, exportRows });
+    res.json({
+      rows,
+      exportRows,
+      summary,
+      pagination: {
+        total,
+        page: currentPage,
+        pageSize: effectivePageSize,
+        totalPages,
+      },
+    });
   })
 );
 

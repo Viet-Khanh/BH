@@ -13,10 +13,20 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const buildPrintHtml = ({ title, rows }) => {
+const buildPrintHtml = ({ title, rows, summaryItems = [] }) => {
   const safeTitle = escapeHtml(title || 'Du lieu');
   const headers = rows.length ? Object.keys(rows[0]) : [];
   const headerCells = headers.map((key) => `<th>${escapeHtml(key.replace(/_/g, ' '))}</th>`).join('');
+  const summaryHtml = summaryItems.length
+    ? `<div style="margin-bottom: 12px; display: flex; gap: 20px; flex-wrap: wrap;">
+        ${summaryItems
+          .map(
+            (item) =>
+              `<div><strong>${escapeHtml(item?.label || '')}:</strong> ${escapeHtml(item?.value || '')}</div>`
+          )
+          .join('')}
+      </div>`
+    : '';
   const bodyRows = rows.length
     ? rows
         .map(
@@ -43,6 +53,7 @@ const buildPrintHtml = ({ title, rows }) => {
       </head>
       <body>
         <h2>${safeTitle}</h2>
+        ${summaryHtml}
         <table>
           ${headers.length ? `<thead><tr>${headerCells}</tr></thead>` : ''}
           <tbody>${bodyRows}</tbody>
@@ -51,7 +62,14 @@ const buildPrintHtml = ({ title, rows }) => {
     </html>`;
 };
 
-const ExportActions = ({ rows = [], pdfRows, fileName = 'du-lieu', sheetName = 'Data', title }) => {
+const ExportActions = ({
+  rows = [],
+  pdfRows,
+  fileName = 'du-lieu',
+  sheetName = 'Data',
+  title,
+  summaryItems = [],
+}) => {
   const rowsForPdf = pdfRows && pdfRows.length ? pdfRows : rows;
   const { settings, load: loadSettings } = useSettingsStore();
 
@@ -77,7 +95,7 @@ const ExportActions = ({ rows = [], pdfRows, fileName = 'du-lieu', sheetName = '
       message.warning('Không có dữ liệu để in.');
       return;
     }
-    const html = buildPrintHtml({ title: title || fileName, rows: rowsForPdf });
+    const html = buildPrintHtml({ title: title || fileName, rows: rowsForPdf, summaryItems });
     await printHtml(html, { copies: printCopies });
   };
 
@@ -86,7 +104,7 @@ const ExportActions = ({ rows = [], pdfRows, fileName = 'du-lieu', sheetName = '
       message.warning('Không có dữ liệu để xuất.');
       return;
     }
-    const html = buildPrintHtml({ title: title || fileName, rows: rowsForPdf });
+    const html = buildPrintHtml({ title: title || fileName, rows: rowsForPdf, summaryItems });
     await printHtml(html, { copies: printCopies, forceDialog: true });
   };
 
@@ -101,13 +119,25 @@ const ExportActions = ({ rows = [], pdfRows, fileName = 'du-lieu', sheetName = '
   };
 
   return (
-    <div className="export-actions">
-      <Button size="large" onClick={handlePrint}>
-        In
-      </Button>
-      <Dropdown menu={{ items: exportItems, onClick: handleMenuClick }} trigger={['click']}>
-        <Button size="large">Xuất</Button>
-      </Dropdown>
+    <div className="export-actions" style={{ display: 'flex', alignItems: 'flex-end', gap: 16, justifyContent: 'space-between' ,width: '100%'}}>
+      <div>
+        <Button size="large" onClick={handlePrint}>
+          In
+        </Button>
+        <Dropdown menu={{ items: exportItems, onClick: handleMenuClick }} trigger={['click']}>
+          <Button size="large">Xuất</Button>
+        </Dropdown>
+      </div>
+      {!!summaryItems.length && (
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+          {summaryItems.map((item, index) => (
+            <span key={`${item?.label || 'summary'}-${index}`} className="text-gray-600">
+              {item?.label}:{' '}
+              <strong className={item?.className || ''}>{item?.value}</strong>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

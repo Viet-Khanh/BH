@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { Select, message } from 'antd';
+import { Pagination, Select, message } from 'antd';
 import dayjs from 'dayjs';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportActions from '../../components/ExportActions.jsx';
@@ -84,6 +84,9 @@ const ReportSalesDetailsTab = () => {
   const [customerId, setCustomerId] = useState('');
   const [rows, setRows] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState({
     amount: 0,
     paid: 0,
@@ -103,17 +106,38 @@ const ReportSalesDetailsTab = () => {
     if (range[0]) params.set('from', range[0]);
     if (range[1]) params.set('to', range[1]);
     if (customerId) params.set('customerId', customerId);
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
     const query = params.toString();
 
     const data = await apiRequest(`/reports/sales-details${query ? `?${query}` : ''}`);
     const rawRows = Array.isArray(data?.rows) ? data.rows : [];
     const rawCustomers = Array.isArray(data?.customers) ? data.customers : [];
+    const backendSummary = data?.summary;
+    const pagination = data?.pagination || {};
     const filteredRows = rawRows;
     const filteredCustomers = rawCustomers;
 
     setRows(filteredRows);
-    setSummary(buildSummary(filteredRows));
+    setSummary(
+      backendSummary
+        ? {
+            amount: Number(backendSummary.amount || 0),
+            paid: Number(backendSummary.paid || 0),
+            remain: Number(backendSummary.remain || 0),
+            profit: Number(backendSummary.profit || 0),
+          }
+        : buildSummary(filteredRows)
+    );
     setCustomers(filteredCustomers);
+    setTotal(Number(pagination.total || filteredRows.length || 0));
+    if (pagination.page && Number(pagination.page) !== page) {
+      setPage(Number(pagination.page));
+    }
+  }, [range, customerId, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
   }, [range, customerId]);
 
   useEffect(() => {
@@ -343,6 +367,20 @@ const ReportSalesDetailsTab = () => {
             )}
           </tbody>
         </table>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+        <Pagination
+          current={page}
+          pageSize={pageSize}
+          total={total}
+          showSizeChanger
+          pageSizeOptions={['10', '20', '50', '100']}
+          onChange={(nextPage, nextPageSize) => {
+            setPage(nextPage);
+            setPageSize(nextPageSize);
+          }}
+          showTotal={(value) => `Tổng ${value} hóa đơn`}
+        />
       </div>
     </div>
   );

@@ -47,6 +47,28 @@ const ReportDebtTab = () => {
     [rows]
   );
 
+  const totals = useMemo(
+    () =>
+      rows.reduce(
+        (acc, row) => ({
+          total: acc.total + Number(row.total || 0),
+          paid: acc.paid + Number(row.paid || 0),
+          debt: acc.debt + Number(row.debt || 0),
+        }),
+        { total: 0, paid: 0, debt: 0 }
+      ),
+    [rows]
+  );
+
+  const summaryItems = useMemo(
+    () => [
+      { label: 'Tổng bán', value: formatMoney(totals.total), className: 'text-primary' },
+      { label: 'Đã thu', value: formatMoney(totals.paid), className: 'text-success' },
+      { label: 'Còn nợ', value: formatMoney(totals.debt), className: 'text-danger' },
+    ],
+    [totals]
+  );
+
   const handleView = async (row) => {
     if (!row?.customer?.id) return;
     try {
@@ -60,7 +82,13 @@ const ReportDebtTab = () => {
   return (
     <div>
       <div className="action-row">
-        <ExportActions rows={debtExport} fileName="cong-no" sheetName="CongNo" title="Công nợ" />
+        <ExportActions
+          rows={debtExport}
+          fileName="cong-no"
+          sheetName="CongNo"
+          title="Công nợ"
+          summaryItems={summaryItems}
+        />
       </div>
       <div className="table-wrapper">
         <table className="invoice-items-table">

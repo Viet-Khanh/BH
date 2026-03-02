@@ -24,6 +24,17 @@ const parseRange = (query) => {
   return { from, to };
 };
 
+const parsePagination = (query = {}) => {
+  const rawPage = Number(query.page || 1);
+  const rawPageSize = Number(query.pageSize || 20);
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+  const pageSize =
+    Number.isFinite(rawPageSize) && rawPageSize > 0
+      ? Math.min(Math.floor(rawPageSize), 200)
+      : 20;
+  return { page, pageSize };
+};
+
 const inRange = (dateValue, from, to) => {
   if (!dateValue) return false;
   const target = dayjs(dateValue);
@@ -609,6 +620,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const { from, to } = parseRange(req.query);
     const customerId = req.query.customerId || '';
+    const { page, pageSize } = parsePagination(req.query);
 
     const customers = await Customer.find({}).lean();
     const customerMap = buildCustomerMap(customers);
@@ -637,7 +649,7 @@ router.get(
       : [];
     const productMap = buildProductMap(products);
 
-    const rows = filteredInvoices
+    const allRows = filteredInvoices
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .map((invoice) =>
         buildInvoiceSummary(invoice, {
@@ -648,7 +660,7 @@ router.get(
         })
       );
 
-    const summary = rows.reduce(
+    const summary = allRows.reduce(
       (acc, row) => ({
         amount: acc.amount + Number(row.amount || 0),
         paid: acc.paid + Number(row.paid || 0),
@@ -662,11 +674,22 @@ router.get(
         profit: 0,
       }
     );
+    const total = allRows.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const currentPage = Math.min(page, totalPages);
+    const start = (currentPage - 1) * pageSize;
+    const rows = allRows.slice(start, start + pageSize);
 
     res.json({
       rows,
       summary,
       customers: activeCustomers.map((customer) => ({ id: customer.id, name: customer.name })),
+      pagination: {
+        total,
+        page: currentPage,
+        pageSize,
+        totalPages,
+      },
     });
   })
 );
@@ -676,6 +699,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const { from, to } = parseRange(req.query);
     const customerId = req.query.customerId || '';
+    const { page, pageSize } = parsePagination(req.query);
 
     const customers = await Customer.find({}).lean();
     const customerMap = buildCustomerMap(customers);
@@ -704,7 +728,7 @@ router.get(
       : [];
     const productMap = buildProductMap(products);
 
-    const rows = filteredInvoices
+    const allRows = filteredInvoices
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .map((invoice) => ({
         ...buildInvoiceSummary(invoice, {
@@ -716,7 +740,7 @@ router.get(
         items: buildInvoiceItems(invoice, productMap),
       }));
 
-    const summary = rows.reduce(
+    const summary = allRows.reduce(
       (acc, row) => ({
         amount: acc.amount + Number(row.amount || 0),
         paid: acc.paid + Number(row.paid || 0),
@@ -730,11 +754,22 @@ router.get(
         profit: 0,
       }
     );
+    const total = allRows.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const currentPage = Math.min(page, totalPages);
+    const start = (currentPage - 1) * pageSize;
+    const rows = allRows.slice(start, start + pageSize);
 
     res.json({
       rows,
       summary,
       customers: activeCustomers.map((customer) => ({ id: customer.id, name: customer.name })),
+      pagination: {
+        total,
+        page: currentPage,
+        pageSize,
+        totalPages,
+      },
     });
   })
 );

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Modal, Select, message } from 'antd';
+import { Modal, Pagination, Select, message } from 'antd';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -48,6 +48,9 @@ const ReportPurchaseInvoicesTab = () => {
   const [supplierId, setSupplierId] = useState('');
   const [rows, setRows] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(0);
   const [selectedPurchaseId, setSelectedPurchaseId] = useState(null);
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
@@ -79,12 +82,24 @@ const ReportPurchaseInvoicesTab = () => {
   }, []);
 
   const fetchReport = useCallback(async () => {
-    const params = new URLSearchParams({ limit: '1000' });
+    const params = new URLSearchParams();
     if (supplierId) params.set('supplierId', supplierId);
     if (range[0]) params.set('from', range[0]);
     if (range[1]) params.set('to', range[1]);
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
     const data = await apiRequest(`/purchases-tools/recent?${params.toString()}`);
-    setRows(Array.isArray(data?.rows) ? data.rows : []);
+    const nextRows = Array.isArray(data?.rows) ? data.rows : [];
+    const pagination = data?.pagination || {};
+    setRows(nextRows);
+    setTotal(Number(pagination.total || nextRows.length || 0));
+    if (pagination.page && Number(pagination.page) !== page) {
+      setPage(Number(pagination.page));
+    }
+  }, [range, supplierId, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
   }, [range, supplierId]);
 
   useEffect(() => {
@@ -352,6 +367,20 @@ const ReportPurchaseInvoicesTab = () => {
             )}
           </tbody>
         </table>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+        <Pagination
+          current={page}
+          pageSize={pageSize}
+          total={total}
+          showSizeChanger
+          pageSizeOptions={['10', '20', '50', '100']}
+          onChange={(nextPage, nextPageSize) => {
+            setPage(nextPage);
+            setPageSize(nextPageSize);
+          }}
+          showTotal={(value) => `Tổng ${value} hóa đơn`}
+        />
       </div>
 
       <ReportPurchaseInvoiceModal

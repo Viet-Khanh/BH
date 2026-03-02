@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { Select, message } from 'antd';
+import { Pagination, Select, message } from 'antd';
 import dayjs from 'dayjs';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportActions from '../../components/ExportActions.jsx';
@@ -107,6 +107,15 @@ const ReportPurchaseDetailsTab = () => {
   const [rows, setRows] = useState([]);
   const [detailRows, setDetailRows] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState({
+    amount: 0,
+    paid: 0,
+    remain: 0,
+    totalPay: 0,
+  });
 
   useEffect(() => {
     let active = true;
@@ -129,13 +138,38 @@ const ReportPurchaseDetailsTab = () => {
   }, []);
 
   const fetchReport = useCallback(async () => {
-    const params = new URLSearchParams({ limit: '1000' });
+    const params = new URLSearchParams();
     if (supplierId) params.set('supplierId', supplierId);
     if (range[0]) params.set('from', range[0]);
     if (range[1]) params.set('to', range[1]);
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
     const data = await apiRequest(`/purchases-tools/recent?${params.toString()}`);
-    setRows(Array.isArray(data?.rows) ? data.rows : []);
-    setDetailRows(Array.isArray(data?.exportRows) ? data.exportRows : []);
+    const rawRows = Array.isArray(data?.rows) ? data.rows : [];
+    const rawDetailRows = Array.isArray(data?.exportRows) ? data.exportRows : [];
+    const backendSummary = data?.summary;
+    const pagination = data?.pagination || {};
+
+    setRows(rawRows);
+    setDetailRows(rawDetailRows);
+    setSummary(
+      backendSummary
+        ? {
+            amount: Number(backendSummary.amount || 0),
+            paid: Number(backendSummary.paid || 0),
+            remain: Number(backendSummary.remain || 0),
+            totalPay: Number(backendSummary.totalPay || 0),
+          }
+        : buildSummary(rawRows)
+    );
+    setTotal(Number(pagination.total || rawRows.length || 0));
+    if (pagination.page && Number(pagination.page) !== page) {
+      setPage(Number(pagination.page));
+    }
+  }, [range, supplierId, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
   }, [range, supplierId]);
 
   useEffect(() => {
@@ -244,8 +278,6 @@ const ReportPurchaseDetailsTab = () => {
 
     return [...normalizedRows, ...Object.values(fallbackRowsByCode)];
   }, [rows, detailRows, supplierMap]);
-
-  const summary = useMemo(() => buildSummary(groupedRows), [groupedRows]);
 
   const exportRows = useMemo(
     () =>
@@ -454,6 +486,20 @@ const ReportPurchaseDetailsTab = () => {
             )}
           </tbody>
         </table>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+        <Pagination
+          current={page}
+          pageSize={pageSize}
+          total={total}
+          showSizeChanger
+          pageSizeOptions={['10', '20', '50', '100']}
+          onChange={(nextPage, nextPageSize) => {
+            setPage(nextPage);
+            setPageSize(nextPageSize);
+          }}
+          showTotal={(value) => `Tổng ${value} hóa đơn`}
+        />
       </div>
     </div>
   );
