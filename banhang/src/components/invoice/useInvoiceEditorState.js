@@ -15,34 +15,10 @@ import { buildInvoiceItems, createCancelTicketHandler, createNewTicketHandler } 
 import { buildInvoiceViewProps } from './invoiceViewProps.js';
 import { printHtml } from '../../utils/printUtils.js';
 
-const SALES_PRICE_CACHE_KEY = 'sales.tempProductPrices';
+const DEFAULT_CUSTOMER_PRICE_KEY = '__default__';
 
-const loadProductPriceCache = () => {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(SALES_PRICE_CACHE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return {};
-    return Object.entries(parsed).reduce((acc, [productId, value]) => {
-      const price = Number(value);
-      if (!productId || !Number.isFinite(price) || price < 0) return acc;
-      acc[productId] = price;
-      return acc;
-    }, {});
-  } catch (error) {
-    return {};
-  }
-};
-
-const saveProductPriceCache = (cache) => {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(SALES_PRICE_CACHE_KEY, JSON.stringify(cache || {}));
-  } catch (error) {
-    // ignore localStorage errors (private mode/quota)
-  }
-};
+const buildProductPriceKey = (customerId, productId) =>
+  `${customerId || DEFAULT_CUSTOMER_PRICE_KEY}::${productId}`;
 
 const buildDefaultCustomerId = (customers) =>
   customers.find(
@@ -89,19 +65,6 @@ const useInvoiceEditorState = ({
   const [pendingPrice, setPendingPrice] = useState(0);
   const [pendingLength, setPendingLength] = useState(null);
   const [pendingWidth, setPendingWidth] = useState(null);
-  const [tempProductPrices, setTempProductPrices] = useState(() => loadProductPriceCache());
-
-  const setTempProductPrice = useCallback((productId, value) => {
-    if (!productId) return;
-    const price = Number(value);
-    if (!Number.isFinite(price) || price < 0) return;
-    setTempProductPrices((prev) => {
-      if (prev[productId] === price) return prev;
-      const next = { ...prev, [productId]: price };
-      saveProductPriceCache(next);
-      return next;
-    });
-  }, []);
 
   useEffect(() => {
     if (invoice) {
@@ -201,6 +164,58 @@ const useInvoiceEditorState = ({
       ? Number(customerDebtOverride || 0)
       : computedCustomerDebt;
 
+  const previousInvoicePrices = useMemo(() => {
+    const latestByKey = {};
+
+    invoices.forEach((inv, invoiceIndex) => {
+      if (!inv || inv.isDeleted || inv.id === invoice?.id || !inv.customerId) return;
+      const invItems = Array.isArray(inv.items) ? inv.items : [];
+      if (!invItems.length) return;
+
+      const dateMs = new Date(inv.date || 0).getTime();
+      const sortDate = Number.isFinite(dateMs) ? dateMs : -1;
+
+      invItems.forEach((invItem, itemIndex) => {
+        const productId = invItem?.productId;
+        if (!productId) return;
+        const unitPrice = Number(invItem.unitPrice);
+        if (!Number.isFinite(unitPrice) || unitPrice < 0) return;
+
+        const priceKey = buildProductPriceKey(inv.customerId, productId);
+        const current = latestByKey[priceKey];
+        if (
+          !current ||
+          sortDate > current.sortDate ||
+          (sortDate === current.sortDate &&
+            (invoiceIndex > current.invoiceIndex ||
+              (invoiceIndex === current.invoiceIndex && itemIndex > current.itemIndex)))
+        ) {
+          latestByKey[priceKey] = {
+            unitPrice,
+            sortDate,
+            invoiceIndex,
+            itemIndex,
+          };
+        }
+      });
+    });
+
+    return Object.entries(latestByKey).reduce((acc, [key, value]) => {
+      acc[key] = Number(value.unitPrice || 0);
+      return acc;
+    }, {});
+  }, [invoices, invoice?.id]);
+
+  const getPreviousProductPrice = useCallback((productId, nextCustomerId = customerId) => {
+    if (!productId) return null;
+    const invoicePrice = Number(previousInvoicePrices[buildProductPriceKey(nextCustomerId, productId)]);
+    return Number.isFinite(invoicePrice) ? invoicePrice : null;
+  }, [customerId, previousInvoicePrices]);
+
+  const getProductPrice = useCallback((product) => {
+    return Number(product.sellPriceDefault || 0);
+  }, []);
+
   const openAddModal = createOpenAddModal({
     setPendingProduct,
     setPendingQty,
@@ -208,6 +223,7 @@ const useInvoiceEditorState = ({
     setPendingLength,
     setPendingWidth,
     setSearchOpen,
+    getProductPrice,
   });
 
   const handleAddProduct = createAddProductHandler({
@@ -222,15 +238,14 @@ const useInvoiceEditorState = ({
     setPendingPrice,
     setPendingLength,
     setPendingWidth,
+    getProductPrice,
   });
 
   const handlePendingPriceChange = useCallback(
     (value) => {
       setPendingPrice(value);
-      if (!pendingProduct?.id) return;
-      setTempProductPrice(pendingProduct.id, value);
     },
-    [pendingProduct, setTempProductPrice]
+    []
   );
 
   const updateItem = (index, field, value) => {
@@ -238,18 +253,15 @@ const useInvoiceEditorState = ({
     const item = { ...next[index], [field]: value };
     const product = products.find((p) => p.id === item.productId);
     item.lineTotal = getLineBase(item, product);
-    if (field === 'unitPrice' && item.productId) {
-      setTempProductPrice(item.productId, value);
-    }
     next[index] = item;
     setItems(next);
   };
 
   const pendingPreviousPrice = useMemo(() => {
     if (!pendingProduct?.id) return null;
-    const price = tempProductPrices[pendingProduct.id];
+    const price = getPreviousProductPrice(pendingProduct.id);
     return Number.isFinite(price) ? Number(price) : null;
-  }, [pendingProduct, tempProductPrices]);
+  }, [pendingProduct, getPreviousProductPrice]);
 
   const applyPendingPreviousPrice = useCallback(() => {
     if (!Number.isFinite(pendingPreviousPrice)) return;
@@ -276,23 +288,26 @@ const useInvoiceEditorState = ({
     note,
   });
 
-  const previewHtml = useMemo(() => {
+  const buildPreviewHtml = useCallback((paymentsOverride = payments) => {
     if (!settings) return '';
     const baseInvoice = invoice || {};
     return renderInvoiceTemplate({
       template: settings.invoiceTemplateHtml,
       invoice: { ...baseInvoice, items, total: totals.total, date, code: baseInvoice.code || draftCode, customerDebt },
       customer,
-      payments,
+      payments: paymentsOverride,
       products,
       settings,
     });
   }, [settings, invoice, items, totals.total, date, customer, payments, products, draftCode, customerDebt]);
 
-  const handlePrint = async () => {
-    if (!previewHtml) return;
+  const previewHtml = useMemo(() => buildPreviewHtml(), [buildPreviewHtml]);
+
+  const handlePrint = async (paymentsOverride) => {
+    const html = buildPreviewHtml(paymentsOverride);
+    if (!html) return;
     const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
-    await printHtml(previewHtml, { copies: printCopies, autoPageSize: true });
+    await printHtml(html, { copies: printCopies, autoPageSize: true });
   };
 
   const handleCancelTicket = createCancelTicketHandler({
@@ -369,11 +384,7 @@ const useInvoiceEditorState = ({
   });
 
   const handleConfirmAdd = (options) => {
-    const added = confirmAdd(options);
-    if (added && pendingProduct?.id) {
-      setTempProductPrice(pendingProduct.id, pendingPrice);
-    }
-    return added;
+    return confirmAdd(options);
   };
 
   const totalPayment = totals.total + customerDebt;

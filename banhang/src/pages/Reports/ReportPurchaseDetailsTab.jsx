@@ -6,25 +6,95 @@ import ExportActions from '../../components/ExportActions.jsx';
 import { apiRequest } from '../../db/repository.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const buildDetailRow = (group, item, { formatted = false, includeInvoiceInfo = true } = {}) => {
+const normalizePurchaseRow = (row = {}, supplier = {}, items = []) => {
+  const amount = Number(row.amount ?? row.total ?? 0);
+  const paid = Number(row.paid ?? 0);
+  const oldDebt = Number(row.oldDebt ?? 0);
+  const totalPay = Number(row.totalPay ?? amount + oldDebt);
+  const remain = Number(row.remain ?? totalPay - paid);
+  const qtySumFromItems = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+  const normalizedDate = row.date || '';
+
+  return {
+    id: row.id || `${row.code || ''}-${normalizedDate}`,
+    code: row.code || '',
+    date: normalizedDate,
+    staff: row.staff || '',
+    supplierName: row.supplierName || supplier.name || '',
+    phone: row.phone || supplier.phone || '',
+    address: row.address || supplier.address || '',
+    itemsCount: row.itemsCount ?? items.length,
+    qtySum: row.qtySum ?? qtySumFromItems,
+    amount,
+    paid,
+    oldDebt,
+    totalPay,
+    remain,
+    note: row.note || '',
+    items,
+  };
+};
+
+const buildSummary = (rows = []) =>
+  rows.reduce(
+    (acc, row) => ({
+      amount: acc.amount + Number(row.amount || 0),
+      paid: acc.paid + Number(row.paid || 0),
+      remain: acc.remain + Number(row.remain || 0),
+      totalPay: acc.totalPay + Number(row.totalPay || 0),
+    }),
+    {
+      amount: 0,
+      paid: 0,
+      remain: 0,
+      totalPay: 0,
+    }
+  );
+
+const buildDetailRow = (row, item, { formatted = false, includeInvoiceInfo = true } = {}) => {
   const invoiceFields = includeInvoiceInfo
     ? {
-        'Mã phiếu': group.code,
-        Ngày: group.date,
-        'Nhà cung cấp': group.supplierName,
+        'Số HĐ': row.code,
+        Ngày: row.date ? dayjs(row.date).format('DD/MM/YYYY HH:mm') : '',
+        'Nhân viên': row.staff || '',
+        'Nhà cung cấp': row.supplierName || '',
+        'Điện thoại': row.phone || '',
+        'Địa chỉ': row.address || '',
+        MH: row.itemsCount ?? '',
+        'Tổng SL': row.qtySum ?? '',
+        'Tiền hàng': formatted ? formatMoney(row.amount) : row.amount,
+        'Đã thu': formatted ? formatMoney(row.paid) : row.paid,
+        'Nợ cũ': formatted ? formatMoney(row.oldDebt) : row.oldDebt,
+        'Tổng cộng': formatted ? formatMoney(row.totalPay) : row.totalPay,
+        'Còn nợ': formatted ? formatMoney(row.remain) : row.remain,
+        'Ghi chú': row.note || '',
       }
     : {
-        'Mã phiếu': '',
+        'Số HĐ': '',
         Ngày: '',
+        'Nhân viên': '',
         'Nhà cung cấp': '',
+        'Điện thoại': '',
+        'Địa chỉ': '',
+        MH: '',
+        'Tổng SL': '',
+        'Tiền hàng': '',
+        'Đã thu': '',
+        'Nợ cũ': '',
+        'Tổng cộng': '',
+        'Còn nợ': '',
+        'Ghi chú': '',
       };
 
   return {
     ...invoiceFields,
-    'Sản phẩm': item?.name || '',
-    'Số lượng': item?.qty ?? '',
+    'Tên hàng': item?.name || '',
+    ĐVT: item?.unit || '',
+    'Quy cách': item?.spec || '',
+    SL: item?.qty ?? '',
     'Đơn giá': formatted ? (item ? formatMoney(item.unitCost ?? 0) : '') : item?.unitCost ?? '',
     'Thành tiền': formatted ? (item ? formatMoney(item.lineTotal ?? 0) : '') : item?.lineTotal ?? '',
+    'Ghi chú hàng': item?.note || '',
   };
 };
 
@@ -34,6 +104,7 @@ const ReportPurchaseDetailsTab = () => {
     dayjs().endOf('day').toISOString(),
   ]);
   const [supplierId, setSupplierId] = useState('');
+  const [rows, setRows] = useState([]);
   const [detailRows, setDetailRows] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
 
@@ -63,6 +134,7 @@ const ReportPurchaseDetailsTab = () => {
     if (range[0]) params.set('from', range[0]);
     if (range[1]) params.set('to', range[1]);
     const data = await apiRequest(`/purchases-tools/recent?${params.toString()}`);
+    setRows(Array.isArray(data?.rows) ? data.rows : []);
     setDetailRows(Array.isArray(data?.exportRows) ? data.exportRows : []);
   }, [range, supplierId]);
 
@@ -83,49 +155,104 @@ const ReportPurchaseDetailsTab = () => {
     };
   }, [fetchReport]);
 
+  const supplierMap = useMemo(
+    () =>
+      suppliers.reduce((acc, supplier) => {
+        acc[supplier.id] = supplier;
+        return acc;
+      }, {}),
+    [suppliers]
+  );
+
   const supplierOptions = useMemo(
     () => suppliers.map((item) => ({ value: item.id, label: item.name })),
     [suppliers]
   );
+
   const selectedSupplierName = useMemo(
     () => suppliers.find((item) => item.id === supplierId)?.name || '',
     [suppliers, supplierId]
   );
+
   const exportTitle = selectedSupplierName
     ? `Chi tiết nhập hàng - Nhà cung cấp: ${selectedSupplierName}`
     : 'Chi tiết nhập hàng';
 
   const groupedRows = useMemo(() => {
-    const map = new Map();
+    const itemsByCode = {};
     detailRows.forEach((row) => {
       const code = row.Ma_phieu || '';
-      const date = row.Ngay || '';
-      const supplierName = row.Nha_cung_cap || '';
-      const key = `${code}__${date}__${supplierName}`;
-      if (!map.has(key)) {
-        map.set(key, {
-          code,
-          date,
-          supplierName,
-          items: [],
-        });
-      }
-      map.get(key).items.push({
+      if (!code) return;
+      if (!itemsByCode[code]) itemsByCode[code] = [];
+      itemsByCode[code].push({
+        key: `${code}-${itemsByCode[code].length}`,
         name: row.San_pham || '',
+        unit: row.DVT || '',
+        spec: row.Quy_cach || '',
         qty: row.So_luong ?? '',
         unitCost: row.Don_gia ?? '',
         lineTotal: row.Thanh_tien ?? '',
+        note: row.Ghi_chu_hang || '',
       });
     });
-    return Array.from(map.values());
-  }, [detailRows]);
+
+    const normalizedRows = rows.map((row) =>
+      normalizePurchaseRow(row, supplierMap[row.supplierId] || {}, itemsByCode[row.code] || [])
+    );
+
+    const existingCodes = new Set(normalizedRows.map((row) => row.code));
+    const fallbackRowsByCode = detailRows.reduce((acc, row) => {
+      const code = row.Ma_phieu || '';
+      if (!code || existingCodes.has(code)) return acc;
+      if (!acc[code]) {
+        acc[code] = {
+          id: `fallback-${code}`,
+          code,
+          date: '',
+          staff: '',
+          supplierName: row.Nha_cung_cap || '',
+          phone: '',
+          address: '',
+          itemsCount: 0,
+          qtySum: 0,
+          amount: 0,
+          paid: 0,
+          oldDebt: 0,
+          totalPay: 0,
+          remain: 0,
+          note: '',
+          items: [],
+        };
+      }
+      const item = {
+        key: `${code}-${acc[code].items.length}`,
+        name: row.San_pham || '',
+        unit: row.DVT || '',
+        spec: row.Quy_cach || '',
+        qty: row.So_luong ?? '',
+        unitCost: row.Don_gia ?? '',
+        lineTotal: row.Thanh_tien ?? '',
+        note: row.Ghi_chu_hang || '',
+      };
+      acc[code].items.push(item);
+      acc[code].itemsCount = acc[code].items.length;
+      acc[code].qtySum += Number(item.qty || 0);
+      acc[code].amount += Number(item.lineTotal || 0);
+      acc[code].totalPay = acc[code].amount;
+      return acc;
+    }, {});
+
+    return [...normalizedRows, ...Object.values(fallbackRowsByCode)];
+  }, [rows, detailRows, supplierMap]);
+
+  const summary = useMemo(() => buildSummary(groupedRows), [groupedRows]);
 
   const exportRows = useMemo(
     () =>
-      groupedRows.flatMap((group) => {
-        const items = group.items.length ? group.items : [null];
+      groupedRows.flatMap((row) => {
+        const items = row.items?.length ? row.items : [null];
         return items.map((item, index) =>
-          buildDetailRow(group, item, { includeInvoiceInfo: index === 0 })
+          buildDetailRow(row, item, { includeInvoiceInfo: index === 0 })
         );
       }),
     [groupedRows]
@@ -133,10 +260,10 @@ const ReportPurchaseDetailsTab = () => {
 
   const pdfRows = useMemo(
     () =>
-      groupedRows.flatMap((group) => {
-        const items = group.items.length ? group.items : [null];
+      groupedRows.flatMap((row) => {
+        const items = row.items?.length ? row.items : [null];
         return items.map((item, index) =>
-          buildDetailRow(group, item, { formatted: true, includeInvoiceInfo: index === 0 })
+          buildDetailRow(row, item, { formatted: true, includeInvoiceInfo: index === 0 })
         );
       }),
     [groupedRows]
@@ -172,24 +299,87 @@ const ReportPurchaseDetailsTab = () => {
             title={exportTitle}
           />
         </div>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            marginLeft: 'auto',
+            justifyContent: 'flex-end',
+            gap: 8,
+          }}
+        >
+          <div style={{ display: 'flex', gap: 40 }}>
+            <span className="text-gray-600">
+              Tiền hàng:{' '}
+              <strong style={{ color: 'blue' }} className="text-lg font-bold">
+                {formatMoney(summary.amount)}
+              </strong>
+            </span>
+
+            <span className="text-gray-600">
+              Đã thu:{' '}
+              <strong style={{ color: 'green' }} className="text-lg font-bold">
+                {formatMoney(summary.paid)}
+              </strong>
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: 40 }}>
+            <span className="text-gray-600">
+              Còn nợ:{' '}
+              <strong style={{ color: 'red' }} className="text-lg font-bold">
+                {formatMoney(summary.remain)}
+              </strong>
+            </span>
+
+            <span className="text-gray-600">
+              Tổng cộng:{' '}
+              <strong style={{ color: '#0f766e' }} className="text-lg font-bold">
+                {formatMoney(summary.totalPay)}
+              </strong>
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="pos-table">
         <table>
           <thead>
             <tr>
-              <th>Mã phiếu</th>
+              <th colSpan={14} style={{ textAlign: 'center' }}>
+                Thông tin phiếu nhập
+              </th>
+              <th colSpan={7} style={{ textAlign: 'center' }}>
+                Chi tiết hàng hóa
+              </th>
+            </tr>
+            <tr>
+              <th>Số HĐ</th>
               <th>Ngày</th>
+              <th>Nhân viên</th>
               <th>Nhà cung cấp</th>
-              <th>Sản phẩm</th>
-              <th>Số lượng</th>
+              <th>Điện thoại</th>
+              <th>Địa chỉ</th>
+              <th>MH</th>
+              <th>Tổng SL</th>
+              <th>Tiền hàng</th>
+              <th>Đã thu</th>
+              <th>Nợ cũ</th>
+              <th>Tổng cộng</th>
+              <th>Còn nợ</th>
+              <th>Ghi chú</th>
+              <th>Tên hàng</th>
+              <th>ĐVT</th>
+              <th>Quy cách</th>
+              <th>SL</th>
               <th>Đơn giá</th>
               <th>Thành tiền</th>
+              <th>Ghi chú hàng</th>
             </tr>
           </thead>
           <tbody>
-            {groupedRows.map((group) => {
-              const items = group.items.length ? group.items : [null];
+            {groupedRows.map((row) => {
+              const items = row.items?.length ? row.items : [null];
               const rowSpan = items.length;
               const invoiceCellProps = {
                 rowSpan,
@@ -197,22 +387,58 @@ const ReportPurchaseDetailsTab = () => {
               };
 
               return (
-                <Fragment key={`${group.code}-${group.date}-${group.supplierName}`}>
+                <Fragment key={row.id}>
                   {items.map((item, index) => {
                     const isFirst = index === 0;
                     return (
-                      <tr key={`${group.code}-${item?.name || 'empty'}-${index}`}>
+                      <tr key={item?.key ?? `${row.id}-empty-${index}`}>
                         {isFirst && (
                           <>
-                            <td {...invoiceCellProps}>{group.code}</td>
-                            <td {...invoiceCellProps}>{group.date}</td>
-                            <td {...invoiceCellProps}>{group.supplierName}</td>
+                            <td {...invoiceCellProps}>{row.code}</td>
+                            <td {...invoiceCellProps}>
+                              {row.date ? dayjs(row.date).format('DD/MM/YY HH:mm') : ''}
+                            </td>
+                            <td {...invoiceCellProps}>{row.staff}</td>
+                            <td {...invoiceCellProps}>{row.supplierName}</td>
+                            <td {...invoiceCellProps}>{row.phone}</td>
+                            <td {...invoiceCellProps}>{row.address}</td>
+                            <td {...invoiceCellProps}>{row.itemsCount}</td>
+                            <td {...invoiceCellProps}>{row.qtySum}</td>
+                            <td {...invoiceCellProps}>{formatMoney(row.amount)}</td>
+                            <td
+                              {...invoiceCellProps}
+                              className={row.paid > 0 ? 'text-success' : ''}
+                            >
+                              {formatMoney(row.paid)}
+                            </td>
+                            <td {...invoiceCellProps} className="text-danger">
+                              {formatMoney(row.oldDebt)}
+                            </td>
+                            <td {...invoiceCellProps}>{formatMoney(row.totalPay)}</td>
+                            <td
+                              {...invoiceCellProps}
+                              className={row.remain > 0 ? 'text-danger' : 'text-success'}
+                            >
+                              {formatMoney(row.remain)}
+                            </td>
+                            <td {...invoiceCellProps}>{row.note}</td>
                           </>
                         )}
-                        <td>{item?.name || ''}</td>
-                        <td>{item?.qty ?? ''}</td>
-                        <td>{item ? formatMoney(item.unitCost ?? 0) : ''}</td>
-                        <td>{item ? formatMoney(item.lineTotal ?? 0) : ''}</td>
+                        {item ? (
+                          <>
+                            <td>{item.name}</td>
+                            <td>{item.unit}</td>
+                            <td>{item.spec}</td>
+                            <td>{item.qty}</td>
+                            <td>{formatMoney(item.unitCost)}</td>
+                            <td>{formatMoney(item.lineTotal)}</td>
+                            <td>{item.note}</td>
+                          </>
+                        ) : (
+                          <td colSpan={7} style={{ textAlign: 'center', color: '#7a8f8d' }}>
+                            Chưa có hàng hóa.
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -221,7 +447,7 @@ const ReportPurchaseDetailsTab = () => {
             })}
             {!groupedRows.length && (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center' }}>
+                <td colSpan={21} style={{ textAlign: 'center' }}>
                   Chưa có dữ liệu.
                 </td>
               </tr>

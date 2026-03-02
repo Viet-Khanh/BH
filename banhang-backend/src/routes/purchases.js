@@ -22,6 +22,27 @@ const parseRange = (query) => {
   return { from, to };
 };
 
+const buildPaymentsByPurchase = (payments = []) =>
+  payments.reduce((acc, payment) => {
+    if (!payment.purchaseId) return acc;
+    if (payment.paymentType === 'supplier_debt_payment') return acc;
+    acc[payment.purchaseId] = (acc[payment.purchaseId] || 0) + Number(payment.amount || 0);
+    return acc;
+  }, {});
+
+const buildOldDebtByPurchase = (purchases = [], paymentsByPurchase = {}) => {
+  const sorted = [...purchases].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const supplierDebt = {};
+  const map = {};
+  sorted.forEach((purchase) => {
+    const paid = paymentsByPurchase[purchase.id] || 0;
+    const total = Number(purchase.total || 0);
+    map[purchase.id] = supplierDebt[purchase.supplierId] || 0;
+    supplierDebt[purchase.supplierId] = (supplierDebt[purchase.supplierId] || 0) + total - paid;
+  });
+  return map;
+};
+
 
 const buildByIdMap = (items = []) =>
   items.reduce((acc, item) => {
@@ -106,18 +127,28 @@ router.get(
     const rawLimit = Number(req.query.limit || 200);
     const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 1000) : 200;
 
-    const filter = { isDeleted: { $ne: true } };
-    if (supplierId) filter.supplierId = supplierId;
+    const baseFilter = { isDeleted: { $ne: true } };
+    if (supplierId) baseFilter.supplierId = supplierId;
+    const recentFilter = { ...baseFilter };
     if (from || to) {
-      filter.date = {};
-      if (from) filter.date.$gte = from.toISOString();
-      if (to) filter.date.$lte = to.toISOString();
+      recentFilter.date = {};
+      if (from) recentFilter.date.$gte = from.toISOString();
+      if (to) recentFilter.date.$lte = to.toISOString();
     }
 
-    const purchases = await Purchase.find(filter)
-      .sort({ date: -1 })
-      .limit(limit)
-      .lean();
+    const [purchases, purchasesForDebt] = await Promise.all([
+      Purchase.find(recentFilter).sort({ date: -1 }).limit(limit).lean(),
+      Purchase.find(baseFilter).lean(),
+    ]);
+    const purchaseIdsForDebt = purchasesForDebt.map((purchase) => purchase.id);
+    const debtPayments = purchaseIdsForDebt.length
+      ? await Payment.find({
+          purchaseId: { $in: purchaseIdsForDebt },
+          isDeleted: { $ne: true },
+        }).lean()
+      : [];
+    const paymentsByPurchase = buildPaymentsByPurchase(debtPayments);
+    const oldDebtByPurchase = buildOldDebtByPurchase(purchasesForDebt, paymentsByPurchase);
 
     const supplierIds = new Set(purchases.map((purchase) => purchase.supplierId).filter(Boolean));
     const suppliers = supplierIds.size
@@ -145,9 +176,12 @@ router.get(
           Ngay: dayjs(purchase.date).format('DD/MM/YYYY'),
           Nha_cung_cap: supplier?.name || '',
           San_pham: product.name || '',
+          DVT: product.unit || '',
+          Quy_cach: product.spec || '',
           So_luong: item.qty,
           Don_gia: item.unitCost,
           Thanh_tien: item.lineTotal,
+          Ghi_chu_hang: item.lineNote || '',
         };
       });
     });
@@ -157,7 +191,21 @@ router.get(
       code: purchase.code,
       date: purchase.date,
       supplierId: purchase.supplierId,
-      total: purchase.total,
+      staff: purchase.staff || '',
+      itemsCount: (purchase.items || []).length,
+      qtySum: (purchase.items || []).reduce((sum, item) => sum + Number(item.qty || 0), 0),
+      amount: Number(purchase.total || 0),
+      total: Number(purchase.total || 0),
+      paid: Number(paymentsByPurchase[purchase.id] || 0),
+      oldDebt: Number(oldDebtByPurchase[purchase.id] || 0),
+      totalPay: Number(purchase.total || 0) + Number(oldDebtByPurchase[purchase.id] || 0),
+      remain:
+        Number(purchase.total || 0) +
+        Number(oldDebtByPurchase[purchase.id] || 0) -
+        Number(paymentsByPurchase[purchase.id] || 0),
+      supplierName: supplierMap[purchase.supplierId]?.name || '',
+      phone: supplierMap[purchase.supplierId]?.phone || '',
+      address: supplierMap[purchase.supplierId]?.address || '',
       note: purchase.note,
     }));
 

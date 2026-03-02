@@ -139,6 +139,7 @@ export const buildInvoiceViewProps = ({
   const productModalProps = {
     open: searchOpen,
     onClose: () => setSearchOpen(false),
+    autoFocusSearchOnOpen: true,
     products: activeProducts,
     onSearchProducts,
     pendingProduct,

@@ -22,39 +22,50 @@ const InvoiceProductModal = ({
   onChangeWidth,
   onApplyPreviousPrice,
   onConfirmAdd,
+  autoFocusSearchOnOpen = true,
   showDimensions = true,
 }) => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const searchInputRef = useRef(null);
   const qtyInputRef = useRef(null);
   const lastProductIdRef = useRef(null);
+  const isFirstOpenCycleRef = useRef(true);
 
-  const focusSearchInput = useCallback(() => {
+  const focusSearchInput = useCallback(({ selectAll = false } = {}) => {
     requestAnimationFrame(() => {
-      searchInputRef.current?.focus();
+      if (!searchInputRef.current) return;
+      if (selectAll) {
+        searchInputRef.current.focus({ cursor: 'all' });
+        searchInputRef.current.select?.();
+        return;
+      }
+      searchInputRef.current.focus();
     });
   }, []);
 
   const handleAdd = useCallback(() => {
     const added = onConfirmAdd({ closeAfter: false });
     if (!added) return;
-    setSearchKeyword('');
-    focusSearchInput();
+    focusSearchInput({ selectAll: true });
   }, [onConfirmAdd, focusSearchInput]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !autoFocusSearchOnOpen) return;
     focusSearchInput();
-  }, [open, focusSearchInput]);
+  }, [open, focusSearchInput, autoFocusSearchOnOpen]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      isFirstOpenCycleRef.current = true;
+      return;
+    }
     const nextId = pendingProduct?.id || null;
-    if (nextId && nextId !== lastProductIdRef.current) {
+    if (nextId && nextId !== lastProductIdRef.current && !isFirstOpenCycleRef.current) {
       requestAnimationFrame(() => {
         qtyInputRef.current?.focus();
       });
     }
+    isFirstOpenCycleRef.current = false;
     lastProductIdRef.current = nextId;
   }, [open, pendingProduct]);
 
@@ -83,15 +94,20 @@ const InvoiceProductModal = ({
     hasPreviousPrice && Number(pendingPrice || 0) === Number(previousPrice || 0);
 
   return (
-  <Modal
-    title="Nhập hàng hóa"
-    open={open}
-    onCancel={onClose}
-    footer={null}
-    width={1100}
-  >
+    <Modal
+      title="Nhập hàng hóa"
+      open={open}
+      onCancel={onClose}
+      afterOpenChange={(nextOpen) => {
+        if (nextOpen && autoFocusSearchOnOpen) {
+          focusSearchInput();
+        }
+      }}
+      footer={null}
+      width={1100}
+    >
       <div style={{ display: 'flex', gap: 16 }}>
-        <div style={{flex: 3}}>
+        <div style={{ flex: 3 }}>
           <ProductPicker
             products={products}
             value={pendingProduct?.id || null}
@@ -101,7 +117,7 @@ const InvoiceProductModal = ({
             inputRef={searchInputRef}
           />
         </div>
-        <div style={{flex: 2}}>
+        <div style={{ flex: 2 }}>
           <div className="section-title">Thông tin hàng</div>
           <Space direction="vertical" style={{ width: '100%' }}>
             <div>

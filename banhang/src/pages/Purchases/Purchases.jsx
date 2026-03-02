@@ -11,6 +11,7 @@ import InvoicePaymentsSection from '../../components/invoice/InvoicePaymentsSect
 import InvoiceItemsTable from '../../components/invoice/InvoiceItemsTable.jsx';
 import InvoiceSearchBar from '../../components/invoice/InvoiceSearchBar.jsx';
 import InvoiceProductModal from '../../components/invoice/InvoiceProductModal.jsx';
+import InvoicePreviewModal from '../../components/invoice/InvoicePreviewModal.jsx';
 import PurchaseRecentModal from './PurchaseRecentModal.jsx';
 import PurchaseDetailModal from './PurchaseDetailModal.jsx';
 import usePurchaseItems from './usePurchaseItems.js';
@@ -20,6 +21,8 @@ import { generateCode } from '../../utils/codeGenerator.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 import { addItem, apiRequest, deleteItem, updateItem as updateRecord } from '../../db/repository.js';
 import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
+import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
+import { useSettingsStore } from '../../store/settingsStore.js';
 const buildPurchaseItems = (purchase) =>
   (purchase?.items || []).map((item) => ({
     ...item,
@@ -53,6 +56,7 @@ const Purchases = () => {
   const location = useLocation();
   const editPurchaseId = location.state?.editPurchaseId;
   const { items: suppliers, load: loadSuppliers } = useSupplierStore();
+  const { settings, load: loadSettings } = useSettingsStore();
   const [products, setProducts] = useState([]);
   const [recentPurchases, setRecentPurchases] = useState([]);
   const [exportRows, setExportRows] = useState([]);
@@ -82,13 +86,14 @@ const Purchases = () => {
   const [supplierDebtPaymentNote, setSupplierDebtPaymentNote] = useState('');
   const [supplierDebtPaymentDebt, setSupplierDebtPaymentDebt] = useState(0);
   const [savingSupplierDebtPayment, setSavingSupplierDebtPayment] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     const bootstrap = async () => {
-      await loadSuppliers();
+      await Promise.all([loadSuppliers(), loadSettings()]);
     };
     bootstrap();
-  }, [loadSuppliers]);
+  }, [loadSuppliers, loadSettings]);
 
   const handleSearchProducts = useCallback(async (keyword = '') => {
     const params = new URLSearchParams();
@@ -510,16 +515,51 @@ const Purchases = () => {
     }
   };
 
+  const previewHtml = useMemo(() => {
+    if (!settings) return '';
+    const purchaseForPreview = {
+      code: draftCode,
+      date,
+      note,
+      total: totals,
+      customerDebt: currentSupplierDebt,
+      items: (items || []).map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitCost || 0),
+        lineNote: item.lineNote || '',
+      })),
+    };
+    return renderInvoiceTemplate({
+      template: settings.invoiceTemplateHtml,
+      invoice: purchaseForPreview,
+      customer: supplier || { name: 'Nhà cung cấp' },
+      payments: currentPurchasePayments,
+      products,
+      settings,
+    });
+  }, [
+    settings,
+    draftCode,
+    date,
+    note,
+    totals,
+    currentSupplierDebt,
+    items,
+    supplier,
+    currentPurchasePayments,
+    products,
+  ]);
+
   return (
     <div className="page-card pos-shell">
       <InvoiceHeader
         onCancel={() => navigate('/')}
+        onPreview={() => setPreviewOpen(true)}
         onOpenPayment={() => setPaymentModalOpen(true)}
         onOpenDebtReceipt={handleOpenSupplierDebtPayment}
         showDebtReceipt
         debtReceiptLabel="Trả nợ NCC"
         title="NHẬP HÀNG"
-        showPreview={false}
         extraActions={(
           <Button size="large" onClick={() => setRecentOpen(true)}>
             Phiếu gần đây
@@ -642,6 +682,11 @@ const Purchases = () => {
         onPaymentNoteChange={setPaymentNote}
         onCheckoutPrint={handleCheckout}
         onCheckout={handleCheckout}
+      />
+      <InvoicePreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        html={previewHtml}
       />
       <Modal
         title="Phiếu trả nợ nhà cung cấp"

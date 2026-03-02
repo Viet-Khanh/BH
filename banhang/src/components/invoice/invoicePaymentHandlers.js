@@ -23,16 +23,21 @@ export const createCheckoutHandler = ({
   const existingPaid = isEdit ? paidTotal : 0;
   const savedInvoice = await persistInvoice();
   if (!savedInvoice) return;
+  let nextPaymentsForPrint = Array.isArray(payments) ? [...payments] : [];
+
   const addPayment = async (amount) => {
-    await onAddPayment({
+    const payload = {
       id: uuid(),
       invoiceId: savedInvoice.id,
       date: new Date().toISOString(),
       method: paymentMethod,
       amount,
       note: paymentNote,
-    });
+    };
+    await onAddPayment(payload);
+    nextPaymentsForPrint = [...nextPaymentsForPrint, payload];
   };
+
   if (isEdit) {
     if (enteredPaid > existingPaid) {
       const addAmount = enteredPaid - existingPaid;
@@ -48,16 +53,28 @@ export const createCheckoutHandler = ({
         if (newLastAmount === 0) {
           if (onRemovePayment) {
             await onRemovePayment(lastPayment.id);
+            nextPaymentsForPrint = nextPaymentsForPrint.filter(
+              (payment) => payment.id !== lastPayment.id
+            );
           } else {
             message.error('Không thể giảm số tiền đã thu.');
             return;
           }
         } else {
+          const updatedPayment = {
+            ...lastPayment,
+            amount: newLastAmount,
+            method: paymentMethod,
+            note: paymentNote,
+          };
           await onUpdatePayment(lastPayment.id, {
             amount: newLastAmount,
             method: paymentMethod,
             note: paymentNote,
           });
+          nextPaymentsForPrint = nextPaymentsForPrint.map((payment) =>
+            payment.id === lastPayment.id ? updatedPayment : payment
+          );
         }
       }
     }
@@ -69,7 +86,7 @@ export const createCheckoutHandler = ({
   setPaymentMethod('cash');
   setPaymentModalOpen(false);
   if (shouldPrint) {
-    handlePrint();
+    await handlePrint(nextPaymentsForPrint);
   }
   handleNewTicket();
 };

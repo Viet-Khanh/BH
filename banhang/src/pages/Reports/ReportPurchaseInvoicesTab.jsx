@@ -13,6 +13,30 @@ import { printHtml } from '../../utils/printUtils.js';
 import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
 import { useSettingsStore } from '../../store/settingsStore.js';
 
+const buildExportRow = (row, { formatted = false } = {}) => {
+  const amount = Number(row.amount ?? row.total ?? 0);
+  const paid = Number(row.paid ?? 0);
+  const oldDebt = Number(row.oldDebt ?? 0);
+  const totalPay = Number(row.totalPay ?? amount + oldDebt);
+  const remain = Number(row.remain ?? totalPay - paid);
+  return {
+    'Số HĐ': row.code,
+    Ngày: row.date ? dayjs(row.date).format('DD/MM/YYYY HH:mm') : '',
+    'Nhân viên': row.staff || '',
+    MH: row.itemsCount ?? '',
+    SL: row.qtySum ?? '',
+    'Tiền hàng': formatted ? formatMoney(amount) : amount,
+    'Đã thu': formatted ? formatMoney(paid) : paid,
+    'Nợ cũ': formatted ? formatMoney(oldDebt) : oldDebt,
+    'Tổng cộng': formatted ? formatMoney(totalPay) : totalPay,
+    'Còn nợ': formatted ? formatMoney(remain) : remain,
+    'Nhà cung cấp': row.supplierName || '',
+    'Điện thoại': row.phone || '',
+    'Địa chỉ': row.address || '',
+    'Ghi chú': row.note || '',
+  };
+};
+
 const ReportPurchaseInvoicesTab = () => {
   const navigate = useNavigate();
   const { settings, load: loadSettings } = useSettingsStore();
@@ -180,15 +204,8 @@ const ReportPurchaseInvoicesTab = () => {
   }, [selectedPurchaseForPrint, selectedSupplier, selectedPayments, selectedProducts, settings]);
 
   const exportRows = useMemo(
-    () =>
-      rows.map((row) => ({
-        Ma_phieu: row.code,
-        Ngay: row.date ? dayjs(row.date).format('DD/MM/YYYY') : '',
-        Nha_cung_cap: supplierMap[row.supplierId]?.name || '',
-        Tong_tien: row.total,
-        Ghi_chu: row.note,
-      })),
-    [rows, supplierMap]
+    () => rows.map((row) => buildExportRow(row)),
+    [rows]
   );
 
   const handleDelete = () => {
@@ -280,30 +297,55 @@ const ReportPurchaseInvoicesTab = () => {
         <table>
           <thead>
             <tr>
-              <th>Mã phiếu</th>
+              <th>Số HĐ</th>
               <th>Ngày</th>
+              <th>Nhân viên</th>
+              <th>MH</th>
+              <th>SL</th>
+              <th>Tiền hàng</th>
+              <th>Đã thu</th>
+              <th>Nợ cũ</th>
+              <th>Tổng cộng</th>
+              <th>Còn nợ</th>
               <th>Nhà cung cấp</th>
-              <th>Tổng tiền</th>
+              <th>Điện thoại</th>
+              <th>Địa chỉ</th>
               <th>Ghi chú</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                onClick={() => setSelectedPurchaseId(row.id)}
-                style={{ cursor: 'pointer' }}
-              >
-                <td>{row.code}</td>
-                <td>{row.date ? dayjs(row.date).format('DD/MM/YYYY') : ''}</td>
-                <td>{supplierMap[row.supplierId]?.name || ''}</td>
-                <td>{formatMoney(row.total)}</td>
-                <td>{row.note}</td>
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const amount = Number(row.amount ?? row.total ?? 0);
+              const paid = Number(row.paid ?? 0);
+              const oldDebt = Number(row.oldDebt ?? 0);
+              const totalPay = Number(row.totalPay ?? amount + oldDebt);
+              const remain = Number(row.remain ?? totalPay - paid);
+              return (
+                <tr
+                  key={row.id}
+                  onClick={() => setSelectedPurchaseId(row.id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td>{row.code}</td>
+                  <td>{row.date ? dayjs(row.date).format('DD/MM/YY HH:mm') : ''}</td>
+                  <td>{row.staff || ''}</td>
+                  <td>{row.itemsCount ?? ''}</td>
+                  <td>{row.qtySum ?? ''}</td>
+                  <td>{formatMoney(amount)}</td>
+                  <td className={paid > 0 ? 'text-success' : ''}>{formatMoney(paid)}</td>
+                  <td className="text-danger">{formatMoney(oldDebt)}</td>
+                  <td>{formatMoney(totalPay)}</td>
+                  <td className={remain > 0 ? 'text-danger' : 'text-success'}>{formatMoney(remain)}</td>
+                  <td>{row.supplierName || supplierMap[row.supplierId]?.name || ''}</td>
+                  <td>{row.phone || ''}</td>
+                  <td>{row.address || ''}</td>
+                  <td>{row.note}</td>
+                </tr>
+              );
+            })}
             {!rows.length && (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center' }}>
+                <td colSpan={14} style={{ textAlign: 'center' }}>
                   Chưa có hóa đơn nhập hàng.
                 </td>
               </tr>

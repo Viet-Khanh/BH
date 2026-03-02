@@ -18,6 +18,8 @@ const Reports = () => {
     return [start.toISOString(), end.toISOString()];
   });
   const tabFallback = <div style={{ padding: 16 }}>Đang tải...</div>;
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab");
 
   return (
     <div className="page-card">
@@ -25,8 +27,9 @@ const Reports = () => {
       <div className="action-row">
         <Button size="large" onClick={() => navigate('/')}>Quay lại</Button>
       </div>
-
+      
       <Tabs
+        {...(tab ? { defaultActiveKey: tab } : {})}
         type="card"
         className="page-tabs"
         tabPosition="top"

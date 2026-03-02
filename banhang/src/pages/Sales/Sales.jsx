@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { useCustomerStore } from '../../store/customerStore.js';
+import { useInvoiceStore } from '../../store/invoiceStore.js';
 import { useSettingsStore } from '../../store/settingsStore.js';
 import InvoiceEditor from '../../components/InvoiceEditor.jsx';
 import { formatMoney } from '../../utils/moneyFormat.js';
@@ -35,7 +36,9 @@ const Sales = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const editId = location.state?.editInvoiceId;
+  const returnPath = location.state?.returnPath;
   const { items: customers, load: loadCustomers, ensureDefaultCustomer } = useCustomerStore();
+  const { items: invoices, load: loadInvoices } = useInvoiceStore();
   const { settings, load: loadSettings } = useSettingsStore();
 
   const [editing, setEditing] = useState(null);
@@ -58,11 +61,11 @@ const Sales = () => {
 
   useEffect(() => {
     const bootstrap = async () => {
-      await Promise.all([loadCustomers(), loadSettings()]);
+      await Promise.all([loadCustomers(), loadSettings(), loadInvoices()]);
       await ensureDefaultCustomer();
     };
     bootstrap();
-  }, [loadCustomers, loadSettings, ensureDefaultCustomer]);
+  }, [loadCustomers, loadSettings, loadInvoices, ensureDefaultCustomer]);
 
   useEffect(() => {
     editingRef.current = editing;
@@ -147,6 +150,7 @@ const Sales = () => {
       const next = saved || nextInvoice;
       setEditing(next);
       editingRef.current = next;
+      await loadInvoices();
       message.success('Đã cập nhật hóa đơn.');
       return next;
     }
@@ -163,6 +167,7 @@ const Sales = () => {
     setEditing(next);
     editingRef.current = next;
     setInvoicePayments([]);
+    await loadInvoices();
     message.success('Đã tạo hóa đơn.');
     return next;
   };
@@ -296,11 +301,20 @@ const Sales = () => {
     }
   };
 
+  const handleCancel = useCallback(() => {
+    if (returnPath) {
+      navigate(`${returnPath}?tab=sales`);
+      return;
+    }
+    navigate('/');
+  }, [navigate, returnPath]);
+
   return (
     <div>
       <InvoiceEditor
         invoice={editing}
         customers={customers}
+        invoices={invoices}
         products={products}
         payments={editing ? invoicePayments : []}
         settings={settings}
@@ -308,7 +322,7 @@ const Sales = () => {
         onSearchProducts={handleSearchProducts}
         onCustomerChange={handleCustomerChange}
         onSave={handleSaveInvoice}
-        onCancel={() => navigate('/')}
+        onCancel={handleCancel}
         onOpenDebtReceipt={handleOpenDebtReceipt}
         onAddPayment={handleAddPayment}
         onUpdatePayment={handleUpdatePayment}

@@ -223,7 +223,12 @@ const ReportSalesInvoicesTab = () => {
   const handleEdit = () => {
     if (!selectedInvoice) return;
     setSelectedInvoiceId(null);
-    navigate("/sales", { state: { editInvoiceId: selectedInvoice.id } });
+    navigate("/sales", {
+      state: {
+        editInvoiceId: selectedInvoice.id,
+        returnPath: "/reports",
+      },
+    });
   };
 
   return (
