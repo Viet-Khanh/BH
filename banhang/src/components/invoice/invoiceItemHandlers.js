@@ -20,10 +20,6 @@ export const createConfirmAddHandler = ({
   if (!pendingProduct) return false;
   const qty = Number(pendingQty || 0);
   const unitPrice = Number(pendingPrice || 0);
-  if (qty === 0) {
-    message.error('Số lượng khác 0.');
-    return false;
-  }
   if (unitPrice < 0) {
     message.error('Đơn giá >= 0.');
     return false;

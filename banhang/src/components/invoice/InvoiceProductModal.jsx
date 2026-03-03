@@ -115,6 +115,7 @@ const InvoiceProductModal = ({
             keyword={searchKeyword}
             onKeywordChange={setSearchKeyword}
             inputRef={searchInputRef}
+            showStock
           />
         </div>
         <div style={{ flex: 2 }}>
@@ -123,6 +124,7 @@ const InvoiceProductModal = ({
             <div>
               <strong>{pendingProduct?.name || 'Chưa chọn sản phẩm'}</strong>
               <div>{pendingProduct?.code || ''}</div>
+              <div>Tồn kho: {Number(pendingProduct?.stock ?? pendingProduct?.openingStock ?? 0)}</div>
             </div>
             <div>
               <div>Số lượng</div>

@@ -16,11 +16,9 @@ export const buildInvoicePayload = ({
     message.error('Vui lòng thêm hàng hóa.');
     return null;
   }
-  const invalid = items.find(
-    (item) => Number(item.qty || 0) === 0 || Number(item.unitPrice || 0) < 0
-  );
+  const invalid = items.find((item) => Number(item.unitPrice || 0) < 0);
   if (invalid) {
-    message.error('Số lượng khác 0 và đơn giá >= 0.');
+    message.error('Đơn giá >= 0.');
     return null;
   }
 

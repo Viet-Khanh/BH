@@ -9,6 +9,7 @@ const ProductPicker = ({
   keyword: keywordProp,
   onKeywordChange,
   inputRef,
+  showStock = false,
 }) => {
   const [keyword, setKeyword] = useState('');
   const searchValue = keywordProp !== undefined ? keywordProp : keyword;
@@ -32,6 +33,12 @@ const ProductPicker = ({
     if (keywordProp === undefined) setKeyword(next);
   };
 
+  const formatStock = (item) => {
+    const rawStock = Number(item?.stock ?? item?.openingStock ?? 0);
+    if (!Number.isFinite(rawStock)) return '0';
+    return rawStock.toLocaleString('vi-VN');
+  };
+
   return (
     <div className="product-picker">
       <Input
@@ -48,9 +55,17 @@ const ProductPicker = ({
             type="button"
             className={`product-option ${value === item.id ? 'active' : ''}`}
             onClick={() => onChange(item.id)}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
           >
-            <div><strong>{item.name}</strong></div>
-            <div>{item.code || '---'} · {item.group} · {item.unit}</div>
+            <div>
+              <div><strong>{item.name}</strong></div>
+              <div>
+                {item.code || '---'} · {item.group} · {item.unit}
+              </div>
+            </div>
+            <div>
+              {showStock ? `Tồn: ${formatStock(item)}` : ''}
+            </div>
           </button>
         ))}
         {!filtered.length && <div>Không tìm thấy sản phẩm.</div>}
