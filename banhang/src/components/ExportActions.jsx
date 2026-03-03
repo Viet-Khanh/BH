@@ -119,8 +119,8 @@ const ExportActions = ({
   };
 
   return (
-    <div className="export-actions" style={{ display: 'flex', alignItems: 'flex-end', gap: 16, justifyContent: 'space-between' ,width: '100%'}}>
-      <div>
+    <div className="export-actions" style={{ display: 'flex', alignItems: 'flex-end', gap: 16, justifyContent: 'space-between'}}>
+      <div style={{ display: 'flex', gap: 8 }}>
         <Button size="large" onClick={handlePrint}>
           In
         </Button>
