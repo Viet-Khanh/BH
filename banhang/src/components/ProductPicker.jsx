@@ -34,7 +34,7 @@ const ProductPicker = ({
   };
 
   const formatStock = (item) => {
-    const rawStock = Number(item?.stock ?? item?.openingStock ?? 0);
+    const rawStock = Number(item?.stock ?? 0);
     if (!Number.isFinite(rawStock)) return '0';
     return rawStock.toLocaleString('vi-VN');
   };

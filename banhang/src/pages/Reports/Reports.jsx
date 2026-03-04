@@ -1,7 +1,7 @@
 import { Button, Tabs } from 'antd';
 import dayjs from 'dayjs';
 import { lazy, Suspense, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const ReportDebtTab = lazy(() => import('./ReportDebtTab.jsx'));
 const ReportProfitTab = lazy(() => import('./ReportProfitTab.jsx'));
@@ -10,16 +10,33 @@ const ReportCashTab = lazy(() => import('./ReportCashTab.jsx'));
 const ReportSalesInvoicesTab = lazy(() => import('./ReportSalesInvoicesTab.jsx'));
 const ReportSalesDetailsTab = lazy(() => import('./ReportSalesDetailsTab.jsx'));
 
+const TAB_KEYS = new Set(['debt', 'sales', 'sales-detail', 'stock-out', 'profit']);
+
 const Reports = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [profitRange, setProfitRange] = useState(() => {
     const end = dayjs().endOf('day');
     const start = end.subtract(30, 'day').startOf('day');
     return [start.toISOString(), end.toISOString()];
   });
   const tabFallback = <div style={{ padding: 16 }}>Đang tải...</div>;
-  const params = new URLSearchParams(window.location.search);
-  const tab = params.get("tab");
+  const params = new URLSearchParams(location.search);
+  const rawTab = params.get('tab') || 'debt';
+  const activeTab = TAB_KEYS.has(rawTab) ? rawTab : 'debt';
+
+  const handleTabChange = (nextTab) => {
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.set('tab', nextTab);
+    const nextSearch = nextParams.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : '',
+      },
+      { replace: true }
+    );
+  };
 
   return (
     <div className="page-card">
@@ -29,7 +46,8 @@ const Reports = () => {
       </div>
       
       <Tabs
-        {...(tab ? { defaultActiveKey: tab } : {})}
+        activeKey={activeTab}
+        onChange={handleTabChange}
         type="card"
         className="page-tabs"
         tabPosition="top"

@@ -36,6 +36,7 @@ const Sales = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const editId = location.state?.editInvoiceId;
+  const returnTo = location.state?.returnTo;
   const returnPath = location.state?.returnPath;
   const { items: customers, load: loadCustomers, ensureDefaultCustomer } = useCustomerStore();
   const { items: invoices, load: loadInvoices } = useInvoiceStore();
@@ -302,12 +303,16 @@ const Sales = () => {
   };
 
   const handleCancel = useCallback(() => {
+    if (returnTo) {
+      navigate(returnTo);
+      return;
+    }
     if (returnPath) {
       navigate(`${returnPath}?tab=sales`);
       return;
     }
     navigate('/');
-  }, [navigate, returnPath]);
+  }, [navigate, returnPath, returnTo]);
 
   return (
     <div>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal, Pagination, Select, message } from "antd";
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import DateRangeFilter from "../../components/DateRangeFilter.jsx";
 import ExportActions from "../../components/ExportActions.jsx";
@@ -13,10 +13,34 @@ import { renderInvoiceTemplate } from "../../utils/renderTemplate.js";
 import ReportSalesInvoiceModal from "./ReportSalesInvoiceModal.jsx";
 import { useSettingsStore } from "../../store/settingsStore.js";
 
-const isRetailCustomer = (name) => {
-  const normalized = String(name || "").trim().toLowerCase();
-  return normalized === "khách lẻ" || normalized === "khach le";
+const buildDefaultRange = () => [dayjs().startOf("day").toISOString(), dayjs().endOf("day").toISOString()];
+
+const parseDateParam = (value, fallback) => {
+  if (value === null) return fallback;
+  if (value === "") return null;
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.toISOString() : fallback;
 };
+
+const parsePositiveInt = (value, fallback) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+};
+
+const readFiltersFromSearch = (search) => {
+  const params = new URLSearchParams(search);
+  const [defaultFrom, defaultTo] = buildDefaultRange();
+  const from = parseDateParam(params.get("from"), defaultFrom);
+  const to = parseDateParam(params.get("to"), defaultTo);
+  return {
+    range: [from, to],
+    customerId: params.get("customerId") || "",
+    page: parsePositiveInt(params.get("page"), 1),
+    pageSize: parsePositiveInt(params.get("pageSize"), 20),
+  };
+};
+
+const isSameRange = (left = [], right = []) => left[0] === right[0] && left[1] === right[1];
 
 const buildSummary = (items = []) =>
   items.reduce(
@@ -54,17 +78,16 @@ const buildExportRow = (row, { formatted = false } = {}) => ({
 
 const ReportSalesInvoicesTab = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { settings, load: loadSettings } = useSettingsStore();
+  const initialFilters = useMemo(() => readFiltersFromSearch(location.search), [location.search]);
 
-  const [range, setRange] = useState(() => [
-    dayjs().startOf("day").toISOString(),
-    dayjs().endOf("day").toISOString(),
-  ]);
-  const [customerId, setCustomerId] = useState("");
+  const [range, setRange] = useState(() => initialFilters.range);
+  const [customerId, setCustomerId] = useState(() => initialFilters.customerId);
   const [rows, setRows] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [page, setPage] = useState(() => initialFilters.page);
+  const [pageSize, setPageSize] = useState(() => initialFilters.pageSize);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState({
     amount: 0,
@@ -90,6 +113,60 @@ const ReportSalesInvoicesTab = () => {
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
+
+  useEffect(() => {
+    const nextFilters = readFiltersFromSearch(location.search);
+    setRange((prev) => (isSameRange(prev, nextFilters.range) ? prev : nextFilters.range));
+    setCustomerId((prev) => (prev === nextFilters.customerId ? prev : nextFilters.customerId));
+    setPage((prev) => (prev === nextFilters.page ? prev : nextFilters.page));
+    setPageSize((prev) => (prev === nextFilters.pageSize ? prev : nextFilters.pageSize));
+  }, [location.search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    let changed = false;
+
+    const setDateParam = (key, value) => {
+      const normalized = value ? String(value) : "";
+      const current = params.get(key);
+      if (current !== normalized) {
+        params.set(key, normalized);
+        changed = true;
+      }
+    };
+
+    const setParam = (key, value) => {
+      const current = params.get(key);
+      if (!value) {
+        if (current !== null) {
+          params.delete(key);
+          changed = true;
+        }
+        return;
+      }
+      if (current !== value) {
+        params.set(key, value);
+        changed = true;
+      }
+    };
+
+    setDateParam("from", range[0]);
+    setDateParam("to", range[1]);
+    setParam("customerId", customerId || "");
+    setParam("page", String(page));
+    setParam("pageSize", String(pageSize));
+
+    if (!changed) return;
+
+    const nextSearch = params.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : "",
+      },
+      { replace: true }
+    );
+  }, [range, customerId, page, pageSize, location.pathname, location.search, navigate]);
 
   const fetchReport = useCallback(async () => {
     const params = new URLSearchParams();
@@ -125,10 +202,6 @@ const ReportSalesInvoicesTab = () => {
       setPage(Number(pagination.page));
     }
   }, [range, customerId, page, pageSize]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [range, customerId]);
 
   useEffect(() => {
     let active = true;
@@ -247,10 +320,13 @@ const ReportSalesInvoicesTab = () => {
   const handleEdit = () => {
     if (!selectedInvoice) return;
     setSelectedInvoiceId(null);
+    const params = new URLSearchParams(location.search);
+    params.set("tab", "sales");
+    const returnTo = `${location.pathname}?${params.toString()}`;
     navigate("/sales", {
       state: {
         editInvoiceId: selectedInvoice.id,
-        returnPath: "/reports",
+        returnTo,
       },
     });
   };
@@ -260,7 +336,13 @@ const ReportSalesInvoicesTab = () => {
       <div className="action-row">
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ fontWeight: 600 }}>Theo ngày</span>
-          <DateRangeFilter value={range} onChange={setRange} />
+          <DateRangeFilter
+            value={range}
+            onChange={(nextRange) => {
+              setRange(nextRange);
+              setPage(1);
+            }}
+          />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ fontWeight: 600 }}>Khách hàng</span>
@@ -268,7 +350,10 @@ const ReportSalesInvoicesTab = () => {
             allowClear
             placeholder="Chọn khách hàng"
             value={customerId || undefined}
-            onChange={(value) => setCustomerId(value || "")}
+            onChange={(value) => {
+              setCustomerId(value || "");
+              setPage(1);
+            }}
             options={customers.map((item) => ({
               value: item.id,
               label: item.name,
@@ -342,10 +427,10 @@ const ReportSalesInvoicesTab = () => {
               <th>SL</th>
               <th>Tiền hàng</th>
               <th>Đã thu</th>
-              <th>Lợi nhuận</th>
               <th>Nợ cũ</th>
               <th>Tổng cộng</th>
               <th>Còn nợ</th>
+              <th>Lợi nhuận</th>
               <th>Khách hàng</th>
               <th>Điện thoại</th>
               <th>Địa chỉ</th>
@@ -368,15 +453,15 @@ const ReportSalesInvoicesTab = () => {
                 <td className={row.paid > 0 ? "text-success" : ""}>
                   {formatMoney(row.paid)}
                 </td>
-                <td
-                  className={row.profit >= 0 ? "text-success" : "text-danger"}
-                >
-                  {formatMoney(row.profit)}
-                </td>
                 <td className="text-danger">{formatMoney(row.oldDebt)}</td>
                 <td>{formatMoney(row.totalPay)}</td>
                 <td className={row.remain > 0 ? "text-danger" : "text-success"}>
                   {formatMoney(row.remain)}
+                </td>
+                <td
+                  className={row.profit >= 0 ? "text-success" : "text-danger"}
+                >
+                  {formatMoney(row.profit)}
                 </td>
                 <td>{row.customerName}</td>
                 <td>{row.phone}</td>
@@ -402,8 +487,14 @@ const ReportSalesInvoicesTab = () => {
           showSizeChanger
           pageSizeOptions={["10", "20", "50", "100"]}
           onChange={(nextPage, nextPageSize) => {
+            const normalizedPageSize = Number(nextPageSize || pageSize);
+            if (normalizedPageSize !== pageSize) {
+              setPage(1);
+              setPageSize(normalizedPageSize);
+              return;
+            }
             setPage(nextPage);
-            setPageSize(nextPageSize);
+            setPageSize(normalizedPageSize);
           }}
           showTotal={(value) => `Tổng ${value} hóa đơn`}
         />

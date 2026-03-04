@@ -6,6 +6,7 @@ import Purchase from '../models/Purchase.js';
 import Supplier from '../models/Supplier.js';
 import Invoice from '../models/Invoice.js';
 import Payment from '../models/Payment.js';
+import { computeStock } from '../utils/stock.js';
 
 const router = express.Router();
 
@@ -280,18 +281,24 @@ router.get(
       return;
     }
 
-    const [supplier, payments] = await Promise.all([
+    const [supplier, payments, purchases, invoices] = await Promise.all([
       Supplier.findOne({ id: purchase.supplierId, isDeleted: { $ne: true } }).lean(),
       Payment.find({ purchaseId: purchase.id, isDeleted: { $ne: true } }).lean(),
+      Purchase.find({ isDeleted: { $ne: true } }).lean(),
+      Invoice.find({ isDeleted: { $ne: true } }).lean(),
     ]);
 
     const productIds = new Set();
     (purchase.items || []).forEach((item) => {
       if (item.productId) productIds.add(item.productId);
     });
-    const products = productIds.size
+    const baseProducts = productIds.size
       ? await Product.find({ id: { $in: [...productIds] } }).lean()
       : [];
+    const products = baseProducts.map((product) => ({
+      ...product,
+      stock: computeStock(product.id, purchases, invoices, baseProducts),
+    }));
 
     res.json({ purchase, supplier, payments, products });
   })

@@ -8,6 +8,7 @@ import Invoice from '../models/Invoice.js';
 import Payment from '../models/Payment.js';
 import Cashbook from '../models/Cashbook.js';
 import Settings from '../models/Settings.js';
+import { computeStock } from '../utils/stock.js';
 
 const router = express.Router();
 
@@ -127,6 +128,15 @@ const getInvoiceAmount = (invoice) => {
   }, 0);
 };
 
+const buildInvoiceFinancials = (invoice, oldDebtByInvoice = {}, paymentsByInvoice = {}) => {
+  const amount = getInvoiceAmount(invoice);
+  const oldDebt = Number(oldDebtByInvoice[invoice.id] || 0);
+  const paid = Number(paymentsByInvoice[invoice.id] || 0);
+  const totalPay = amount + oldDebt;
+  const remain = totalPay - paid;
+  return { amount, oldDebt, totalPay, paid, remain };
+};
+
 const computeInvoiceCost = (invoice, productMap = {}) =>
   (invoice.items || []).reduce((sum, item) => {
     const qty = Number(item.qty || 0);
@@ -143,15 +153,15 @@ const buildInvoiceSummary = (
 ) => {
   const items = invoice.items || [];
   const customer = customerMap[invoice.customerId];
-  const paid = paymentsByInvoice[invoice.id] || 0;
+  const { amount, oldDebt, totalPay, paid, remain } = buildInvoiceFinancials(
+    invoice,
+    oldDebtByInvoice,
+    paymentsByInvoice
+  );
   const itemsCount = items.length;
   const qtySum = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-  const amount = getInvoiceAmount(invoice);
   const cost = computeInvoiceCost(invoice, productMap);
   const profit = amount - cost;
-  const oldDebt = oldDebtByInvoice[invoice.id] || 0;
-  const totalPay = amount + oldDebt;
-  const remain = totalPay - paid;
 
   return {
     id: invoice.id,
@@ -199,26 +209,6 @@ const buildInvoiceItems = (invoice, productMap = {}) =>
       note: item.lineNote || '',
     };
   });
-
-const computeStock = (productId, purchases = [], invoices = [], products = []) => {
-  const baseStock = Number(products.find((item) => item.id === productId)?.openingStock || 0);
-  const inQty = purchases.reduce((sum, purchase) => {
-    if (purchase?.appliedToStock) return sum;
-    const qty = (purchase.items || [])
-      .filter((item) => item.productId === productId)
-      .reduce((acc, item) => acc + Number(item.qty || 0), 0);
-    return sum + qty;
-  }, 0);
-
-  const outQty = invoices.reduce((sum, invoice) => {
-    const qty = (invoice.items || [])
-      .filter((item) => item.productId === productId)
-      .reduce((acc, item) => acc + Number(item.qty || 0), 0);
-    return sum + qty;
-  }, 0);
-
-  return baseStock + Number(inQty) - Number(outQty);
-};
 
 const buildProfitRows = (invoices = []) => {
   const map = {};
@@ -837,6 +827,62 @@ router.get(
 );
 
 router.get(
+  '/invoices/:id/preview',
+  asyncHandler(async (req, res) => {
+    const invoice = await Invoice.findOne({
+      id: req.params.id,
+    }).lean();
+    if (!invoice) {
+      res.status(404).json({ message: 'Invoice not found' });
+      return;
+    }
+
+    const [customer, payments, purchases, allInvoices] = await Promise.all([
+      Customer.findOne({ id: invoice.customerId }).lean(),
+      Payment.find({ invoiceId: invoice.id, isDeleted: { $ne: true } }).lean(),
+      Purchase.find({ isDeleted: { $ne: true } }).lean(),
+      Invoice.find({ isDeleted: { $ne: true } }).lean(),
+    ]);
+
+    const productIds = new Set();
+    (invoice.items || []).forEach((item) => {
+      if (item.productId) productIds.add(item.productId);
+    });
+    const baseProducts = productIds.size
+      ? await Product.find({ id: { $in: [...productIds] }, isDeleted: { $ne: true } }).lean()
+      : [];
+    const products = baseProducts.map((product) => ({
+      ...product,
+      stock: computeStock(product.id, purchases, allInvoices, baseProducts),
+    }));
+    const productMap = buildProductMap(products);
+    const customerInvoices = allInvoices.filter((item) => item.customerId === invoice.customerId);
+    const customerInvoiceIds = customerInvoices.map((item) => item.id);
+    const customerPayments = customerInvoiceIds.length
+      ? await Payment.find({
+          invoiceId: { $in: customerInvoiceIds },
+          isDeleted: { $ne: true },
+        }).lean()
+      : [];
+    const paymentsByInvoice = buildPaymentsByInvoice(customerPayments);
+    const oldDebtByInvoice = buildOldDebtByInvoice(customerInvoices, paymentsByInvoice);
+    const financials = buildInvoiceFinancials(invoice, oldDebtByInvoice, paymentsByInvoice);
+
+    res.json({
+      invoice: {
+        ...invoice,
+        customerDebt: financials.oldDebt,
+        ...financials,
+      },
+      customer,
+      payments,
+      products,
+      items: buildInvoiceItems(invoice, productMap),
+    });
+  })
+);
+
+router.get(
   '/invoices/:id',
   asyncHandler(async (req, res) => {
     const invoice = await Invoice.findOne({
@@ -848,22 +894,43 @@ router.get(
       return;
     }
 
-    const [customer, payments] = await Promise.all([
+    const [customer, payments, purchases, allInvoices] = await Promise.all([
       Customer.findOne({ id: invoice.customerId, isDeleted: { $ne: true } }).lean(),
       Payment.find({ invoiceId: invoice.id, isDeleted: { $ne: true } }).lean(),
+      Purchase.find({ isDeleted: { $ne: true } }).lean(),
+      Invoice.find({ isDeleted: { $ne: true } }).lean(),
     ]);
 
     const productIds = new Set();
     (invoice.items || []).forEach((item) => {
       if (item.productId) productIds.add(item.productId);
     });
-    const products = productIds.size
+    const baseProducts = productIds.size
       ? await Product.find({ id: { $in: [...productIds] }, isDeleted: { $ne: true } }).lean()
       : [];
+    const products = baseProducts.map((product) => ({
+      ...product,
+      stock: computeStock(product.id, purchases, allInvoices, baseProducts),
+    }));
     const productMap = buildProductMap(products);
+    const customerInvoices = allInvoices.filter((item) => item.customerId === invoice.customerId);
+    const customerInvoiceIds = customerInvoices.map((item) => item.id);
+    const customerPayments = customerInvoiceIds.length
+      ? await Payment.find({
+          invoiceId: { $in: customerInvoiceIds },
+          isDeleted: { $ne: true },
+        }).lean()
+      : [];
+    const paymentsByInvoice = buildPaymentsByInvoice(customerPayments);
+    const oldDebtByInvoice = buildOldDebtByInvoice(customerInvoices, paymentsByInvoice);
+    const financials = buildInvoiceFinancials(invoice, oldDebtByInvoice, paymentsByInvoice);
 
     res.json({
-      invoice,
+      invoice: {
+        ...invoice,
+        customerDebt: financials.oldDebt,
+        ...financials,
+      },
       customer,
       payments,
       products,
