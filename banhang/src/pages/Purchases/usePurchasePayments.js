@@ -11,7 +11,9 @@ const buildPaymentsByPurchase = (payments = []) =>
   }, {});
 
 const getPaymentsByPurchaseId = (payments, purchaseId) =>
-  payments.filter((payment) => payment.purchaseId === purchaseId);
+  payments.filter(
+    (payment) => payment.purchaseId === purchaseId && payment.paymentType !== 'supplier_debt_payment'
+  );
 
 const usePurchasePayments = ({
   editing,

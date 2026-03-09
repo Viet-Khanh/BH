@@ -71,6 +71,32 @@ const getLineTotal = ({ qty, unitCost, length, width }) => {
   return total;
 };
 
+const getPurchaseAmount = (purchase = {}) => {
+  if (purchase.total !== undefined && purchase.total !== null) {
+    return Number(purchase.total || 0);
+  }
+  return (purchase.items || []).reduce((sum, item) => {
+    const lineTotalValue =
+      item.lineTotal ??
+      getLineTotal({
+        qty: item.qty,
+        unitCost: item.unitCost,
+        length: item.length,
+        width: item.width,
+      });
+    return sum + Number(lineTotalValue || 0);
+  }, 0);
+};
+
+const buildPurchaseFinancials = (purchase, oldDebtByPurchase = {}, paymentsByPurchase = {}) => {
+  const amount = getPurchaseAmount(purchase);
+  const oldDebt = Number(oldDebtByPurchase[purchase.id] || 0);
+  const paid = Number(paymentsByPurchase[purchase.id] || 0);
+  const totalPay = amount + oldDebt;
+  const remain = totalPay - paid;
+  return { amount, oldDebt, totalPay, paid, remain };
+};
+
 const computeAvgCost = (oldQty, oldAvgCost, inQty, inCost) => {
   const totalQty = Number(oldQty) + Number(inQty);
   if (totalQty <= 0) return Number(oldAvgCost) || Number(inCost) || 0;
@@ -300,7 +326,29 @@ router.get(
       stock: computeStock(product.id, purchases, invoices, baseProducts),
     }));
 
-    res.json({ purchase, supplier, payments, products });
+    const supplierPurchases = purchases.filter((item) => item.supplierId === purchase.supplierId);
+    const supplierPurchaseIds = supplierPurchases.map((item) => item.id);
+    const supplierPayments = supplierPurchaseIds.length
+      ? await Payment.find({
+          purchaseId: { $in: supplierPurchaseIds },
+          isDeleted: { $ne: true },
+        }).lean()
+      : [];
+    const paymentsByPurchase = buildPaymentsByPurchase(supplierPayments);
+    const oldDebtByPurchase = buildOldDebtByPurchase(supplierPurchases, paymentsByPurchase);
+    const financials = buildPurchaseFinancials(purchase, oldDebtByPurchase, paymentsByPurchase);
+    const purchasePayments = payments.filter((payment) => payment.paymentType !== 'supplier_debt_payment');
+
+    res.json({
+      purchase: {
+        ...purchase,
+        customerDebt: financials.oldDebt,
+        ...financials,
+      },
+      supplier,
+      payments: purchasePayments,
+      products,
+    });
   })
 );
 
@@ -313,6 +361,33 @@ router.get(
       return;
     }
     const excludePurchaseId = String(req.query.excludePurchaseId || '').trim();
+
+    if (excludePurchaseId) {
+      const targetPurchase = await Purchase.findOne({
+        id: excludePurchaseId,
+        isDeleted: { $ne: true },
+      }).lean();
+      if (targetPurchase?.supplierId === supplierId) {
+        const purchases = await Purchase.find({ supplierId, isDeleted: { $ne: true } }).lean();
+        const purchaseIds = purchases.map((purchase) => purchase.id);
+        const payments = purchaseIds.length
+          ? await Payment.find({ purchaseId: { $in: purchaseIds }, isDeleted: { $ne: true } }).lean()
+          : [];
+        const paymentsByPurchase = buildPaymentsByPurchase(payments);
+        const oldDebtByPurchase = buildOldDebtByPurchase(purchases, paymentsByPurchase);
+        const debt = Number(oldDebtByPurchase[excludePurchaseId] || 0);
+        res.json({
+          supplierId,
+          total: debt,
+          purchasePaid: 0,
+          debtPaid: 0,
+          paid: 0,
+          debt,
+        });
+        return;
+      }
+    }
+
     const filter = { supplierId, isDeleted: { $ne: true } };
     if (excludePurchaseId) filter.id = { $ne: excludePurchaseId };
     const purchases = await Purchase.find(filter).lean();

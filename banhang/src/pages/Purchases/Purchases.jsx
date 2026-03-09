@@ -55,6 +55,7 @@ const Purchases = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const editPurchaseId = location.state?.editPurchaseId;
+  const returnTo = location.state?.returnTo;
   const { items: suppliers, load: loadSuppliers } = useSupplierStore();
   const { settings, load: loadSettings } = useSettingsStore();
   const [products, setProducts] = useState([]);
@@ -227,6 +228,13 @@ const Purchases = () => {
     setDraftCode(generateCode('PO'));
     resetSearchState();
   };
+  const handleBack = useCallback(() => {
+    if (returnTo) {
+      navigate(returnTo);
+      return;
+    }
+    navigate('/');
+  }, [navigate, returnTo]);
   const persistPurchase = async () => {
     if (isEdit && !isFullEdit) return editing;
     if (!supplierId) {
@@ -553,7 +561,7 @@ const Purchases = () => {
   return (
     <div className="page-card pos-shell">
       <InvoiceHeader
-        onCancel={() => navigate('/')}
+        onCancel={handleBack}
         onPreview={() => setPreviewOpen(true)}
         onOpenPayment={() => setPaymentModalOpen(true)}
         onOpenDebtReceipt={handleOpenSupplierDebtPayment}

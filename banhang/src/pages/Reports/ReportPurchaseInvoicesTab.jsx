@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Pagination, Select, message } from 'antd';
 import dayjs from 'dayjs';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportActions from '../../components/ExportActions.jsx';
@@ -12,6 +12,35 @@ import { saveWorkbook } from '../../utils/excelExport.js';
 import { printHtml } from '../../utils/printUtils.js';
 import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
 import { useSettingsStore } from '../../store/settingsStore.js';
+
+const buildDefaultRange = () => [dayjs().startOf('day').toISOString(), dayjs().endOf('day').toISOString()];
+
+const parseDateParam = (value, fallback) => {
+  if (value === null) return fallback;
+  if (value === '') return null;
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.toISOString() : fallback;
+};
+
+const parsePositiveInt = (value, fallback) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+};
+
+const readFiltersFromSearch = (search) => {
+  const params = new URLSearchParams(search);
+  const [defaultFrom, defaultTo] = buildDefaultRange();
+  const from = parseDateParam(params.get('from'), defaultFrom);
+  const to = parseDateParam(params.get('to'), defaultTo);
+  return {
+    range: [from, to],
+    supplierId: params.get('supplierId') || '',
+    page: parsePositiveInt(params.get('page'), 1),
+    pageSize: parsePositiveInt(params.get('pageSize'), 20),
+  };
+};
+
+const isSameRange = (left = [], right = []) => left[0] === right[0] && left[1] === right[1];
 
 const buildExportRow = (row, { formatted = false } = {}) => {
   const amount = Number(row.amount ?? row.total ?? 0);
@@ -39,17 +68,16 @@ const buildExportRow = (row, { formatted = false } = {}) => {
 
 const ReportPurchaseInvoicesTab = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { settings, load: loadSettings } = useSettingsStore();
+  const initialFilters = useMemo(() => readFiltersFromSearch(location.search), [location.search]);
 
-  const [range, setRange] = useState(() => [
-    dayjs().startOf('day').toISOString(),
-    dayjs().endOf('day').toISOString(),
-  ]);
-  const [supplierId, setSupplierId] = useState('');
+  const [range, setRange] = useState(() => initialFilters.range);
+  const [supplierId, setSupplierId] = useState(() => initialFilters.supplierId);
   const [rows, setRows] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [page, setPage] = useState(() => initialFilters.page);
+  const [pageSize, setPageSize] = useState(() => initialFilters.pageSize);
   const [total, setTotal] = useState(0);
   const [selectedPurchaseId, setSelectedPurchaseId] = useState(null);
   const [selectedPurchase, setSelectedPurchase] = useState(null);
@@ -60,6 +88,60 @@ const ReportPurchaseInvoicesTab = () => {
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
+
+  useEffect(() => {
+    const nextFilters = readFiltersFromSearch(location.search);
+    setRange((prev) => (isSameRange(prev, nextFilters.range) ? prev : nextFilters.range));
+    setSupplierId((prev) => (prev === nextFilters.supplierId ? prev : nextFilters.supplierId));
+    setPage((prev) => (prev === nextFilters.page ? prev : nextFilters.page));
+    setPageSize((prev) => (prev === nextFilters.pageSize ? prev : nextFilters.pageSize));
+  }, [location.search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    let changed = false;
+
+    const setDateParam = (key, value) => {
+      const normalized = value ? String(value) : '';
+      const current = params.get(key);
+      if (current !== normalized) {
+        params.set(key, normalized);
+        changed = true;
+      }
+    };
+
+    const setParam = (key, value) => {
+      const current = params.get(key);
+      if (!value) {
+        if (current !== null) {
+          params.delete(key);
+          changed = true;
+        }
+        return;
+      }
+      if (current !== value) {
+        params.set(key, value);
+        changed = true;
+      }
+    };
+
+    setDateParam('from', range[0]);
+    setDateParam('to', range[1]);
+    setParam('supplierId', supplierId || '');
+    setParam('page', String(page));
+    setParam('pageSize', String(pageSize));
+
+    if (!changed) return;
+
+    const nextSearch = params.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : '',
+      },
+      { replace: true }
+    );
+  }, [range, supplierId, page, pageSize, location.pathname, location.search, navigate]);
 
   useEffect(() => {
     let active = true;
@@ -97,10 +179,6 @@ const ReportPurchaseInvoicesTab = () => {
       setPage(Number(pagination.page));
     }
   }, [range, supplierId, page, pageSize]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [range, supplierId]);
 
   useEffect(() => {
     let active = true;
@@ -197,7 +275,7 @@ const ReportPurchaseInvoicesTab = () => {
     if (!selectedPurchase) return null;
     return {
       ...selectedPurchase,
-      customerDebt: 0,
+      customerDebt: Number(selectedPurchase.customerDebt ?? selectedPurchase.oldDebt ?? 0),
       items: (selectedPurchase.items || []).map((item) => ({
         ...item,
         unitPrice: item.unitCost,
@@ -246,7 +324,12 @@ const ReportPurchaseInvoicesTab = () => {
   const handleEdit = () => {
     if (!selectedPurchase) return;
     setSelectedPurchaseId(null);
-    navigate('/purchases', { state: { editPurchaseId: selectedPurchase.id, editMode: 'full' } });
+    const params = new URLSearchParams(location.search);
+    params.set('tab', 'purchase-invoices');
+    const returnTo = `${location.pathname}?${params.toString()}`;
+    navigate('/purchases', {
+      state: { editPurchaseId: selectedPurchase.id, editMode: 'full', returnTo },
+    });
   };
 
   const handlePrint = async () => {
@@ -282,7 +365,13 @@ const ReportPurchaseInvoicesTab = () => {
       <div className="action-row">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontWeight: 600 }}>Theo ngày</span>
-          <DateRangeFilter value={range} onChange={setRange} />
+          <DateRangeFilter
+            value={range}
+            onChange={(nextRange) => {
+              setRange(nextRange);
+              setPage(1);
+            }}
+          />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontWeight: 600 }}>Nhà cung cấp</span>
@@ -290,7 +379,10 @@ const ReportPurchaseInvoicesTab = () => {
             allowClear
             placeholder="Chọn nhà cung cấp"
             value={supplierId || undefined}
-            onChange={(value) => setSupplierId(value || '')}
+            onChange={(value) => {
+              setSupplierId(value || '');
+              setPage(1);
+            }}
             options={supplierOptions}
             style={{ minWidth: 220 }}
             size="large"
@@ -376,8 +468,14 @@ const ReportPurchaseInvoicesTab = () => {
           showSizeChanger
           pageSizeOptions={['10', '20', '50', '100']}
           onChange={(nextPage, nextPageSize) => {
+            const normalizedPageSize = Number(nextPageSize || pageSize);
+            if (normalizedPageSize !== pageSize) {
+              setPage(1);
+              setPageSize(normalizedPageSize);
+              return;
+            }
             setPage(nextPage);
-            setPageSize(nextPageSize);
+            setPageSize(normalizedPageSize);
           }}
           showTotal={(value) => `Tổng ${value} hóa đơn`}
         />
