@@ -11,6 +11,7 @@ const InvoiceItemsTable = ({
   priceField = 'unitPrice',
   priceLabel = 'Đơn giá',
   qtyLabel = 'SL/m2',
+  priceMin = 0,
   readOnly = false,
 }) => (
   <div className="pos-table">
@@ -69,7 +70,7 @@ const InvoiceItemsTable = ({
               </td>
               <td>
                 <InputNumber
-                  min={0}
+                  min={priceMin}
                   value={item[priceField]}
                   formatter={formatNumberInput}
                   parser={parseNumberInput}

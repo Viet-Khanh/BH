@@ -254,13 +254,6 @@ const Purchases = () => {
       lineNote: item.lineNote || '',
       lineTotal: getPurchaseLineTotal(item),
     }));
-    const invalid = normalizedItems.find(
-      (item) => !item.productId || Number(item.qty || 0) <= 0 || Number(item.unitCost || 0) < 0
-    );
-    if (invalid) {
-      message.error('Số lượng > 0 và đơn giá >= 0.');
-      return null;
-    }
     const nextTotal = normalizedItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
 
     if (isEdit && isFullEdit && editing?.id) {
@@ -622,6 +615,7 @@ const Purchases = () => {
         showDimensions={false}
         priceField="unitCost"
         qtyLabel="SL"
+        priceMin={undefined}
       />
       <InvoicePaymentsSection
         isEdit={isEdit}
@@ -647,6 +641,7 @@ const Purchases = () => {
         onChangeLength={setPendingLength}
         onChangeWidth={setPendingWidth}
         onConfirmAdd={handleConfirmAdd}
+        priceMin={undefined}
       />
 
       <PurchaseRecentModal

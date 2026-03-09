@@ -24,6 +24,7 @@ const InvoiceProductModal = ({
   onConfirmAdd,
   autoFocusSearchOnOpen = true,
   showDimensions = true,
+  priceMin = 0,
 }) => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const searchInputRef = useRef(null);
@@ -139,7 +140,7 @@ const InvoiceProductModal = ({
               <div>Đơn giá</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <InputNumber
-                  min={0}
+                  min={priceMin}
                   style={{ width: '100%' }}
                   value={pendingPrice}
                   formatter={formatNumberInput}

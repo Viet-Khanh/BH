@@ -93,14 +93,6 @@ const usePurchaseProductModal = ({ activeProducts, setItems, readOnly = false, o
     if (!pendingProduct) return false;
     const qty = Number(pendingQty || 0);
     const unitCost = Number(pendingPrice || 0);
-    if (qty === 0) {
-      message.error('Số lượng khác 0.');
-      return false;
-    }
-    if (unitCost < 0) {
-      message.error('Đơn giá >= 0.');
-      return false;
-    }
 
     const lengthValue = getValidDimension(pendingLength);
     const widthValue = getValidDimension(pendingWidth);

@@ -147,7 +147,7 @@ const sanitizePurchaseItems = (items = []) =>
   });
 
 const findInvalidPurchaseItem = (items = []) =>
-  items.find((item) => !item.productId || item.qty <= 0 || item.unitCost < 0);
+  items.find((item) => !item.productId);
 
 const buildQtyMapFromItems = (items = []) =>
   items.reduce((acc, item) => {
