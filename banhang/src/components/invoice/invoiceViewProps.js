@@ -63,6 +63,8 @@ export const buildInvoiceViewProps = ({
   setPreviewOpen,
   previewHtml,
   onSearchProducts,
+  onCreateProduct,
+  onProductCreated,
 }) => {
   const headerProps = {
     onCancel,
@@ -155,6 +157,8 @@ export const buildInvoiceViewProps = ({
     onChangeWidth: setPendingWidth,
     onApplyPreviousPrice: applyPendingPreviousPrice,
     onConfirmAdd: handleConfirmAdd,
+    onCreateProduct,
+    onProductCreated,
   };
 
   const previewModalProps = {

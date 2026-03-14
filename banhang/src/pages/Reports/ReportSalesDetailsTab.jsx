@@ -27,7 +27,11 @@ const buildSummary = (items = []) =>
     }
   );
 
-const buildDetailRow = (row, item, { formatted = false, includeInvoiceInfo = true } = {}) => {
+const buildDetailRow = (
+  row,
+  item,
+  { formatted = false, includeInvoiceInfo = true, includeProfit = true } = {}
+) => {
   const invoiceFields = includeInvoiceInfo
     ? {
         'Số HĐ': row.code,
@@ -43,7 +47,9 @@ const buildDetailRow = (row, item, { formatted = false, includeInvoiceInfo = tru
         'Nợ cũ': formatted ? formatMoney(row.oldDebt) : row.oldDebt,
         'Tổng cộng': formatted ? formatMoney(row.totalPay) : row.totalPay,
         'Còn nợ': formatted ? formatMoney(row.remain) : row.remain,
-        'Lợi nhuận': formatted ? formatMoney(row.profit) : row.profit,
+        ...(includeProfit
+          ? { 'Lợi nhuận': formatted ? formatMoney(row.profit) : row.profit }
+          : {}),
         'Ghi chú': row.note,
       }
     : {
@@ -60,7 +66,7 @@ const buildDetailRow = (row, item, { formatted = false, includeInvoiceInfo = tru
         'Nợ cũ': '',
         'Tổng cộng': '',
         'Còn nợ': '',
-        'Lợi nhuận': '',
+        ...(includeProfit ? { 'Lợi nhuận': '' } : {}),
         'Ghi chú': '',
       };
 
@@ -76,7 +82,7 @@ const buildDetailRow = (row, item, { formatted = false, includeInvoiceInfo = tru
   };
 };
 
-const ReportSalesDetailsTab = () => {
+const ReportSalesDetailsTab = ({ showSensitiveInfo = false }) => {
   const [range, setRange] = useState(() => [
     dayjs().startOf('day').toISOString(),
     dayjs().endOf('day').toISOString(),
@@ -162,10 +168,13 @@ const ReportSalesDetailsTab = () => {
       rows.flatMap((row) => {
         const items = row.items?.length ? row.items : [null];
         return items.map((item, index) =>
-          buildDetailRow(row, item, { includeInvoiceInfo: index === 0 })
+          buildDetailRow(row, item, {
+            includeInvoiceInfo: index === 0,
+            includeProfit: showSensitiveInfo,
+          })
         );
       }),
-    [rows]
+    [rows, showSensitiveInfo]
   );
 
   const pdfRows = useMemo(
@@ -173,10 +182,14 @@ const ReportSalesDetailsTab = () => {
       rows.flatMap((row) => {
         const items = row.items?.length ? row.items : [null];
         return items.map((item, index) =>
-          buildDetailRow(row, item, { formatted: true, includeInvoiceInfo: index === 0 })
+          buildDetailRow(row, item, {
+            formatted: true,
+            includeInvoiceInfo: index === 0,
+            includeProfit: showSensitiveInfo,
+          })
         );
       }),
-    [rows]
+    [rows, showSensitiveInfo]
   );
 
   return (
@@ -242,12 +255,14 @@ const ReportSalesDetailsTab = () => {
               </strong>
             </span>
 
-            <span className="text-gray-600">
-              Lợi nhuận:{' '}
-              <strong style={{ color: 'purple' }} className="text-lg font-bold">
-                {formatMoney(summary.profit)}
-              </strong>
-            </span>
+            {showSensitiveInfo && (
+              <span className="text-gray-600">
+                Lợi nhuận:{' '}
+                <strong style={{ color: 'purple' }} className="text-lg font-bold">
+                  {formatMoney(summary.profit)}
+                </strong>
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -256,7 +271,7 @@ const ReportSalesDetailsTab = () => {
         <table>
           <thead>
             <tr>
-              <th colSpan={15} style={{ textAlign: 'center' }}>
+              <th colSpan={showSensitiveInfo ? 15 : 14} style={{ textAlign: 'center' }}>
                 Thông tin hóa đơn
               </th>
               <th colSpan={7} style={{ textAlign: 'center' }}>
@@ -277,7 +292,7 @@ const ReportSalesDetailsTab = () => {
               <th>Nợ cũ</th>
               <th>Tổng cộng</th>
               <th>Còn nợ</th>
-              <th>Lợi nhuận</th>
+              {showSensitiveInfo && <th>Lợi nhuận</th>}
               <th>Ghi chú</th>
               <th>Tên hàng</th>
               <th>ĐVT</th>
@@ -329,12 +344,14 @@ const ReportSalesDetailsTab = () => {
                             >
                               {formatMoney(row.remain)}
                             </td>
-                            <td
-                              {...invoiceCellProps}
-                              className={row.profit >= 0 ? 'text-success' : 'text-danger'}
-                            >
-                              {formatMoney(row.profit)}
-                            </td>
+                            {showSensitiveInfo && (
+                              <td
+                                {...invoiceCellProps}
+                                className={row.profit >= 0 ? 'text-success' : 'text-danger'}
+                              >
+                                {formatMoney(row.profit)}
+                              </td>
+                            )}
                             <td {...invoiceCellProps}>{row.note}</td>
                           </>
                         )}
@@ -360,7 +377,7 @@ const ReportSalesDetailsTab = () => {
             })}
             {!rows.length && (
               <tr>
-                <td colSpan={22} style={{ textAlign: 'center' }}>
+                <td colSpan={showSensitiveInfo ? 22 : 21} style={{ textAlign: 'center' }}>
                   Chưa có hóa đơn.
                 </td>
               </tr>

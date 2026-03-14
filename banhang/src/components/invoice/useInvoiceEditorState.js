@@ -45,6 +45,7 @@ const useInvoiceEditorState = ({
   onNewInvoice,
   onCustomerChange,
   onSearchProducts,
+  onCreateProduct,
 }) => {
   const isEdit = Boolean(invoice);
   const defaultCustomerId = useMemo(() => buildDefaultCustomerId(customers), [customers]);
@@ -225,6 +226,13 @@ const useInvoiceEditorState = ({
     setSearchOpen,
     getProductPrice,
   });
+
+  const handleProductCreated = useCallback(
+    (product) => {
+      openAddModal(product);
+    },
+    [openAddModal]
+  );
 
   const handleAddProduct = createAddProductHandler({
     activeProducts,
@@ -455,6 +463,8 @@ const useInvoiceEditorState = ({
     setPreviewOpen,
     previewHtml,
     onSearchProducts,
+    onCreateProduct,
+    onProductCreated: handleProductCreated,
   });
 };
 

@@ -58,7 +58,7 @@ const buildSummary = (items = []) =>
     }
   );
 
-const buildExportRow = (row, { formatted = false } = {}) => ({
+const buildExportRow = (row, { formatted = false, includeProfit = true } = {}) => ({
   'Số HĐ': row.code,
   Ngày: row.date ? dayjs(row.date).format('DD/MM/YYYY HH:mm') : '',
   'Nhân viên': row.staff,
@@ -66,7 +66,9 @@ const buildExportRow = (row, { formatted = false } = {}) => ({
   'Số lượng': row.qtySum,
   'Tiền hàng': formatted ? formatMoney(row.amount) : row.amount,
   'Đã thu': formatted ? formatMoney(row.paid) : row.paid,
-  'Lợi nhuận': formatted ? formatMoney(row.profit) : row.profit,
+  ...(includeProfit
+    ? { 'Lợi nhuận': formatted ? formatMoney(row.profit) : row.profit }
+    : {}),
   'Nợ cũ': formatted ? formatMoney(row.oldDebt) : row.oldDebt,
   'Tổng cộng': formatted ? formatMoney(row.totalPay) : row.totalPay,
   'Còn nợ': formatted ? formatMoney(row.remain) : row.remain,
@@ -76,7 +78,7 @@ const buildExportRow = (row, { formatted = false } = {}) => ({
   'Ghi chú': row.note,
 });
 
-const ReportSalesInvoicesTab = () => {
+const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { settings, load: loadSettings } = useSettingsStore();
@@ -253,8 +255,25 @@ const ReportSalesInvoicesTab = () => {
     };
   }, [selectedInvoiceId]);
 
-  const exportRows = useMemo(() => rows.map((row) => buildExportRow(row)), [rows]);
-  const pdfRows = useMemo(() => rows.map((row) => buildExportRow(row, { formatted: true })), [rows]);
+  const exportRows = useMemo(
+    () =>
+      rows.map((row) =>
+        buildExportRow(row, {
+          includeProfit: showSensitiveInfo,
+        })
+      ),
+    [rows, showSensitiveInfo]
+  );
+  const pdfRows = useMemo(
+    () =>
+      rows.map((row) =>
+        buildExportRow(row, {
+          formatted: true,
+          includeProfit: showSensitiveInfo,
+        })
+      ),
+    [rows, showSensitiveInfo]
+  );
 
   const previewHtml = useMemo(() => {
     if (!selectedInvoice || !settings) return "";
@@ -406,12 +425,14 @@ const ReportSalesInvoicesTab = () => {
               </strong>
             </span>
 
-            <span className="text-gray-600">
-              Lợi nhuận:{" "}
-              <strong style={{ color: "purple" }} className="text-lg font-bold">
-                {formatMoney(summary.profit)}
-              </strong>
-            </span>
+            {showSensitiveInfo && (
+              <span className="text-gray-600">
+                Lợi nhuận:{" "}
+                <strong style={{ color: "purple" }} className="text-lg font-bold">
+                  {formatMoney(summary.profit)}
+                </strong>
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -430,7 +451,7 @@ const ReportSalesInvoicesTab = () => {
               <th>Nợ cũ</th>
               <th>Tổng cộng</th>
               <th>Còn nợ</th>
-              <th>Lợi nhuận</th>
+              {showSensitiveInfo && <th>Lợi nhuận</th>}
               <th>Khách hàng</th>
               <th>Điện thoại</th>
               <th>Địa chỉ</th>
@@ -458,11 +479,13 @@ const ReportSalesInvoicesTab = () => {
                 <td className={row.remain > 0 ? "text-danger" : "text-success"}>
                   {formatMoney(row.remain)}
                 </td>
-                <td
-                  className={row.profit >= 0 ? "text-success" : "text-danger"}
-                >
-                  {formatMoney(row.profit)}
-                </td>
+                {showSensitiveInfo && (
+                  <td
+                    className={row.profit >= 0 ? "text-success" : "text-danger"}
+                  >
+                    {formatMoney(row.profit)}
+                  </td>
+                )}
                 <td>{row.customerName}</td>
                 <td>{row.phone}</td>
                 <td>{row.address}</td>
@@ -471,7 +494,7 @@ const ReportSalesInvoicesTab = () => {
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={15} style={{ textAlign: "center" }}>
+                <td colSpan={showSensitiveInfo ? 15 : 14} style={{ textAlign: "center" }}>
                   Chưa có hóa đơn.
                 </td>
               </tr>

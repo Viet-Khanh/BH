@@ -6,17 +6,19 @@ import ExportActions from '../../components/ExportActions.jsx';
 import { apiRequest } from '../../db/repository.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const buildExportRow = (row, { formatted = false } = {}) => ({
+const buildExportRow = (row, { formatted = false, includeProfit = true } = {}) => ({
   'Tên hàng': row.name,
   'ĐVT': row.unit,
   'Quy cách': row.spec,
   'Số lượng': row.qty,
   'Thành tiền': formatted ? formatMoney(row.amount) : row.amount,
   'Tiền vốn': formatted ? formatMoney(row.cost) : row.cost,
-  'Lợi nhuận': formatted ? formatMoney(row.profit) : row.profit,
+  ...(includeProfit
+    ? { 'Lợi nhuận': formatted ? formatMoney(row.profit) : row.profit }
+    : {}),
 });
 
-const ReportStockOutTab = () => {
+const ReportStockOutTab = ({ showSensitiveInfo = false }) => {
   const [range, setRange] = useState(() => [
     dayjs().startOf('day').toISOString(),
     dayjs().endOf('day').toISOString(),
@@ -109,10 +111,24 @@ const ReportStockOutTab = () => {
     [itemRows]
   );
 
-  const exportRows = useMemo(() => itemRows.map((row) => buildExportRow(row)), [itemRows]);
+  const exportRows = useMemo(
+    () =>
+      itemRows.map((row) =>
+        buildExportRow(row, {
+          includeProfit: showSensitiveInfo,
+        })
+      ),
+    [itemRows, showSensitiveInfo]
+  );
   const pdfRows = useMemo(
-    () => itemRows.map((row) => buildExportRow(row, { formatted: true })),
-    [itemRows]
+    () =>
+      itemRows.map((row) =>
+        buildExportRow(row, {
+          formatted: true,
+          includeProfit: showSensitiveInfo,
+        })
+      ),
+    [itemRows, showSensitiveInfo]
   );
 
   return (
@@ -155,12 +171,14 @@ const ReportStockOutTab = () => {
         <span>
           Tiền vốn: <span className="text-danger">{formatMoney(summary.cost)}</span>
         </span>
-        <span>
-          Lợi nhuận:{' '}
-          <span className={summary.profit >= 0 ? 'text-success' : 'text-danger'}>
-            {formatMoney(summary.profit)}
+        {showSensitiveInfo && (
+          <span>
+            Lợi nhuận:{' '}
+            <span className={summary.profit >= 0 ? 'text-success' : 'text-danger'}>
+              {formatMoney(summary.profit)}
+            </span>
           </span>
-        </span>
+        )}
       </div>
 
       <div className="section-title">Mặt hàng xuất kho</div>
@@ -173,7 +191,7 @@ const ReportStockOutTab = () => {
               <th>Số lượng</th>
               <th>Thành tiền</th>
               <th>Tiền vốn</th>
-              <th>Lợi nhuận</th>
+              {showSensitiveInfo && <th>Lợi nhuận</th>}
             </tr>
           </thead>
           <tbody>
@@ -184,14 +202,16 @@ const ReportStockOutTab = () => {
                 <td>{row.qty}</td>
                 <td className="text-success">{formatMoney(row.amount)}</td>
                 <td className="text-danger">{formatMoney(row.cost)}</td>
-                <td className={row.profit >= 0 ? 'text-success' : 'text-danger'}>
-                  {formatMoney(row.profit)}
-                </td>
+                {showSensitiveInfo && (
+                  <td className={row.profit >= 0 ? 'text-success' : 'text-danger'}>
+                    {formatMoney(row.profit)}
+                  </td>
+                )}
               </tr>
             ))}
             {!itemRows.length && (
               <tr>
-                <td colSpan={7}>Chưa có dữ liệu.</td>
+                <td colSpan={showSensitiveInfo ? 6 : 5}>Chưa có dữ liệu.</td>
               </tr>
             )}
           </tbody>

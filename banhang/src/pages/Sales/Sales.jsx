@@ -11,6 +11,7 @@ import { formatMoney } from '../../utils/moneyFormat.js';
 import { generateCode } from '../../utils/codeGenerator.js';
 import { addItem, apiRequest, deleteItem, updateItem } from '../../db/repository.js';
 import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
+import { buildCodeFromName } from '../Catalog/catalogUtils.js';
 
 const computeStatus = (total, paid) => {
   if (paid <= 0) return 'CHUA THU';
@@ -107,6 +108,23 @@ const Sales = () => {
     } catch (error) {
       message.error('Không thể tải danh sách sản phẩm.');
     }
+  }, []);
+
+  const handleCreateProduct = useCallback(async (values) => {
+    const payload = {
+      ...values,
+      id: uuid(),
+      code: values.code || buildCodeFromName(values.name || ''),
+      avgCost: Number(values.avgCost || 0),
+      sellPriceDefault: Number(values.sellPriceDefault || 0),
+      sellPriceWholesale: Number(values.sellPriceWholesale || 0),
+      openingStock: Number(values.openingStock || 0),
+      createdAt: new Date().toISOString(),
+    };
+    const saved = await addItem('products', payload);
+    const nextProduct = saved || payload;
+    setProducts((prev) => mergeProducts(prev, [nextProduct]));
+    return nextProduct;
   }, []);
 
   const handleCustomerChange = useCallback(async (nextCustomerId, excludeInvoiceId) => {
@@ -325,6 +343,7 @@ const Sales = () => {
         settings={settings}
         customerDebtOverride={customerDebt}
         onSearchProducts={handleSearchProducts}
+        onCreateProduct={handleCreateProduct}
         onCustomerChange={handleCustomerChange}
         onSave={handleSaveInvoice}
         onCancel={handleCancel}

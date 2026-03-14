@@ -10,6 +10,7 @@ const CatalogFormModal = ({
   onSave,
   onNameChange,
   onCodeChange,
+  confirmLoading = false,
 }) => (
   <Modal
     title={editing ? 'Sửa dữ liệu' : 'Tạo mới'}
@@ -18,6 +19,7 @@ const CatalogFormModal = ({
     onOk={onSave}
     okText="Lưu"
     cancelText="Hủy"
+    confirmLoading={confirmLoading}
   >
     {activeKey === 'products' && (
       <Form form={form} layout="vertical">

@@ -1,29 +1,38 @@
 import { Button, Tabs } from 'antd';
 import dayjs from 'dayjs';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useSettingsStore } from '../../store/settingsStore.js';
 
 const ReportDebtTab = lazy(() => import('./ReportDebtTab.jsx'));
 const ReportProfitTab = lazy(() => import('./ReportProfitTab.jsx'));
 const ReportStockOutTab = lazy(() => import('./ReportStockOutTab.jsx'));
-const ReportCashTab = lazy(() => import('./ReportCashTab.jsx'));
 const ReportSalesInvoicesTab = lazy(() => import('./ReportSalesInvoicesTab.jsx'));
 const ReportSalesDetailsTab = lazy(() => import('./ReportSalesDetailsTab.jsx'));
 
-const TAB_KEYS = new Set(['debt', 'sales', 'sales-detail', 'stock-out', 'profit']);
+const BASE_TAB_KEYS = new Set(['debt', 'sales', 'sales-detail', 'stock-out']);
+const TAB_KEYS_WITH_PROFIT = new Set(['debt', 'sales', 'sales-detail', 'stock-out', 'profit']);
 
 const Reports = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings, load: loadSettings } = useSettingsStore();
   const [profitRange, setProfitRange] = useState(() => {
     const end = dayjs().endOf('day');
     const start = end.subtract(30, 'day').startOf('day');
     return [start.toISOString(), end.toISOString()];
   });
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const showSensitiveInfo = Boolean(settings?.showSensitiveInfo);
+  const tabKeys = showSensitiveInfo ? TAB_KEYS_WITH_PROFIT : BASE_TAB_KEYS;
   const tabFallback = <div style={{ padding: 16 }}>Đang tải...</div>;
   const params = new URLSearchParams(location.search);
   const rawTab = params.get('tab') || 'debt';
-  const activeTab = TAB_KEYS.has(rawTab) ? rawTab : 'debt';
+  const activeTab = tabKeys.has(rawTab) ? rawTab : 'debt';
 
   const handleTabChange = (nextTab) => {
     const nextParams = new URLSearchParams(location.search);
@@ -67,7 +76,7 @@ const Reports = () => {
             label: 'Hoá đơn bán hàng',
             children: (
               <Suspense fallback={tabFallback}>
-                <ReportSalesInvoicesTab />
+                <ReportSalesInvoicesTab showSensitiveInfo={showSensitiveInfo} />
               </Suspense>
             ),
           },
@@ -76,7 +85,7 @@ const Reports = () => {
             label: 'Chi tiết bán hàng',
             children: (
               <Suspense fallback={tabFallback}>
-                <ReportSalesDetailsTab />
+                <ReportSalesDetailsTab showSensitiveInfo={showSensitiveInfo} />
               </Suspense>
             ),
           },
@@ -85,19 +94,23 @@ const Reports = () => {
             label: 'Báo cáo xuất kho',
             children: (
               <Suspense fallback={tabFallback}>
-                <ReportStockOutTab />
+                <ReportStockOutTab showSensitiveInfo={showSensitiveInfo} />
               </Suspense>
             ),
           },
-          {
-            key: 'profit',
-            label: 'Doanh thu & Lãi',
-            children: (
-              <Suspense fallback={tabFallback}>
-                <ReportProfitTab range={profitRange} onRangeChange={setProfitRange} />
-              </Suspense>
-            ),
-          },
+          ...(showSensitiveInfo
+            ? [
+                {
+                  key: 'profit',
+                  label: 'Doanh thu & Lãi',
+                  children: (
+                    <Suspense fallback={tabFallback}>
+                      <ReportProfitTab range={profitRange} onRangeChange={setProfitRange} />
+                    </Suspense>
+                  ),
+                },
+              ]
+            : []),
           // {
           //   key: 'summary',
           //   label: 'Thu/Chi',

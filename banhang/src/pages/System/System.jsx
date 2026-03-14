@@ -13,6 +13,8 @@ import { useCashbookStore } from '../../store/cashbookStore.js';
 import { clearAll } from '../../db/repository.js';
 import { seedDemo } from '../../db/seed.js';
 import TemplateEditor from '../../components/TemplateEditor.jsx';
+import { consumeSystemAccess } from './systemAccess.js';
+import { getSystemPasswordFromSettings } from './systemPassword.js';
 
 const System = () => {
   const navigate = useNavigate();
@@ -29,14 +31,21 @@ const System = () => {
 
   useEffect(() => {
     const bootstrap = async () => {
+      if (!consumeSystemAccess()) {
+        message.error('Vui lòng nhập mật khẩu từ Trang chủ để vào Hệ thống.');
+        navigate('/', { replace: true });
+        return;
+      }
       await Promise.all([loadSettings(), loadProducts(), loadCustomers()]);
     };
     bootstrap();
-  }, [loadSettings, loadProducts, loadCustomers]);
-
+  }, [loadCustomers, loadProducts, loadSettings, navigate]);
 
   useEffect(() => {
-    form.setFieldsValue(settings);
+    form.setFieldsValue({
+      ...settings,
+      systemPassword: getSystemPasswordFromSettings(settings),
+    });
   }, [form, settings]);
 
   const reloadAll = async () => {
@@ -113,11 +122,25 @@ const System = () => {
           <Form.Item label="Cho phép âm kho" name="allowNegativeStock" valuePropName="checked">
             <Switch />
           </Form.Item>
+          <Form.Item
+            label="Cho phép hiển thị thông tin nhạy cảm"
+            name="showSensitiveInfo"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
           <Form.Item label="Ngưỡng cảnh báo tồn thấp" name="lowStockThreshold">
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Số bản in" name="printCopies">
             <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            label="Mật khẩu vào trang hệ thống"
+            name="systemPassword"
+            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu.' }]}
+          >
+            <Input.Password size="large" autoComplete="new-password" />
           </Form.Item>
         </div>
       </Form>
