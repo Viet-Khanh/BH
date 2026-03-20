@@ -58,6 +58,12 @@ const buildSummary = (items = []) =>
     }
   );
 
+const EMPTY_DEBT_TIMELINE = {
+  openingBalance: 0,
+  closingBalance: 0,
+  rows: [],
+};
+
 const buildExportRow = (row, { formatted = false, includeProfit = true } = {}) => ({
   'Số HĐ': row.code,
   Ngày: row.date ? dayjs(row.date).format('DD/MM/YYYY HH:mm') : '',
@@ -97,6 +103,8 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
     remain: 0,
     profit: 0,
   });
+  const [debtTimeline, setDebtTimeline] = useState(EMPTY_DEBT_TIMELINE);
+  const [debtTimelineLoading, setDebtTimelineLoading] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -221,6 +229,48 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
       active = false;
     };
   }, [fetchReport]);
+
+  useEffect(() => {
+    if (!customerId) {
+      setDebtTimeline(EMPTY_DEBT_TIMELINE);
+      setDebtTimelineLoading(false);
+      return;
+    }
+
+    let active = true;
+    setDebtTimeline(EMPTY_DEBT_TIMELINE);
+    setDebtTimelineLoading(true);
+
+    const loadDebtTimeline = async () => {
+      try {
+        const params = new URLSearchParams({ customerId });
+        if (range[0]) params.set("from", range[0]);
+        if (range[1]) params.set("to", range[1]);
+        const data = await apiRequest(`/reports/customer-debt-timeline?${params.toString()}`);
+        if (!active) return;
+        setDebtTimeline({
+          openingBalance: Number(data?.openingBalance || 0),
+          closingBalance: Number(data?.closingBalance || 0),
+          rows: Array.isArray(data?.rows) ? data.rows : [],
+        });
+      } catch (error) {
+        if (active) {
+          setDebtTimeline(EMPTY_DEBT_TIMELINE);
+          message.error(`Không thể tải diễn biến công nợ: ${error.message || "Lỗi không xác định"}`);
+        }
+      } finally {
+        if (active) {
+          setDebtTimelineLoading(false);
+        }
+      }
+    };
+
+    loadDebtTimeline();
+
+    return () => {
+      active = false;
+    };
+  }, [customerId, range]);
 
   useEffect(() => {
     if (!selectedInvoiceId) {
@@ -522,6 +572,61 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
           showTotal={(value) => `Tổng ${value} hóa đơn`}
         />
       </div>
+
+      {customerId && (
+        <div style={{ marginTop: 20 }}>
+          <div className="section-title">
+            Diễn biến công nợ{selectedCustomerName ? ` - ${selectedCustomerName}` : ""}
+          </div>
+          <div className="table-wrapper">
+            <table className="invoice-items-table">
+              <thead>
+                <tr>
+                  <th>Ngày</th>
+                  <th>Tên hóa đơn</th>
+                  <th>Tiền hàng</th>
+                  <th>Đã thu</th>
+                  <th>Nợ cũ</th>
+                  <th>Tổng cộng</th>
+                  <th>Còn nợ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {debtTimelineLoading && (
+                  <tr>
+                    <td colSpan={7}>Đang tải diễn biến công nợ...</td>
+                  </tr>
+                )}
+                {!debtTimelineLoading &&
+                  debtTimeline.rows.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.date ? dayjs(row.date).format("DD/MM/YYYY HH:mm") : ""}</td>
+                      <td>{row.title || ""}</td>
+                      <td className={Number(row.amount || 0) > 0 ? "text-danger" : ""}>
+                        {Number(row.amount || 0) > 0 ? formatMoney(row.amount) : ""}
+                      </td>
+                      <td className={Number(row.paid || 0) > 0 ? "text-success" : ""}>
+                        {Number(row.paid || 0) > 0 ? formatMoney(row.paid) : ""}
+                      </td>
+                      <td className={Number(row.oldDebt || 0) > 0 ? "text-danger" : "text-success"}>
+                        {formatMoney(row.oldDebt)}
+                      </td>
+                      <td>{formatMoney(row.totalPay)}</td>
+                      <td className={Number(row.remain || 0) > 0 ? "text-danger" : "text-success"}>
+                        {formatMoney(row.remain)}
+                      </td>
+                    </tr>
+                  ))}
+                {!debtTimelineLoading && !debtTimeline.rows.length && (
+                  <tr>
+                    <td colSpan={7}>Không có phát sinh công nợ trong khoảng ngày này.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <ReportSalesInvoiceModal
         open={!!selectedInvoice}

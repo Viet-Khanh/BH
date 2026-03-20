@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { InputNumber, Modal, message } from 'antd';
+import { Input, InputNumber, Modal, message } from 'antd';
 import ExportActions from '../../components/ExportActions.jsx';
 import { apiRequest, updateItem } from '../../db/repository.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import { hasSearchMatch } from '../../utils/searchText.js';
 
 const ReportStockTab = () => {
   const [rows, setRows] = useState([]);
@@ -10,6 +11,7 @@ const ReportStockTab = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingStock, setEditingStock] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [keyword, setKeyword] = useState('');
 
   const loadStock = useCallback(async () => {
     const data = await apiRequest('/reports/stock');
@@ -66,9 +68,14 @@ const ReportStockTab = () => {
     }
   };
 
+  const filteredRows = useMemo(
+    () => rows.filter((row) => hasSearchMatch({ name: row.name, code: row.code }, keyword)),
+    [rows, keyword]
+  );
+
   const stockExport = useMemo(
     () =>
-      rows.map((row) => ({
+      filteredRows.map((row) => ({
         San_pham: row.name,
         // Nhom: row.group,
         Ma_san_pham: row.code,
@@ -77,13 +84,23 @@ const ReportStockTab = () => {
         Gia_von: row.avgCost,
         Gia_tri: row.value,
       })),
-    [rows]
+    [filteredRows]
   );
 
   return (
     <div>
       <div className="action-row">
-        <ExportActions rows={stockExport} fileName="ton-kho" sheetName="TonKho" title="Tồn kho" />
+        <Input
+          allowClear
+          size="large"
+          placeholder="Tìm theo sản phẩm"
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          style={{ maxWidth: 360 }}
+        />
+        <div style={{ marginLeft: 'auto' }}>
+          <ExportActions rows={stockExport} fileName="ton-kho" sheetName="TonKho" title="Tồn kho" />
+        </div>
       </div>
       <div className="table-wrapper">
         <table className="invoice-items-table">
@@ -99,7 +116,7 @@ const ReportStockTab = () => {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
+            {filteredRows.map((row) => {
               const isLowStock = Number(row.stock || 0) <= Number(lowStockThreshold || 0);
               const lowStockCellStyle = isLowStock ? { background: '#fff59d' } : undefined;
               return (
@@ -118,7 +135,7 @@ const ReportStockTab = () => {
                 </tr>
               );
             })}
-            {!rows.length && (
+            {!filteredRows.length && (
               <tr>
                 <td colSpan={6}>Chưa có dữ liệu.</td>
               </tr>

@@ -137,6 +137,96 @@ const buildInvoiceFinancials = (invoice, oldDebtByInvoice = {}, paymentsByInvoic
   return { amount, oldDebt, totalPay, paid, remain };
 };
 
+const buildCustomerDebtTimeline = ({ invoices = [], invoicePayments = [], debtReceipts = [], from, to }) => {
+  const invoiceMap = invoices.reduce((acc, invoice) => {
+    acc[invoice.id] = invoice;
+    return acc;
+  }, {});
+
+  const events = [
+    ...invoices.map((invoice) => ({
+      id: `invoice:${invoice.id}`,
+      date: invoice.date,
+      type: 'invoice',
+      title: invoice.code || invoice.id || 'Hóa đơn bán hàng',
+      amount: Number(invoice.total || 0),
+      paid: 0,
+    })),
+    ...invoicePayments
+      .filter((payment) => payment.invoiceId)
+      .map((payment) => {
+        const invoice = invoiceMap[payment.invoiceId] || {};
+        return {
+          id: `invoice-payment:${payment.id}`,
+          date: payment.date,
+          type: 'invoice_payment',
+          title: invoice.code ? `Thu tiền ${invoice.code}` : 'Thu tiền hóa đơn',
+          amount: 0,
+          paid: Number(payment.amount || 0),
+        };
+      }),
+    ...debtReceipts.map((payment) => ({
+      id: `debt-receipt:${payment.id}`,
+      date: payment.date,
+      type: 'debt_receipt',
+      title: payment.code || 'Phiếu thu nợ',
+      amount: 0,
+      paid: Number(payment.amount || 0),
+    })),
+  ]
+    .filter((event) => event.date && dayjs(event.date).isValid())
+    .sort((left, right) => {
+      const dateDiff = new Date(left.date) - new Date(right.date);
+      if (dateDiff !== 0) return dateDiff;
+
+      const orderMap = {
+        invoice: 0,
+        invoice_payment: 1,
+        debt_receipt: 2,
+      };
+      const orderDiff = (orderMap[left.type] ?? 99) - (orderMap[right.type] ?? 99);
+      if (orderDiff !== 0) return orderDiff;
+
+      return String(left.id).localeCompare(String(right.id));
+    });
+
+  let balance = 0;
+  let openingBalance = 0;
+  const rows = [];
+
+  events.forEach((event) => {
+    const eventDate = dayjs(event.date);
+    const delta = Number(event.amount || 0) - Number(event.paid || 0);
+
+    if (from && eventDate.isBefore(from)) {
+      balance += delta;
+      openingBalance = balance;
+      return;
+    }
+
+    if (to && eventDate.isAfter(to)) return;
+
+    const oldDebt = balance;
+    const amount = Number(event.amount || 0);
+    const paid = Number(event.paid || 0);
+    const totalPay = oldDebt + amount;
+    const remain = totalPay - paid;
+    balance = remain;
+    rows.push({
+      ...event,
+      oldDebt,
+      totalPay,
+      remain,
+    });
+  });
+
+  return {
+    openingBalance,
+    closingBalance: rows.length ? Number(rows[rows.length - 1].remain || 0) : balance,
+    rows,
+  };
+};
+
 const computeInvoiceCost = (invoice, productMap = {}) =>
   (invoice.items || []).reduce((sum, item) => {
     const qty = Number(item.qty || 0);
@@ -680,6 +770,67 @@ router.get(
         pageSize,
         totalPages,
       },
+    });
+  })
+);
+
+router.get(
+  '/customer-debt-timeline',
+  asyncHandler(async (req, res) => {
+    const customerId = String(req.query.customerId || '').trim();
+    if (!customerId) {
+      res.status(400).json({ message: 'customerId is required' });
+      return;
+    }
+
+    const { from, to } = parseRange(req.query);
+    const customer = await Customer.findOne({
+      id: customerId,
+      isDeleted: { $ne: true },
+    }).lean();
+
+    if (!customer) {
+      res.status(404).json({ message: 'Customer not found' });
+      return;
+    }
+
+    const invoices = await Invoice.find({
+      customerId,
+      isDeleted: { $ne: true },
+    }).lean();
+    const invoiceIds = invoices.map((invoice) => invoice.id);
+    const [invoicePayments, debtReceipts] = await Promise.all([
+      invoiceIds.length
+        ? Payment.find({
+            invoiceId: { $in: invoiceIds },
+            isDeleted: { $ne: true },
+          }).lean()
+        : Promise.resolve([]),
+      Payment.find({
+        customerId,
+        paymentType: 'debt_receipt',
+        isDeleted: { $ne: true },
+      }).lean(),
+    ]);
+
+    const timeline = buildCustomerDebtTimeline({
+      invoices,
+      invoicePayments,
+      debtReceipts,
+      from,
+      to,
+    });
+
+    res.json({
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        phone: customer.phone,
+        address: customer.address,
+      },
+      from: from ? from.toISOString() : null,
+      to: to ? to.toISOString() : null,
+      ...timeline,
     });
   })
 );

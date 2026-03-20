@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Modal, message } from 'antd';
+import { Button, Input, Modal, message } from 'antd';
 import dayjs from 'dayjs';
 import ExportActions from '../../components/ExportActions.jsx';
 import { apiRequest } from '../../db/repository.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import { hasSearchMatch } from '../../utils/searchText.js';
 
 const isRetailCustomer = (name) => {
   const normalized = String(name || '').trim().toLowerCase();
@@ -13,6 +14,7 @@ const isRetailCustomer = (name) => {
 const ReportDebtTab = () => {
   const [rows, setRows] = useState([]);
   const [debtDetail, setDebtDetail] = useState(null);
+  const [keyword, setKeyword] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -34,9 +36,14 @@ const ReportDebtTab = () => {
     };
   }, []);
 
+  const filteredRows = useMemo(
+    () => rows.filter((row) => hasSearchMatch({ customerName: row.customer?.name }, keyword)),
+    [rows, keyword]
+  );
+
   const debtExport = useMemo(
     () =>
-      rows.map((row) => ({
+      filteredRows.map((row) => ({
         Khach_hang: row.customer?.name || '',
         Tong_ban: row.total,
         Thu_theo_hoa_don: row.invoicePaid,
@@ -44,12 +51,12 @@ const ReportDebtTab = () => {
         Da_thu: row.paid,
         Con_no: row.debt,
       })),
-    [rows]
+    [filteredRows]
   );
 
   const totals = useMemo(
     () =>
-      rows.reduce(
+      filteredRows.reduce(
         (acc, row) => ({
           total: acc.total + Number(row.total || 0),
           paid: acc.paid + Number(row.paid || 0),
@@ -57,7 +64,7 @@ const ReportDebtTab = () => {
         }),
         { total: 0, paid: 0, debt: 0 }
       ),
-    [rows]
+    [filteredRows]
   );
 
   const summaryItems = useMemo(
@@ -82,13 +89,23 @@ const ReportDebtTab = () => {
   return (
     <div>
       <div className="action-row">
-        <ExportActions
-          rows={debtExport}
-          fileName="cong-no"
-          sheetName="CongNo"
-          title="Công nợ"
-          summaryItems={summaryItems}
+        <Input
+          allowClear
+          size="large"
+          placeholder="Tìm theo khách hàng"
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          style={{ maxWidth: 360 }}
         />
+        <div style={{ marginLeft: 'auto' }}>
+          <ExportActions
+            rows={debtExport}
+            fileName="cong-no"
+            sheetName="CongNo"
+            title="Công nợ"
+            summaryItems={summaryItems}
+          />
+        </div>
       </div>
       <div className="table-wrapper">
         <table className="invoice-items-table">
@@ -102,7 +119,7 @@ const ReportDebtTab = () => {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {filteredRows.map((row) => (
               <tr key={row.customer?.id || row.customer?.name}>
                 <td>{row.customer?.name}</td>
                 <td>{formatMoney(row.total)}</td>
@@ -113,7 +130,7 @@ const ReportDebtTab = () => {
                 </td>
               </tr>
             ))}
-            {!rows.length && (
+            {!filteredRows.length && (
               <tr>
                 <td colSpan={5}>Chưa có dữ liệu.</td>
               </tr>
