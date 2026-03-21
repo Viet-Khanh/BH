@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DatePicker, Input, InputNumber, Modal, Select, message } from 'antd';
+import { Button, DatePicker, Input, InputNumber, Modal, Select, message } from 'antd';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
@@ -12,6 +12,8 @@ import { generateCode } from '../../utils/codeGenerator.js';
 import { addItem, apiRequest, deleteItem, updateItem } from '../../db/repository.js';
 import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
 import { buildCodeFromName } from '../Catalog/catalogUtils.js';
+import { printHtml } from '../../utils/printUtils.js';
+import { renderDebtReceiptTemplate } from '../../utils/renderDebtReceiptTemplate.js';
 
 const computeStatus = (total, paid) => {
   if (paid <= 0) return 'CHUA THU';
@@ -55,6 +57,7 @@ const Sales = () => {
   const [debtReceiptNote, setDebtReceiptNote] = useState('');
   const [debtReceiptDebt, setDebtReceiptDebt] = useState(0);
   const [savingDebtReceipt, setSavingDebtReceipt] = useState(false);
+  const [debtReceiptSubmitMode, setDebtReceiptSubmitMode] = useState('');
   const editingRef = useRef(null);
   const activeCustomers = useMemo(
     () => customers.filter((customer) => !customer.isDeleted),
@@ -286,7 +289,21 @@ const Sales = () => {
     };
   }, [debtReceiptOpen, debtReceiptCustomerId]);
 
-  const handleCreateDebtReceipt = async () => {
+  const handlePrintDebtReceipt = useCallback(
+    async ({ receipt, customer, debtBefore }) => {
+      const html = renderDebtReceiptTemplate({
+        receipt,
+        customer,
+        settings,
+        debtBefore,
+      });
+      const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
+      await printHtml(html, { copies: printCopies, autoPageSize: true });
+    },
+    [settings]
+  );
+
+  const handleCreateDebtReceipt = async ({ shouldPrint = false } = {}) => {
     if (!debtReceiptCustomerId) {
       message.error('Chọn khách hàng.');
       return;
@@ -298,9 +315,12 @@ const Sales = () => {
     }
 
     setSavingDebtReceipt(true);
+    setDebtReceiptSubmitMode(shouldPrint ? 'print' : 'save');
     try {
+      const receiptCode = generateCode('PTN');
       const payload = {
         id: uuid(),
+        code: receiptCode,
         customerId: debtReceiptCustomerId,
         paymentType: 'debt_receipt',
         date: debtReceiptDate || new Date().toISOString(),
@@ -308,15 +328,31 @@ const Sales = () => {
         amount,
         note: debtReceiptNote || '',
       };
-      await addItem('payments', payload);
+      const created = await addItem('payments', payload);
+      const nextReceipt = created || payload;
+      const currentCustomer =
+        activeCustomers.find((customer) => customer.id === debtReceiptCustomerId) || null;
       setDebtReceiptOpen(false);
-      message.success('Đã tạo phiếu thu nợ.');
       if (editingRef.current?.customerId === debtReceiptCustomerId) {
         await handleCustomerChange(debtReceiptCustomerId, editingRef.current?.id || null);
       }
+      if (shouldPrint) {
+        try {
+          await handlePrintDebtReceipt({
+            receipt: nextReceipt,
+            customer: currentCustomer,
+            debtBefore: debtReceiptDebt,
+          });
+        } catch (error) {
+          message.warning('Đã lưu phiếu thu nợ nhưng không thể in tự động.');
+          return;
+        }
+      }
+      message.success(shouldPrint ? 'Đã tạo và in phiếu thu nợ.' : 'Đã tạo phiếu thu nợ.');
     } catch (error) {
       message.error(`Không thể tạo phiếu thu nợ: ${error.message || 'Lỗi không xác định'}`);
     } finally {
+      setDebtReceiptSubmitMode('');
       setSavingDebtReceipt(false);
     }
   };
@@ -369,10 +405,7 @@ const Sales = () => {
         title="Phiếu thu nợ"
         open={debtReceiptOpen}
         onCancel={() => setDebtReceiptOpen(false)}
-        onOk={handleCreateDebtReceipt}
-        okText="Lưu phiếu thu"
-        cancelText="Hủy"
-        confirmLoading={savingDebtReceipt}
+        footer={null}
       >
         <div className="pos-payment">
           <div className="pos-payment-row">
@@ -434,6 +467,27 @@ const Sales = () => {
               onChange={(event) => setDebtReceiptNote(event.target.value)}
               placeholder="Nội dung thu nợ"
             />
+          </div>
+          <div className="pos-payment-actions">
+            <Button
+              type="primary"
+              className="btn-success"
+              onClick={() => handleCreateDebtReceipt({ shouldPrint: true })}
+              loading={savingDebtReceipt && debtReceiptSubmitMode === 'print'}
+            >
+              Lưu và in
+            </Button>
+            <Button
+              type="primary"
+              className="btn-primary"
+              onClick={() => handleCreateDebtReceipt({ shouldPrint: false })}
+              loading={savingDebtReceipt && debtReceiptSubmitMode === 'save'}
+            >
+              Lưu phiếu thu
+            </Button>
+            <Button onClick={() => setDebtReceiptOpen(false)} disabled={savingDebtReceipt}>
+              Thoát
+            </Button>
           </div>
         </div>
       </Modal>

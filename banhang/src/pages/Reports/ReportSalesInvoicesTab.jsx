@@ -42,18 +42,20 @@ const readFiltersFromSearch = (search) => {
 
 const isSameRange = (left = [], right = []) => left[0] === right[0] && left[1] === right[1];
 
-const buildSummary = (items = []) =>
+const buildSummary = (items = [], { timelineMode = false } = {}) =>
   items.reduce(
-    (acc, row) => ({
-      amount: acc.amount + Number(row.amount || 0),
-      paid: acc.paid + Number(row.paid || 0),
-      remain: acc.remain + Number(row.remain || 0),
-      profit: acc.profit + Number(row.profit || 0),
-    }),
+    (acc, row) => {
+      const isDebtReceipt = row.rowType === "debt_receipt";
+      acc.amount += isDebtReceipt ? 0 : Number(row.amount || 0);
+      acc.paid += Number(row.paid || 0);
+      acc.remain += timelineMode ? 0 : Number(row.remain || 0);
+      acc.profit += isDebtReceipt ? 0 : Number(row.profit || 0);
+      return acc;
+    },
     {
       amount: 0,
       paid: 0,
-      remain: 0,
+      remain: timelineMode && items.length ? Number(items[items.length - 1]?.remain || 0) : 0,
       profit: 0,
     }
   );
@@ -64,25 +66,29 @@ const EMPTY_DEBT_TIMELINE = {
   rows: [],
 };
 
-const buildExportRow = (row, { formatted = false, includeProfit = true } = {}) => ({
-  'Số HĐ': row.code,
-  Ngày: row.date ? dayjs(row.date).format('DD/MM/YYYY HH:mm') : '',
-  'Nhân viên': row.staff,
-  'Mặt hàng': row.itemsCount,
-  'Số lượng': row.qtySum,
-  'Tiền hàng': formatted ? formatMoney(row.amount) : row.amount,
-  'Đã thu': formatted ? formatMoney(row.paid) : row.paid,
-  ...(includeProfit
-    ? { 'Lợi nhuận': formatted ? formatMoney(row.profit) : row.profit }
-    : {}),
-  'Nợ cũ': formatted ? formatMoney(row.oldDebt) : row.oldDebt,
-  'Tổng cộng': formatted ? formatMoney(row.totalPay) : row.totalPay,
-  'Còn nợ': formatted ? formatMoney(row.remain) : row.remain,
-  'Khách hàng': row.customerName,
-  'Điện thoại': row.phone,
-  'Địa chỉ': row.address,
-  'Ghi chú': row.note,
-});
+const buildExportRow = (row, { formatted = false, includeProfit = true } = {}) => {
+  const isDebtReceipt = row.rowType === "debt_receipt";
+  const blank = "";
+  return {
+    'Số HĐ': isDebtReceipt ? blank : row.code,
+    Ngày: row.date ? dayjs(row.date).format('DD/MM/YYYY HH:mm') : '',
+    'Nhân viên': isDebtReceipt ? blank : row.staff,
+    'Mặt hàng': isDebtReceipt ? blank : row.itemsCount,
+    'Số lượng': isDebtReceipt ? blank : row.qtySum,
+    'Tiền hàng': isDebtReceipt ? blank : formatted ? formatMoney(row.amount) : row.amount,
+    'Đã thu': formatted ? formatMoney(row.paid) : Number(row.paid || 0),
+    ...(includeProfit
+      ? { 'Lợi nhuận': isDebtReceipt ? blank : formatted ? formatMoney(row.profit) : row.profit }
+      : {}),
+    'Nợ cũ': formatted ? formatMoney(row.oldDebt) : Number(row.oldDebt || 0),
+    'Tổng cộng': isDebtReceipt ? blank : formatted ? formatMoney(row.totalPay) : row.totalPay,
+    'Còn nợ': formatted ? formatMoney(row.remain) : Number(row.remain || 0),
+    'Khách hàng': isDebtReceipt ? blank : row.customerName,
+    'Điện thoại': isDebtReceipt ? blank : row.phone,
+    'Địa chỉ': isDebtReceipt ? blank : row.address,
+    'Ghi chú': isDebtReceipt ? blank : row.note,
+  };
+};
 
 const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
   const navigate = useNavigate();
@@ -97,12 +103,6 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
   const [page, setPage] = useState(() => initialFilters.page);
   const [pageSize, setPageSize] = useState(() => initialFilters.pageSize);
   const [total, setTotal] = useState(0);
-  const [summary, setSummary] = useState({
-    amount: 0,
-    paid: 0,
-    remain: 0,
-    profit: 0,
-  });
   const [debtTimeline, setDebtTimeline] = useState(EMPTY_DEBT_TIMELINE);
   const [debtTimelineLoading, setDebtTimelineLoading] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
@@ -190,22 +190,11 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
     const data = await apiRequest(`/reports/sales-invoices${query ? `?${query}` : ""}`);
     const rawRows = Array.isArray(data?.rows) ? data.rows : [];
     const rawCustomers = Array.isArray(data?.customers) ? data.customers : [];
-    const backendSummary = data?.summary;
     const pagination = data?.pagination || {};
     const filteredRows = rawRows;
     const filteredCustomers = rawCustomers;
 
     setRows(filteredRows);
-    setSummary(
-      backendSummary
-        ? {
-            amount: Number(backendSummary.amount || 0),
-            paid: Number(backendSummary.paid || 0),
-            remain: Number(backendSummary.remain || 0),
-            profit: Number(backendSummary.profit || 0),
-          }
-        : buildSummary(filteredRows)
-    );
     setCustomers(filteredCustomers);
     setTotal(Number(pagination.total || filteredRows.length || 0));
     if (pagination.page && Number(pagination.page) !== page) {
@@ -305,24 +294,76 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
     };
   }, [selectedInvoiceId]);
 
+  const displayRows = useMemo(() => {
+    const invoiceRows = rows.map((row) => ({ ...row, rowType: "invoice" }));
+    if (!customerId || !rows.length || !debtTimeline.rows.length) {
+      return invoiceRows;
+    }
+
+    const startInvoiceIndex = (page - 1) * pageSize + 1;
+    const endInvoiceIndex = startInvoiceIndex + rows.length - 1;
+    const invoiceRowsById = new Map(invoiceRows.map((row) => [row.id, row]));
+    const timelineRows = debtTimeline.rows.filter(
+      (row) => row.type === "invoice" || row.type === "debt_receipt"
+    );
+
+    const mergedRows = [];
+    let invoicePosition = 0;
+
+    for (const timelineRow of timelineRows) {
+      if (timelineRow.type === "invoice") {
+        invoicePosition += 1;
+        if (invoicePosition < startInvoiceIndex) continue;
+        if (invoicePosition > endInvoiceIndex) break;
+
+        const invoiceId = String(timelineRow.id || "").replace(/^invoice:/, "");
+        const invoiceRow = invoiceRowsById.get(invoiceId);
+        if (invoiceRow) {
+          mergedRows.push(invoiceRow);
+        }
+        continue;
+      }
+
+      if (invoicePosition < startInvoiceIndex || invoicePosition > endInvoiceIndex) {
+        continue;
+      }
+
+      mergedRows.push({
+        id: timelineRow.id,
+        rowType: "debt_receipt",
+        date: timelineRow.date,
+        paid: Number(timelineRow.paid || 0),
+        oldDebt: Number(timelineRow.oldDebt || 0),
+        remain: Number(timelineRow.remain || 0),
+      });
+    }
+
+    return mergedRows.length ? mergedRows : invoiceRows;
+  }, [customerId, debtTimeline.rows, page, pageSize, rows]);
+
+  const summary = useMemo(
+    () => buildSummary(displayRows, { timelineMode: Boolean(customerId) }),
+    [customerId, displayRows]
+  );
+
   const exportRows = useMemo(
     () =>
-      rows.map((row) =>
+      displayRows.map((row) =>
         buildExportRow(row, {
           includeProfit: showSensitiveInfo,
         })
       ),
-    [rows, showSensitiveInfo]
+    [displayRows, showSensitiveInfo]
   );
   const pdfRows = useMemo(
     () =>
-      rows.map((row) =>
+      displayRows.map((row) =>
         buildExportRow(row, {
           formatted: true,
           includeProfit: showSensitiveInfo,
         })
       ),
-    [rows, showSensitiveInfo]
+    [displayRows, showSensitiveInfo]
   );
 
   const previewHtml = useMemo(() => {
@@ -509,43 +550,52 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {displayRows.map((row) => (
               <tr
                 key={row.id}
-                onClick={() => setSelectedInvoiceId(row.id)}
-                style={{ cursor: "pointer" }}
+                onClick={row.rowType === "invoice" ? () => setSelectedInvoiceId(row.id) : undefined}
+                style={{
+                  cursor: row.rowType === "invoice" ? "pointer" : "default",
+                  background: row.rowType === "debt_receipt" ? "#fffbe6" : undefined,
+                }}
               >
-                <td>{row.code}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : row.code}</td>
                 <td>{dayjs(row.date).format("DD/MM/YY HH:mm")}</td>
-                <td>{row.staff}</td>
-                <td>{row.itemsCount}</td>
-                <td>{row.qtySum}</td>
-                <td>{formatMoney(row.amount)}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : row.staff}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : row.itemsCount}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : row.qtySum}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : formatMoney(row.amount)}</td>
                 <td className={row.paid > 0 ? "text-success" : ""}>
                   {formatMoney(row.paid)}
                 </td>
                 <td className="text-danger">{formatMoney(row.oldDebt)}</td>
-                <td>{formatMoney(row.totalPay)}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : formatMoney(row.totalPay)}</td>
                 <td className={row.remain > 0 ? "text-danger" : "text-success"}>
                   {formatMoney(row.remain)}
                 </td>
                 {showSensitiveInfo && (
                   <td
-                    className={row.profit >= 0 ? "text-success" : "text-danger"}
+                    className={
+                      row.rowType === "debt_receipt"
+                        ? ""
+                        : row.profit >= 0
+                          ? "text-success"
+                          : "text-danger"
+                    }
                   >
-                    {formatMoney(row.profit)}
+                    {row.rowType === "debt_receipt" ? "" : formatMoney(row.profit)}
                   </td>
                 )}
-                <td>{row.customerName}</td>
-                <td>{row.phone}</td>
-                <td>{row.address}</td>
-                <td>{row.note}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : row.customerName}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : row.phone}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : row.address}</td>
+                <td>{row.rowType === "debt_receipt" ? "" : row.note}</td>
               </tr>
             ))}
-            {!rows.length && (
+            {!displayRows.length && (
               <tr>
                 <td colSpan={showSensitiveInfo ? 15 : 14} style={{ textAlign: "center" }}>
-                  Chưa có hóa đơn.
+                  {debtTimelineLoading ? "Đang tải dữ liệu..." : "Chưa có hóa đơn."}
                 </td>
               </tr>
             )}
@@ -572,61 +622,6 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
           showTotal={(value) => `Tổng ${value} hóa đơn`}
         />
       </div>
-
-      {customerId && (
-        <div style={{ marginTop: 20 }}>
-          <div className="section-title">
-            Diễn biến công nợ{selectedCustomerName ? ` - ${selectedCustomerName}` : ""}
-          </div>
-          <div className="table-wrapper">
-            <table className="invoice-items-table">
-              <thead>
-                <tr>
-                  <th>Ngày</th>
-                  <th>Tên hóa đơn</th>
-                  <th>Tiền hàng</th>
-                  <th>Đã thu</th>
-                  <th>Nợ cũ</th>
-                  <th>Tổng cộng</th>
-                  <th>Còn nợ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {debtTimelineLoading && (
-                  <tr>
-                    <td colSpan={7}>Đang tải diễn biến công nợ...</td>
-                  </tr>
-                )}
-                {!debtTimelineLoading &&
-                  debtTimeline.rows.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.date ? dayjs(row.date).format("DD/MM/YYYY HH:mm") : ""}</td>
-                      <td>{row.title || ""}</td>
-                      <td className={Number(row.amount || 0) > 0 ? "text-danger" : ""}>
-                        {Number(row.amount || 0) > 0 ? formatMoney(row.amount) : ""}
-                      </td>
-                      <td className={Number(row.paid || 0) > 0 ? "text-success" : ""}>
-                        {Number(row.paid || 0) > 0 ? formatMoney(row.paid) : ""}
-                      </td>
-                      <td className={Number(row.oldDebt || 0) > 0 ? "text-danger" : "text-success"}>
-                        {formatMoney(row.oldDebt)}
-                      </td>
-                      <td>{formatMoney(row.totalPay)}</td>
-                      <td className={Number(row.remain || 0) > 0 ? "text-danger" : "text-success"}>
-                        {formatMoney(row.remain)}
-                      </td>
-                    </tr>
-                  ))}
-                {!debtTimelineLoading && !debtTimeline.rows.length && (
-                  <tr>
-                    <td colSpan={7}>Không có phát sinh công nợ trong khoảng ngày này.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       <ReportSalesInvoiceModal
         open={!!selectedInvoice}

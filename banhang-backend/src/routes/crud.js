@@ -18,6 +18,7 @@ const ensureActive = (payload) => {
 export const createCrudRouter = (Model) => {
   const router = express.Router();
   const isInvoiceModel = Model.modelName === 'Invoice';
+  const isPaymentModel = Model.modelName === 'Payment';
 
   router.get(
     '/',
@@ -65,8 +66,9 @@ export const createCrudRouter = (Model) => {
     '/:id',
     asyncHandler(async (req, res) => {
       const payload = sanitizePayload(req.body);
+      let existing = null;
       if (isInvoiceModel) {
-        const existing = await Model.findOne({ id: req.params.id }).lean();
+        existing = await Model.findOne({ id: req.params.id }).lean();
         if (
           existing &&
           payload.customerId !== undefined &&
@@ -74,6 +76,23 @@ export const createCrudRouter = (Model) => {
         ) {
           res.status(400).json({ message: 'Không thể đổi khách hàng của hóa đơn đã tạo.' });
           return;
+        }
+      }
+      if (isPaymentModel) {
+        existing = existing || (await Model.findOne({ id: req.params.id }).lean());
+        if (existing?.paymentType === 'debt_receipt') {
+          const immutableFields = ['customerId', 'paymentType', 'invoiceId', 'purchaseId', 'supplierId', 'code'];
+          const changedField = immutableFields.find(
+            (field) =>
+              payload[field] !== undefined &&
+              String(payload[field] ?? '') !== String(existing[field] ?? '')
+          );
+          if (changedField) {
+            res.status(400).json({
+              message: 'Không thể đổi khách hàng hoặc loại của phiếu thu nợ đã tạo.',
+            });
+            return;
+          }
         }
       }
       payload.id = req.params.id;

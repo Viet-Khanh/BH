@@ -625,7 +625,7 @@ router.get(
       isDeleted: { $ne: true },
     }).lean();
     const invoiceIds = invoices.map((inv) => inv.id);
-    const [invoicePayments, debtReceipts] = await Promise.all([
+    const [invoicePayments, debtReceipts, deletedDebtReceipts] = await Promise.all([
       invoiceIds.length
         ? Payment.find({ invoiceId: { $in: invoiceIds }, isDeleted: { $ne: true } }).lean()
         : Promise.resolve([]),
@@ -633,6 +633,11 @@ router.get(
         customerId: customer.id,
         paymentType: 'debt_receipt',
         isDeleted: { $ne: true },
+      }).lean(),
+      Payment.find({
+        customerId: customer.id,
+        paymentType: 'debt_receipt',
+        isDeleted: true,
       }).lean(),
     ]);
 
@@ -662,6 +667,18 @@ router.get(
       }))
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
+    const deletedDebtReceiptRows = deletedDebtReceipts
+      .map((payment) => ({
+        id: payment.id,
+        code: payment.code || '',
+        date: payment.date,
+        amount: Number(payment.amount || 0),
+        method: payment.method || '',
+        note: payment.note || '',
+        deletedAt: payment.deletedAt || '',
+      }))
+      .sort((a, b) => new Date(b.deletedAt || b.date || 0) - new Date(a.deletedAt || a.date || 0));
+
     const invoiceTotal = invoices.reduce((sum, inv) => sum + Number(inv.total || 0), 0);
     const invoicePaid = invoices.reduce((sum, inv) => sum + Number(paymentsByInvoice[inv.id] || 0), 0);
     const debtReceiptPaid = debtReceiptRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
@@ -676,6 +693,7 @@ router.get(
       },
       invoices: openInvoices,
       debtReceipts: debtReceiptRows,
+      deletedDebtReceipts: deletedDebtReceiptRows,
       summary: {
         invoiceTotal,
         invoicePaid,
