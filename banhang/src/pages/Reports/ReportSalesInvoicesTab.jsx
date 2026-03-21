@@ -296,16 +296,17 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
 
   const displayRows = useMemo(() => {
     const invoiceRows = rows.map((row) => ({ ...row, rowType: "invoice" }));
-    if (!customerId || !rows.length || !debtTimeline.rows.length) {
+    if (!customerId || !debtTimeline.rows.length) {
       return invoiceRows;
     }
 
-    const startInvoiceIndex = (page - 1) * pageSize + 1;
-    const endInvoiceIndex = startInvoiceIndex + rows.length - 1;
     const invoiceRowsById = new Map(invoiceRows.map((row) => [row.id, row]));
     const timelineRows = debtTimeline.rows.filter(
       (row) => row.type === "invoice" || row.type === "debt_receipt"
     );
+    if (!timelineRows.length) {
+      return invoiceRows;
+    }
 
     const mergedRows = [];
     let invoicePosition = 0;
@@ -313,9 +314,6 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
     for (const timelineRow of timelineRows) {
       if (timelineRow.type === "invoice") {
         invoicePosition += 1;
-        if (invoicePosition < startInvoiceIndex) continue;
-        if (invoicePosition > endInvoiceIndex) break;
-
         const invoiceId = String(timelineRow.id || "").replace(/^invoice:/, "");
         const invoiceRow = invoiceRowsById.get(invoiceId);
         if (invoiceRow) {
@@ -324,7 +322,8 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
         continue;
       }
 
-      if (invoicePosition < startInvoiceIndex || invoicePosition > endInvoiceIndex) {
+      const receiptPage = invoicePosition > 0 ? Math.ceil(invoicePosition / pageSize) : 1;
+      if (receiptPage !== page) {
         continue;
       }
 
