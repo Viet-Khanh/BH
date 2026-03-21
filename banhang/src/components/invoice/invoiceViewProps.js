@@ -89,6 +89,7 @@ export const buildInvoiceViewProps = ({
     total: totals.total,
     customerId,
     onCustomerChange: setCustomerId,
+    customerLocked: isEdit,
     customers: activeCustomers,
     customer,
     note,

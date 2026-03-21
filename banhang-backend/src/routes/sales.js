@@ -87,13 +87,17 @@ router.get(
       const targetInvoice = excludeInvoiceId
         ? invoices.find((invoice) => invoice.id === excludeInvoiceId) || null
         : null;
-      if (!excludeInvoiceId || targetInvoice?.customerId === customerId) {
+      const effectiveExcludeInvoiceId =
+        targetInvoice?.customerId === customerId ? excludeInvoiceId : '';
+      const effectiveAsOfDate = asOfDate || targetInvoice?.date || '';
+
+      if (effectiveAsOfDate) {
         const debt = computeCustomerDebtBeforeDate({
           invoices,
           payments,
           customerId,
-          asOfDate: asOfDate || targetInvoice?.date || '',
-          excludeInvoiceId,
+          asOfDate: effectiveAsOfDate,
+          excludeInvoiceId: effectiveExcludeInvoiceId,
         });
         res.json({
           customerId,

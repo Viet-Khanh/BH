@@ -17,6 +17,7 @@ const InvoiceTopSection = ({
   total,
   customerId,
   onCustomerChange,
+  customerLocked = false,
   customers,
   customer,
   note,
@@ -90,9 +91,14 @@ const InvoiceTopSection = ({
           }))}
           showSearch
           optionFilterProp="label"
-          disabled={readOnly}
+          disabled={readOnly || customerLocked}
         />
       </div>
+      {customerLocked && (
+        <div className="pos-info-row" style={{ marginTop: -4, color: '#8c8c8c', fontSize: 12 }}>
+          Khóa khách hàng khi sửa hóa đơn để tránh sai công nợ.
+        </div>
+      )}
       <div className="pos-info-row">
         <span style={{ width: 150 }}>{partnerPhoneLabel}:</span>
         <Input value={customer?.phone || ''} readOnly />

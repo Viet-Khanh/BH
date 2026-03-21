@@ -13,7 +13,7 @@ const compareDebtEvents = (left, right) => {
   const orderDiff = (EVENT_ORDER[left.type] ?? 99) - (EVENT_ORDER[right.type] ?? 99);
   if (orderDiff !== 0) return orderDiff;
 
-  return String(left.id || '').localeCompare(String(right.id || ''));
+  return String(left.sortKey || left.id || '').localeCompare(String(right.sortKey || right.id || ''));
 };
 
 export const buildPaymentsByInvoice = (payments = []) => {
@@ -41,6 +41,7 @@ const buildDebtEvents = ({ invoices = [], payments = [], excludeInvoiceId = '' }
       invoiceId: invoice.id,
       customerId: invoice.customerId,
       amount: Number(invoice.total || 0),
+      sortKey: String(invoice._id || invoice.id || ''),
     }));
 
   const invoicePaymentEvents = payments
@@ -58,6 +59,7 @@ const buildDebtEvents = ({ invoices = [], payments = [], excludeInvoiceId = '' }
       invoiceId: payment.invoiceId,
       customerId: payment.customerId || invoiceMap[payment.invoiceId]?.customerId || '',
       amount: Number(payment.amount || 0),
+      sortKey: String(payment._id || payment.id || ''),
     }));
 
   const debtReceiptEvents = payments
@@ -73,6 +75,7 @@ const buildDebtEvents = ({ invoices = [], payments = [], excludeInvoiceId = '' }
       date: payment.date,
       customerId: payment.customerId,
       amount: Number(payment.amount || 0),
+      sortKey: String(payment._id || payment.id || ''),
     }));
 
   return [...invoiceEvents, ...invoicePaymentEvents, ...debtReceiptEvents]
@@ -111,12 +114,28 @@ export const computeCustomerDebtBeforeDate = ({
   if (!customerId || !asOfDate || !dayjs(asOfDate).isValid()) return 0;
 
   const targetDate = dayjs(asOfDate);
+  const targetInvoice = excludeInvoiceId
+    ? invoices.find((invoice) => invoice.id === excludeInvoiceId) || null
+    : null;
+  const targetEvent = targetInvoice
+    ? {
+        id: `invoice:${targetInvoice.id}`,
+        type: 'invoice',
+        date: targetInvoice.date,
+        sortKey: String(targetInvoice._id || targetInvoice.id || ''),
+      }
+    : null;
   const events = buildDebtEvents({ invoices, payments, excludeInvoiceId });
   let balance = 0;
 
   events.forEach((event) => {
     if (event.customerId !== customerId) return;
-    if (!dayjs(event.date).isBefore(targetDate)) return;
+
+    if (targetEvent) {
+      if (compareDebtEvents(event, targetEvent) >= 0) return;
+    } else if (dayjs(event.date).isAfter(targetDate)) {
+      return;
+    }
 
     if (event.type === 'invoice') {
       balance += Number(event.amount || 0);

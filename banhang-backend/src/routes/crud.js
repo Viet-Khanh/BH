@@ -17,6 +17,7 @@ const ensureActive = (payload) => {
 
 export const createCrudRouter = (Model) => {
   const router = express.Router();
+  const isInvoiceModel = Model.modelName === 'Invoice';
 
   router.get(
     '/',
@@ -64,6 +65,17 @@ export const createCrudRouter = (Model) => {
     '/:id',
     asyncHandler(async (req, res) => {
       const payload = sanitizePayload(req.body);
+      if (isInvoiceModel) {
+        const existing = await Model.findOne({ id: req.params.id }).lean();
+        if (
+          existing &&
+          payload.customerId !== undefined &&
+          String(payload.customerId || '') !== String(existing.customerId || '')
+        ) {
+          res.status(400).json({ message: 'Không thể đổi khách hàng của hóa đơn đã tạo.' });
+          return;
+        }
+      }
       payload.id = req.params.id;
       const doc = await Model.findOneAndUpdate(
         { id: req.params.id },

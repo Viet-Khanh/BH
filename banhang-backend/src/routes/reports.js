@@ -48,6 +48,12 @@ const inRange = (dateValue, from, to) => {
   return true;
 };
 
+const compareDatedRecords = (left, right) => {
+  const dateDiff = new Date(left?.date) - new Date(right?.date);
+  if (dateDiff !== 0) return dateDiff;
+  return String(left?._id || left?.id || '').localeCompare(String(right?._id || right?.id || ''));
+};
+
 const buildPaymentsByPurchase = (payments = []) => {
   const map = {};
   payments.forEach((payment) => {
@@ -130,8 +136,9 @@ const buildCustomerDebtTimeline = ({ invoices = [], invoicePayments = [], debtRe
       date: invoice.date,
       type: 'invoice',
       title: invoice.code || invoice.id || 'Hóa đơn bán hàng',
-      amount: Number(invoice.total || 0),
+      amount: getInvoiceAmount(invoice),
       paid: 0,
+      sortKey: String(invoice._id || invoice.id || ''),
     })),
     ...invoicePayments
       .filter((payment) => payment.invoiceId)
@@ -144,6 +151,7 @@ const buildCustomerDebtTimeline = ({ invoices = [], invoicePayments = [], debtRe
           title: invoice.code ? `Thu tiền ${invoice.code}` : 'Thu tiền hóa đơn',
           amount: 0,
           paid: Number(payment.amount || 0),
+          sortKey: String(payment._id || payment.id || ''),
         };
       }),
     ...debtReceipts.map((payment) => ({
@@ -153,6 +161,7 @@ const buildCustomerDebtTimeline = ({ invoices = [], invoicePayments = [], debtRe
       title: payment.code || 'Phiếu thu nợ',
       amount: 0,
       paid: Number(payment.amount || 0),
+      sortKey: String(payment._id || payment.id || ''),
     })),
   ]
     .filter((event) => event.date && dayjs(event.date).isValid())
@@ -168,7 +177,9 @@ const buildCustomerDebtTimeline = ({ invoices = [], invoicePayments = [], debtRe
       const orderDiff = (orderMap[left.type] ?? 99) - (orderMap[right.type] ?? 99);
       if (orderDiff !== 0) return orderDiff;
 
-      return String(left.id).localeCompare(String(right.id));
+      return String(left.sortKey || left.id || '').localeCompare(
+        String(right.sortKey || right.id || '')
+      );
     });
 
   let balance = 0;
@@ -716,7 +727,7 @@ router.get(
     const productMap = buildProductMap(products);
 
     const allRows = filteredInvoices
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .sort(compareDatedRecords)
       .map((invoice) =>
         buildInvoiceSummary(invoice, {
           customerMap,
@@ -861,7 +872,7 @@ router.get(
     const productMap = buildProductMap(products);
 
     const allRows = filteredInvoices
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .sort(compareDatedRecords)
       .map((invoice) => ({
         ...buildInvoiceSummary(invoice, {
           customerMap,
