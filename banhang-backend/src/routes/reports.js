@@ -9,6 +9,10 @@ import Payment from '../models/Payment.js';
 import Cashbook from '../models/Cashbook.js';
 import Settings from '../models/Settings.js';
 import { computeStock } from '../utils/stock.js';
+import {
+  buildOldDebtByInvoiceTimeline,
+  buildPaymentsByInvoice,
+} from '../utils/customerDebt.js';
 
 const router = express.Router();
 
@@ -44,16 +48,6 @@ const inRange = (dateValue, from, to) => {
   return true;
 };
 
-const buildPaymentsByInvoice = (payments = []) => {
-  const map = {};
-  payments.forEach((payment) => {
-    if (!payment.invoiceId) return;
-    if (payment.paymentType === 'debt_receipt') return;
-    map[payment.invoiceId] = (map[payment.invoiceId] || 0) + Number(payment.amount || 0);
-  });
-  return map;
-};
-
 const buildPaymentsByPurchase = (payments = []) => {
   const map = {};
   payments.forEach((payment) => {
@@ -80,19 +74,6 @@ const buildDebtReceiptsByCustomer = (payments = []) => {
     if (payment.paymentType !== 'debt_receipt') return;
     if (!payment.customerId) return;
     map[payment.customerId] = (map[payment.customerId] || 0) + Number(payment.amount || 0);
-  });
-  return map;
-};
-
-const buildOldDebtByInvoice = (invoices = [], paymentsByInvoice = {}) => {
-  const sorted = [...invoices].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const customerDebt = {};
-  const map = {};
-  sorted.forEach((invoice) => {
-    const paid = paymentsByInvoice[invoice.id] || 0;
-    const total = Number(invoice.total || 0);
-    map[invoice.id] = customerDebt[invoice.customerId] || 0;
-    customerDebt[invoice.customerId] = (customerDebt[invoice.customerId] || 0) + total - paid;
   });
   return map;
 };
@@ -712,11 +693,16 @@ router.get(
     const filteredInvoices = invoices.filter((invoice) => inRange(invoice.date, from, to));
 
     const invoiceIds = invoices.map((invoice) => invoice.id);
-    const payments = invoiceIds.length
-      ? await Payment.find({ invoiceId: { $in: invoiceIds }, isDeleted: { $ne: true } }).lean()
-      : [];
+    const paymentFilter = { isDeleted: { $ne: true } };
+    const paymentOr = [];
+    if (invoiceIds.length) {
+      paymentOr.push({ invoiceId: { $in: invoiceIds } });
+    }
+    paymentOr.push({ paymentType: 'debt_receipt' });
+    paymentFilter.$or = paymentOr;
+    const payments = await Payment.find(paymentFilter).lean();
     const paymentsByInvoice = buildPaymentsByInvoice(payments);
-    const oldDebtByInvoice = buildOldDebtByInvoice(invoices, paymentsByInvoice);
+    const oldDebtByInvoice = buildOldDebtByInvoiceTimeline({ invoices, payments });
 
     const productIds = new Set();
     invoices.forEach((invoice) => {
@@ -852,11 +838,16 @@ router.get(
     const filteredInvoices = invoices.filter((invoice) => inRange(invoice.date, from, to));
 
     const invoiceIds = invoices.map((invoice) => invoice.id);
-    const payments = invoiceIds.length
-      ? await Payment.find({ invoiceId: { $in: invoiceIds }, isDeleted: { $ne: true } }).lean()
-      : [];
+    const paymentFilter = { isDeleted: { $ne: true } };
+    const paymentOr = [];
+    if (invoiceIds.length) {
+      paymentOr.push({ invoiceId: { $in: invoiceIds } });
+    }
+    paymentOr.push({ paymentType: 'debt_receipt' });
+    paymentFilter.$or = paymentOr;
+    const payments = await Payment.find(paymentFilter).lean();
     const paymentsByInvoice = buildPaymentsByInvoice(payments);
-    const oldDebtByInvoice = buildOldDebtByInvoice(invoices, paymentsByInvoice);
+    const oldDebtByInvoice = buildOldDebtByInvoiceTimeline({ invoices, payments });
 
     const productIds = new Set();
     invoices.forEach((invoice) => {
@@ -1009,14 +1000,19 @@ router.get(
     const productMap = buildProductMap(products);
     const customerInvoices = allInvoices.filter((item) => item.customerId === invoice.customerId);
     const customerInvoiceIds = customerInvoices.map((item) => item.id);
-    const customerPayments = customerInvoiceIds.length
-      ? await Payment.find({
-          invoiceId: { $in: customerInvoiceIds },
-          isDeleted: { $ne: true },
-        }).lean()
-      : [];
+    const customerPaymentFilter = {
+      isDeleted: { $ne: true },
+      $or: [
+        ...(customerInvoiceIds.length ? [{ invoiceId: { $in: customerInvoiceIds } }] : []),
+        { customerId: invoice.customerId, paymentType: 'debt_receipt' },
+      ],
+    };
+    const customerPayments = await Payment.find(customerPaymentFilter).lean();
     const paymentsByInvoice = buildPaymentsByInvoice(customerPayments);
-    const oldDebtByInvoice = buildOldDebtByInvoice(customerInvoices, paymentsByInvoice);
+    const oldDebtByInvoice = buildOldDebtByInvoiceTimeline({
+      invoices: customerInvoices,
+      payments: customerPayments,
+    });
     const financials = buildInvoiceFinancials(invoice, oldDebtByInvoice, paymentsByInvoice);
 
     res.json({
@@ -1066,14 +1062,19 @@ router.get(
     const productMap = buildProductMap(products);
     const customerInvoices = allInvoices.filter((item) => item.customerId === invoice.customerId);
     const customerInvoiceIds = customerInvoices.map((item) => item.id);
-    const customerPayments = customerInvoiceIds.length
-      ? await Payment.find({
-          invoiceId: { $in: customerInvoiceIds },
-          isDeleted: { $ne: true },
-        }).lean()
-      : [];
+    const customerPaymentFilter = {
+      isDeleted: { $ne: true },
+      $or: [
+        ...(customerInvoiceIds.length ? [{ invoiceId: { $in: customerInvoiceIds } }] : []),
+        { customerId: invoice.customerId, paymentType: 'debt_receipt' },
+      ],
+    };
+    const customerPayments = await Payment.find(customerPaymentFilter).lean();
     const paymentsByInvoice = buildPaymentsByInvoice(customerPayments);
-    const oldDebtByInvoice = buildOldDebtByInvoice(customerInvoices, paymentsByInvoice);
+    const oldDebtByInvoice = buildOldDebtByInvoiceTimeline({
+      invoices: customerInvoices,
+      payments: customerPayments,
+    });
     const financials = buildInvoiceFinancials(invoice, oldDebtByInvoice, paymentsByInvoice);
 
     res.json({

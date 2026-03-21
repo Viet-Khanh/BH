@@ -86,8 +86,8 @@ const useInvoiceEditorState = ({
 
   useEffect(() => {
     if (!onCustomerChange || !customerId) return;
-    onCustomerChange(customerId, invoice?.id || null);
-  }, [customerId, invoice?.id, onCustomerChange]);
+    onCustomerChange(customerId, invoice?.id || null, date);
+  }, [customerId, date, invoice?.id, onCustomerChange]);
 
   useEffect(() => {
     if (!onSearchProducts) return;

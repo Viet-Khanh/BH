@@ -4,6 +4,10 @@ import Purchase from '../models/Purchase.js';
 import Invoice from '../models/Invoice.js';
 import Payment from '../models/Payment.js';
 import { computeStock } from '../utils/stock.js';
+import {
+  buildPaymentsByInvoice,
+  computeCustomerDebtBeforeDate,
+} from '../utils/customerDebt.js';
 
 const router = express.Router();
 
@@ -30,29 +34,6 @@ const buildProductSearchFilter = (search) => {
       return { $or: buildOr(regex) };
     }),
   };
-};
-
-const buildPaymentsByInvoice = (payments = []) => {
-  const map = {};
-  payments.forEach((payment) => {
-    if (!payment.invoiceId) return;
-    if (payment.paymentType === 'debt_receipt') return;
-    map[payment.invoiceId] = (map[payment.invoiceId] || 0) + Number(payment.amount || 0);
-  });
-  return map;
-};
-
-const buildOldDebtByInvoice = (invoices = [], paymentsByInvoice = {}) => {
-  const sorted = [...invoices].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const customerDebt = {};
-  const map = {};
-  sorted.forEach((invoice) => {
-    const paid = paymentsByInvoice[invoice.id] || 0;
-    const total = Number(invoice.total || 0);
-    map[invoice.id] = customerDebt[invoice.customerId] || 0;
-    customerDebt[invoice.customerId] = (customerDebt[invoice.customerId] || 0) + total - paid;
-  });
-  return map;
 };
 
 router.get(
@@ -89,21 +70,31 @@ router.get(
       return;
     }
     const excludeInvoiceId = String(req.query.excludeInvoiceId || '').trim();
+    const asOfDate = String(req.query.asOfDate || '').trim();
 
-    if (excludeInvoiceId) {
-      const targetInvoice = await Invoice.findOne({
-        id: excludeInvoiceId,
-        isDeleted: { $ne: true },
-      }).lean();
-      if (targetInvoice?.customerId === customerId) {
-        const invoices = await Invoice.find({ customerId, isDeleted: { $ne: true } }).lean();
-        const invoiceIds = invoices.map((inv) => inv.id);
-        const invoicePayments = invoiceIds.length
-          ? await Payment.find({ invoiceId: { $in: invoiceIds }, isDeleted: { $ne: true } }).lean()
-          : [];
-        const paymentsByInvoice = buildPaymentsByInvoice(invoicePayments);
-        const oldDebtByInvoice = buildOldDebtByInvoice(invoices, paymentsByInvoice);
-        const debt = Number(oldDebtByInvoice[excludeInvoiceId] || 0);
+    const invoices = await Invoice.find({ customerId, isDeleted: { $ne: true } }).lean();
+    const invoiceIds = invoices.map((inv) => inv.id);
+    const paymentFilter = {
+      isDeleted: { $ne: true },
+      $or: [
+        ...(invoiceIds.length ? [{ invoiceId: { $in: invoiceIds } }] : []),
+        { customerId, paymentType: 'debt_receipt' },
+      ],
+    };
+    const payments = await Payment.find(paymentFilter).lean();
+
+    if (excludeInvoiceId || asOfDate) {
+      const targetInvoice = excludeInvoiceId
+        ? invoices.find((invoice) => invoice.id === excludeInvoiceId) || null
+        : null;
+      if (!excludeInvoiceId || targetInvoice?.customerId === customerId) {
+        const debt = computeCustomerDebtBeforeDate({
+          invoices,
+          payments,
+          customerId,
+          asOfDate: asOfDate || targetInvoice?.date || '',
+          excludeInvoiceId,
+        });
         res.json({
           customerId,
           total: debt,
@@ -116,18 +107,10 @@ router.get(
       }
     }
 
-    const invoices = await Invoice.find({ customerId, isDeleted: { $ne: true } }).lean();
-    const invoiceIds = invoices.map((inv) => inv.id);
-    const [invoicePayments, debtReceipts] = await Promise.all([
-      invoiceIds.length
-        ? Payment.find({ invoiceId: { $in: invoiceIds }, isDeleted: { $ne: true } }).lean()
-        : Promise.resolve([]),
-      Payment.find({
-        customerId,
-        paymentType: 'debt_receipt',
-        isDeleted: { $ne: true },
-      }).lean(),
-    ]);
+    const invoicePayments = payments.filter(
+      (payment) => payment.invoiceId && payment.paymentType !== 'debt_receipt'
+    );
+    const debtReceipts = payments.filter((payment) => payment.paymentType === 'debt_receipt');
     const total = invoices.reduce((sum, inv) => sum + Number(inv.total || 0), 0);
     const invoicePaid = invoicePayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
     const debtReceiptPaid = debtReceipts.reduce(

@@ -127,13 +127,14 @@ const Sales = () => {
     return nextProduct;
   }, []);
 
-  const handleCustomerChange = useCallback(async (nextCustomerId, excludeInvoiceId) => {
+  const handleCustomerChange = useCallback(async (nextCustomerId, excludeInvoiceId, asOfDate) => {
     if (!nextCustomerId) {
       setCustomerDebt(0);
       return;
     }
     const params = new URLSearchParams({ customerId: nextCustomerId });
     if (excludeInvoiceId) params.set('excludeInvoiceId', excludeInvoiceId);
+    if (asOfDate) params.set('asOfDate', asOfDate);
     try {
       const data = await apiRequest(`/sales/customer-debt?${params.toString()}`);
       setCustomerDebt(Number(data?.debt || 0));
