@@ -6,7 +6,7 @@ import Payment from '../models/Payment.js';
 import { computeStock } from '../utils/stock.js';
 import {
   buildPaymentsByInvoice,
-  computeCustomerDebtBeforeDate,
+  computeCustomerDebtBeforeDateByInvoiceOrder,
 } from '../utils/customerDebt.js';
 
 const router = express.Router();
@@ -92,7 +92,7 @@ router.get(
       const effectiveAsOfDate = asOfDate || targetInvoice?.date || '';
 
       if (effectiveAsOfDate) {
-        const debt = computeCustomerDebtBeforeDate({
+        const debt = computeCustomerDebtBeforeDateByInvoiceOrder({
           invoices,
           payments,
           customerId,

@@ -235,6 +235,7 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
         const params = new URLSearchParams({ customerId });
         if (range[0]) params.set("from", range[0]);
         if (range[1]) params.set("to", range[1]);
+        params.set("mode", "invoice-order");
         const data = await apiRequest(`/reports/customer-debt-timeline?${params.toString()}`);
         if (!active) return;
         setDebtTimeline({

@@ -104,6 +104,66 @@ export const buildOldDebtByInvoiceTimeline = ({ invoices = [], payments = [] } =
   return oldDebtByInvoice;
 };
 
+const buildInvoiceOrderDebtEvents = ({ invoices = [], payments = [], excludeInvoiceId = '' } = {}) => {
+  const filteredPayments = payments.filter((payment) => payment?.invoiceId !== excludeInvoiceId);
+  const paymentsByInvoice = buildPaymentsByInvoice(filteredPayments);
+
+  const invoiceEvents = invoices
+    .filter((invoice) => invoice?.id && invoice.id !== excludeInvoiceId && invoice.customerId && invoice.date)
+    .map((invoice) => ({
+      id: `invoice:${invoice.id}`,
+      type: 'invoice',
+      date: invoice.date,
+      invoiceId: invoice.id,
+      customerId: invoice.customerId,
+      amount: Number(invoice.total || 0),
+      paid: Number(paymentsByInvoice[invoice.id] || 0),
+      sortKey: String(invoice._id || invoice.id || ''),
+    }));
+
+  const debtReceiptEvents = filteredPayments
+    .filter(
+      (payment) =>
+        payment?.paymentType === 'debt_receipt' &&
+        payment.customerId &&
+        payment.date
+    )
+    .map((payment) => ({
+      id: `debt-receipt:${payment.id}`,
+      type: 'debt_receipt',
+      date: payment.date,
+      customerId: payment.customerId,
+      amount: Number(payment.amount || 0),
+      sortKey: String(payment._id || payment.id || ''),
+    }));
+
+  return [...invoiceEvents, ...debtReceiptEvents]
+    .filter((event) => dayjs(event.date).isValid())
+    .sort(compareDebtEvents);
+};
+
+export const buildOldDebtByInvoiceOrder = ({ invoices = [], payments = [] } = {}) => {
+  const events = buildInvoiceOrderDebtEvents({ invoices, payments });
+  const balances = {};
+  const oldDebtByInvoice = {};
+
+  events.forEach((event) => {
+    const customerId = event.customerId;
+    const currentDebt = Number(balances[customerId] || 0);
+
+    if (event.type === 'invoice') {
+      oldDebtByInvoice[event.invoiceId] = currentDebt;
+      balances[customerId] =
+        currentDebt + Number(event.amount || 0) - Number(event.paid || 0);
+      return;
+    }
+
+    balances[customerId] = currentDebt - Number(event.amount || 0);
+  });
+
+  return oldDebtByInvoice;
+};
+
 export const computeCustomerDebtBeforeDate = ({
   invoices = [],
   payments = [],
@@ -139,6 +199,50 @@ export const computeCustomerDebtBeforeDate = ({
 
     if (event.type === 'invoice') {
       balance += Number(event.amount || 0);
+      return;
+    }
+
+    balance -= Number(event.amount || 0);
+  });
+
+  return balance;
+};
+
+export const computeCustomerDebtBeforeDateByInvoiceOrder = ({
+  invoices = [],
+  payments = [],
+  customerId = '',
+  asOfDate,
+  excludeInvoiceId = '',
+} = {}) => {
+  if (!customerId || !asOfDate || !dayjs(asOfDate).isValid()) return 0;
+
+  const targetDate = dayjs(asOfDate);
+  const targetInvoice = excludeInvoiceId
+    ? invoices.find((invoice) => invoice.id === excludeInvoiceId) || null
+    : null;
+  const targetEvent = excludeInvoiceId
+    ? {
+        id: `invoice:${excludeInvoiceId}`,
+        type: 'invoice',
+        date: targetDate.toISOString(),
+        sortKey: String(targetInvoice?._id || targetInvoice?.id || excludeInvoiceId || ''),
+      }
+    : null;
+  const events = buildInvoiceOrderDebtEvents({ invoices, payments, excludeInvoiceId });
+  let balance = 0;
+
+  events.forEach((event) => {
+    if (event.customerId !== customerId) return;
+
+    if (targetEvent) {
+      if (compareDebtEvents(event, targetEvent) >= 0) return;
+    } else if (dayjs(event.date).isAfter(targetDate)) {
+      return;
+    }
+
+    if (event.type === 'invoice') {
+      balance += Number(event.amount || 0) - Number(event.paid || 0);
       return;
     }
 

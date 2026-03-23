@@ -10,7 +10,7 @@ import Cashbook from '../models/Cashbook.js';
 import Settings from '../models/Settings.js';
 import { computeStock } from '../utils/stock.js';
 import {
-  buildOldDebtByInvoiceTimeline,
+  buildOldDebtByInvoiceOrder,
   buildPaymentsByInvoice,
 } from '../utils/customerDebt.js';
 
@@ -172,6 +172,88 @@ const buildCustomerDebtTimeline = ({ invoices = [], invoicePayments = [], debtRe
       const orderMap = {
         invoice: 0,
         invoice_payment: 1,
+        debt_receipt: 2,
+      };
+      const orderDiff = (orderMap[left.type] ?? 99) - (orderMap[right.type] ?? 99);
+      if (orderDiff !== 0) return orderDiff;
+
+      return String(left.sortKey || left.id || '').localeCompare(
+        String(right.sortKey || right.id || '')
+      );
+    });
+
+  let balance = 0;
+  let openingBalance = 0;
+  const rows = [];
+
+  events.forEach((event) => {
+    const eventDate = dayjs(event.date);
+    const delta = Number(event.amount || 0) - Number(event.paid || 0);
+
+    if (from && eventDate.isBefore(from)) {
+      balance += delta;
+      openingBalance = balance;
+      return;
+    }
+
+    if (to && eventDate.isAfter(to)) return;
+
+    const oldDebt = balance;
+    const amount = Number(event.amount || 0);
+    const paid = Number(event.paid || 0);
+    const totalPay = oldDebt + amount;
+    const remain = totalPay - paid;
+    balance = remain;
+    rows.push({
+      ...event,
+      oldDebt,
+      totalPay,
+      remain,
+    });
+  });
+
+  return {
+    openingBalance,
+    closingBalance: rows.length ? Number(rows[rows.length - 1].remain || 0) : balance,
+    rows,
+  };
+};
+
+const buildCustomerDebtTimelineByInvoiceOrder = ({
+  invoices = [],
+  invoicePayments = [],
+  debtReceipts = [],
+  from,
+  to,
+}) => {
+  const paymentsByInvoice = buildPaymentsByInvoice(invoicePayments);
+  const events = [
+    ...invoices.map((invoice) => ({
+      id: `invoice:${invoice.id}`,
+      date: invoice.date,
+      type: 'invoice',
+      title: invoice.code || invoice.id || 'Hóa đơn bán hàng',
+      amount: getInvoiceAmount(invoice),
+      paid: Number(paymentsByInvoice[invoice.id] || 0),
+      sortKey: String(invoice._id || invoice.id || ''),
+    })),
+    ...debtReceipts.map((payment) => ({
+      id: `debt-receipt:${payment.id}`,
+      date: payment.date,
+      type: 'debt_receipt',
+      title: payment.code || 'Phiếu thu nợ',
+      amount: 0,
+      paid: Number(payment.amount || 0),
+      sortKey: String(payment._id || payment.id || ''),
+    })),
+  ]
+    .filter((event) => event.date && dayjs(event.date).isValid())
+    .sort((left, right) => {
+      const dateDiff = new Date(left.date) - new Date(right.date);
+      if (dateDiff !== 0) return dateDiff;
+
+      const orderMap = {
+        invoice: 0,
         debt_receipt: 2,
       };
       const orderDiff = (orderMap[left.type] ?? 99) - (orderMap[right.type] ?? 99);
@@ -731,7 +813,7 @@ router.get(
     paymentFilter.$or = paymentOr;
     const payments = await Payment.find(paymentFilter).lean();
     const paymentsByInvoice = buildPaymentsByInvoice(payments);
-    const oldDebtByInvoice = buildOldDebtByInvoiceTimeline({ invoices, payments });
+    const oldDebtByInvoice = buildOldDebtByInvoiceOrder({ invoices, payments });
 
     const productIds = new Set();
     invoices.forEach((invoice) => {
@@ -828,13 +910,22 @@ router.get(
       }).lean(),
     ]);
 
-    const timeline = buildCustomerDebtTimeline({
-      invoices,
-      invoicePayments,
-      debtReceipts,
-      from,
-      to,
-    });
+    const timelineMode = String(req.query.mode || '').trim();
+    const timeline = timelineMode === 'invoice-order'
+      ? buildCustomerDebtTimelineByInvoiceOrder({
+          invoices,
+          invoicePayments,
+          debtReceipts,
+          from,
+          to,
+        })
+      : buildCustomerDebtTimeline({
+          invoices,
+          invoicePayments,
+          debtReceipts,
+          from,
+          to,
+        });
 
     res.json({
       customer: {
@@ -876,7 +967,7 @@ router.get(
     paymentFilter.$or = paymentOr;
     const payments = await Payment.find(paymentFilter).lean();
     const paymentsByInvoice = buildPaymentsByInvoice(payments);
-    const oldDebtByInvoice = buildOldDebtByInvoiceTimeline({ invoices, payments });
+    const oldDebtByInvoice = buildOldDebtByInvoiceOrder({ invoices, payments });
 
     const productIds = new Set();
     invoices.forEach((invoice) => {
@@ -1038,7 +1129,7 @@ router.get(
     };
     const customerPayments = await Payment.find(customerPaymentFilter).lean();
     const paymentsByInvoice = buildPaymentsByInvoice(customerPayments);
-    const oldDebtByInvoice = buildOldDebtByInvoiceTimeline({
+    const oldDebtByInvoice = buildOldDebtByInvoiceOrder({
       invoices: customerInvoices,
       payments: customerPayments,
     });
@@ -1100,7 +1191,7 @@ router.get(
     };
     const customerPayments = await Payment.find(customerPaymentFilter).lean();
     const paymentsByInvoice = buildPaymentsByInvoice(customerPayments);
-    const oldDebtByInvoice = buildOldDebtByInvoiceTimeline({
+    const oldDebtByInvoice = buildOldDebtByInvoiceOrder({
       invoices: customerInvoices,
       payments: customerPayments,
     });
