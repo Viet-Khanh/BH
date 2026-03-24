@@ -32,6 +32,8 @@ const TemplateEditor = ({
     return {
       code: 'INV-20240101-001',
       date: dayjs().toISOString(),
+      note: 'Ghi chu da luu',
+      printNote: 'Luu y chi dung khi in',
       items: product
         ? [
             {

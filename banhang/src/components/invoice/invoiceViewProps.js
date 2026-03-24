@@ -21,6 +21,8 @@ export const buildInvoiceViewProps = ({
   customer,
   note,
   setNote,
+  printNote,
+  setPrintNote,
   searchKeyword,
   setSearchKeyword,
   filteredQuick,
@@ -94,6 +96,8 @@ export const buildInvoiceViewProps = ({
     customer,
     note,
     onNoteChange: setNote,
+    printNote,
+    onPrintNoteChange: setPrintNote,
   };
 
   const searchProps = {

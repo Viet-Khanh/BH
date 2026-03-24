@@ -13,6 +13,7 @@ export const createCancelTicketHandler = ({
   invoice,
   setItems,
   setNote,
+  setPrintNote,
   setDate,
   setDraftCode,
 }) => () => {
@@ -25,11 +26,13 @@ export const createCancelTicketHandler = ({
       if (invoice) {
         setItems(buildInvoiceItems(invoice));
         setNote(invoice.note || '');
+        setPrintNote('');
         setDate(invoice.date || new Date().toISOString());
         return;
       }
       setItems([]);
       setNote('');
+      setPrintNote('');
       setDate(new Date().toISOString());
       setDraftCode(generateCode('INV'));
     },
@@ -40,6 +43,7 @@ export const createNewTicketHandler = ({
   onNewInvoice,
   setItems,
   setNote,
+  setPrintNote,
   setDate,
   setDraftCode,
   setCustomerId,
@@ -56,6 +60,7 @@ export const createNewTicketHandler = ({
   }
   setItems([]);
   setNote('');
+  setPrintNote('');
   setDate(new Date().toISOString());
   setDraftCode(generateCode('INV'));
   setCustomerId(defaultCustomerId);

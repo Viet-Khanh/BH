@@ -19,6 +19,8 @@ const formatMeasure = (value, { blankOnZero = false } = {}) => {
   }).format(number);
 };
 
+const formatTemplateText = (value) => escapeHtml(value).replaceAll('\n', '<br />');
+
 export const buildItemsHtml = (items = [], products = []) => {
   const rows = items
     .map((item, index) => {
@@ -99,6 +101,9 @@ export const renderInvoiceTemplate = ({
   const grandTotal = invoiceTotal + customerDebt;
   const remaining = grandTotal - paid;
   const staff = invoice.staff || 'admin';
+  const persistedNote = invoice.note || '';
+  const printNote = invoice.printNote || '';
+  const resolvedNote = printNote || persistedNote;
 
   const replacements = {
     '{{invoice.code}}': invoice.code || '',
@@ -116,7 +121,9 @@ export const renderInvoiceTemplate = ({
     '{{grand.total}}': formatMoney(grandTotal),
     '{{remaining}}': formatMoney(remaining),
     '{{date}}': dayjs(invoice.date).format('DD/MM/YYYY'),
-    '{{note}}': invoice.note || '',
+    '{{note}}': formatTemplateText(resolvedNote),
+    '{{invoice.note}}': formatTemplateText(persistedNote),
+    '{{print.note}}': formatTemplateText(printNote),
     '{{staff}}': staff,
     '{{shop.name}}': settings.shopName || '',
     '{{shop.phone}}': settings.shopPhone || '',

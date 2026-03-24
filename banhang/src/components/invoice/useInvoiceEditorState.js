@@ -53,6 +53,7 @@ const useInvoiceEditorState = ({
   const [date, setDate] = useState(invoice?.date || new Date().toISOString());
   const [items, setItems] = useState([]);
   const [note, setNote] = useState(invoice?.note || '');
+  const [printNote, setPrintNote] = useState('');
   const [draftCode, setDraftCode] = useState(invoice?.code || generateCode('INV'));
   const [previewOpen, setPreviewOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -72,6 +73,7 @@ const useInvoiceEditorState = ({
       setCustomerId(invoice.customerId || defaultCustomerId);
       setDate(invoice.date || new Date().toISOString());
       setNote(invoice.note || '');
+      setPrintNote('');
       setDraftCode(invoice.code || generateCode('INV'));
       setItems(buildInvoiceItems(invoice));
       return;
@@ -80,6 +82,7 @@ const useInvoiceEditorState = ({
     setCustomerId(defaultCustomerId);
     setDate(new Date().toISOString());
     setNote('');
+    setPrintNote('');
     setDraftCode(generateCode('INV'));
     setItems([]);
   }, [invoice, defaultCustomerId]);
@@ -301,13 +304,33 @@ const useInvoiceEditorState = ({
     const baseInvoice = invoice || {};
     return renderInvoiceTemplate({
       template: settings.invoiceTemplateHtml,
-      invoice: { ...baseInvoice, items, total: totals.total, date, code: baseInvoice.code || draftCode, customerDebt },
+      invoice: {
+        ...baseInvoice,
+        items,
+        total: totals.total,
+        date,
+        code: baseInvoice.code || draftCode,
+        customerDebt,
+        printNote,
+      },
       customer,
       payments: paymentsOverride,
       products,
       settings,
     });
-  }, [settings, invoice, items, totals.total, date, customer, payments, products, draftCode, customerDebt]);
+  }, [
+    settings,
+    invoice,
+    items,
+    totals.total,
+    date,
+    customer,
+    payments,
+    products,
+    draftCode,
+    customerDebt,
+    printNote,
+  ]);
 
   const previewHtml = useMemo(() => buildPreviewHtml(), [buildPreviewHtml]);
 
@@ -322,6 +345,7 @@ const useInvoiceEditorState = ({
     invoice,
     setItems,
     setNote,
+    setPrintNote,
     setDate,
     setDraftCode,
   });
@@ -330,6 +354,7 @@ const useInvoiceEditorState = ({
     onNewInvoice,
     setItems,
     setNote,
+    setPrintNote,
     setDate,
     setDraftCode,
     setCustomerId,
@@ -421,6 +446,8 @@ const useInvoiceEditorState = ({
     customer,
     note,
     setNote,
+    printNote,
+    setPrintNote,
     searchKeyword,
     setSearchKeyword,
     filteredQuick,

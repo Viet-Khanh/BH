@@ -2,6 +2,8 @@ import dayjs from 'dayjs';
 import { Button, DatePicker, Input, Select } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
+const { TextArea } = Input;
+
 const InvoiceTopSection = ({
   code,
   date,
@@ -22,12 +24,15 @@ const InvoiceTopSection = ({
   customer,
   note,
   onNoteChange,
+  printNote,
+  onPrintNoteChange,
   codeLabel = 'HĐ',
   recentLabel = 'F4 - HĐ gần đây',
   partnerLabel = 'Tên khách hàng',
   partnerPhoneLabel = 'Điện thoại',
   partnerAddressLabel = 'Địa chỉ',
   noteLabel = 'Ghi chú',
+  printNoteLabel = 'Lưu ý in',
   itemsLabel = 'Tổng MH',
   qtyLabel = 'Tổng SL',
   debtLabel = 'Nợ cũ',
@@ -115,6 +120,18 @@ const InvoiceTopSection = ({
           disabled={readOnly}
         />
       </div>
+      {onPrintNoteChange && (
+        <div className="pos-info-row" style={{ alignItems: 'flex-start' }}>
+          <span style={{ width: 150, paddingTop: 5 }}>{printNoteLabel}:</span>
+          <TextArea
+            value={printNote || ''}
+            onChange={(event) => onPrintNoteChange(event.target.value)}
+            disabled={readOnly}
+            autoSize={{ minRows: 2, maxRows: 4 }}
+            placeholder="Chỉ dùng khi in, không lưu vào dữ liệu hóa đơn"
+          />
+        </div>
+      )}
     </div>
   </div>
 );
