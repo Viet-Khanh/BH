@@ -1,6 +1,6 @@
 import { formatMoney } from './moneyFormat.js';
 
-const normalizeNumberString = (value) => {
+const normalizeFlexibleNumberString = (value) => {
   if (value === null || value === undefined || value === '') return '';
 
   const sanitized = String(value).trim().replace(/\s+/g, '').replace(/[^\d.,-]/g, '');
@@ -16,9 +16,20 @@ const normalizeNumberString = (value) => {
   }
 
   if (hasDot) {
-    return /^\d{1,3}(\.\d{3})+$/.test(sanitized)
-      ? sanitized.replace(/\./g, '')
-      : sanitized;
+    const negative = sanitized.startsWith('-') ? '-' : '';
+    const unsigned = negative ? sanitized.slice(1) : sanitized;
+    const parts = unsigned.split('.');
+
+    if (parts.length > 2) {
+      return `${negative}${parts.join('')}`;
+    }
+
+    const [integerPart = '', fractionPart = ''] = parts;
+
+    if (!fractionPart) return `${negative}${integerPart}`;
+    if (fractionPart.length >= 3) return `${negative}${integerPart}${fractionPart}`;
+    if (/^0+$/.test(fractionPart)) return `${negative}${integerPart}${fractionPart}`;
+    return sanitized;
   }
 
   if (hasComma) {
@@ -31,12 +42,17 @@ const normalizeNumberString = (value) => {
 };
 
 export const parseNumberInput = (value) => {
-  return normalizeNumberString(value);
+  if (value === null || value === undefined || value === '') return '';
+  return String(value).replace(/\./g, '').replace(/,/g, '');
 };
 
-export const formatNumberInput = (value) => {
+export const parseFlexibleNumberInput = (value) => {
+  return normalizeFlexibleNumberString(value);
+};
+
+export const formatNumberInput = (value, info) => {
   if (value === null || value === undefined || value === '') return '';
-  const numeric = typeof value === 'number' ? value : Number(normalizeNumberString(value));
+  const numeric = typeof value === 'number' ? value : Number(parseNumberInput(value));
   if (Number.isNaN(numeric)) return '';
   return formatMoney(numeric);
 };

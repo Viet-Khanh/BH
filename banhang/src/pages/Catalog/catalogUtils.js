@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import {
   formatNumberInput as sharedFormatNumberInput,
+  parseFlexibleNumberInput as sharedParseFlexibleNumberInput,
   parseNumberInput as sharedParseNumberInput,
 } from '../../utils/numberInput.js';
 
@@ -46,13 +47,13 @@ export const parseNumberInput = sharedParseNumberInput;
 export const formatNumberInput = sharedFormatNumberInput;
 
 export const parseImportNumber = (value) => {
-  const cleaned = parseNumberInput(value);
+  const cleaned = sharedParseFlexibleNumberInput(value);
   const numeric = Number(cleaned || 0);
   return Number.isNaN(numeric) ? 0 : numeric;
 };
 
 export const parseImportNumberOptional = (value) => {
-  const cleaned = parseNumberInput(value);
+  const cleaned = sharedParseFlexibleNumberInput(value);
   if (cleaned === '' || cleaned === null || cleaned === undefined) return undefined;
   const numeric = Number(cleaned);
   return Number.isNaN(numeric) ? undefined : numeric;
