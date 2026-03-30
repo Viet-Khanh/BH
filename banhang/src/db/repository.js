@@ -62,6 +62,12 @@ export const bulkAdd = async (table, items) =>
     body: Array.isArray(items) ? items.map(stripMeta) : [],
   });
 
+export const bulkUpdateProductPricesByName = async (items) =>
+  apiRequest('/products-tools/price-update-by-name', {
+    method: 'POST',
+    body: Array.isArray(items) ? items.map(stripMeta) : [],
+  });
+
 export const clearAll = async () => apiRequest('/reset', { method: 'POST' });
 
 export const getSettings = async () => getById('settings', 'main');

@@ -1,5 +1,12 @@
 import { create } from 'zustand';
-import { addItem, getAll, updateItem, deleteItem, bulkAdd } from '../db/repository.js';
+import {
+  addItem,
+  getAll,
+  updateItem,
+  deleteItem,
+  bulkAdd,
+  bulkUpdateProductPricesByName,
+} from '../db/repository.js';
 
 const TABLE = 'products';
 
@@ -24,5 +31,10 @@ export const useProductStore = create((set, get) => ({
   bulkAdd: async (items) => {
     await bulkAdd(TABLE, items);
     await get().load();
+  },
+  bulkUpdatePricesByName: async (items) => {
+    const result = await bulkUpdateProductPricesByName(items);
+    await get().load();
+    return result;
   },
 }));

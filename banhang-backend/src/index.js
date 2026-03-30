@@ -19,6 +19,7 @@ import { buildSeedData } from './seedData.js';
 import reportRouter from './routes/reports.js';
 import salesRouter from './routes/sales.js';
 import purchasesRouter from './routes/purchases.js';
+import productToolsRouter from './routes/productTools.js';
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ Object.entries(models).forEach(([key, model]) => {
 app.use('/api/reports', reportRouter);
 app.use('/api/sales', salesRouter);
 app.use('/api/purchases-tools', purchasesRouter);
+app.use('/api/products-tools', productToolsRouter);
 
 if (SHOULD_SERVE_FRONTEND && fs.existsSync(FRONTEND_DIST)) {
   app.use(express.static(FRONTEND_DIST));

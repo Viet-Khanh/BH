@@ -1,5 +1,8 @@
 import { v4 as uuid } from 'uuid';
-import { formatMoney } from '../../utils/moneyFormat.js';
+import {
+  formatNumberInput as sharedFormatNumberInput,
+  parseNumberInput as sharedParseNumberInput,
+} from '../../utils/numberInput.js';
 
 export const normalizeSearchText = (value) =>
   String(value ?? '')
@@ -38,17 +41,9 @@ export const buildCodeFromName = (name = '') => {
     .join('');
 };
 
-export const parseNumberInput = (value) => {
-  if (!value) return '';
-  return String(value).replace(/\./g, '').replace(/,/g, '');
-};
+export const parseNumberInput = sharedParseNumberInput;
 
-export const formatNumberInput = (value) => {
-  if (value === null || value === undefined || value === '') return '';
-  const numeric = typeof value === 'number' ? value : Number(parseNumberInput(value));
-  if (Number.isNaN(numeric)) return '';
-  return formatMoney(numeric);
-};
+export const formatNumberInput = sharedFormatNumberInput;
 
 export const parseImportNumber = (value) => {
   const cleaned = parseNumberInput(value);
@@ -56,11 +51,25 @@ export const parseImportNumber = (value) => {
   return Number.isNaN(numeric) ? 0 : numeric;
 };
 
+export const parseImportNumberOptional = (value) => {
+  const cleaned = parseNumberInput(value);
+  if (cleaned === '' || cleaned === null || cleaned === undefined) return undefined;
+  const numeric = Number(cleaned);
+  return Number.isNaN(numeric) ? undefined : numeric;
+};
+
 export const buildTemplateRow = (headers) =>
   headers.reduce((acc, header) => {
     acc[header] = '';
     return acc;
   }, {});
+
+export const buildProductPriceUpdateRows = (products = []) =>
+  products.map((item) => ({
+    Ten_hang: item.name || '',
+    Gia_von: item.avgCost ?? '',
+    Don_gia_le: item.sellPriceDefault ?? '',
+  }));
 
 export const TEMPLATE_CONFIGS = {
   products: {
@@ -83,6 +92,12 @@ export const TEMPLATE_CONFIGS = {
     fileName: 'mau-danh-muc-don-vi',
     sheetName: 'DonVi',
   },
+};
+
+export const PRODUCT_PRICE_UPDATE_TEMPLATE_CONFIG = {
+  headers: ['Ten_hang', 'Gia_von', 'Don_gia_le'],
+  fileName: 'cap-nhat-gia-san-pham',
+  sheetName: 'CapNhatGia',
 };
 
 export const IMPORT_CONFIGS = {
@@ -183,5 +198,29 @@ export const IMPORT_CONFIGS = {
         createdAt: new Date().toISOString(),
       };
     },
+  },
+};
+
+export const PRODUCT_PRICE_UPDATE_IMPORT_CONFIG = {
+  columnMap: {
+    tenhang: 'name',
+    giavon: 'avgCost',
+    dongiale: 'sellPriceDefault',
+    dongiabanle: 'sellPriceDefault',
+    giabanle: 'sellPriceDefault',
+  },
+  requiredFields: ['name'],
+  requiredLabels: { name: 'Ten_hang' },
+  buildItem: (raw) => {
+    const name = String(raw.name || '').trim();
+    if (!name) return null;
+    const avgCost = parseImportNumberOptional(raw.avgCost);
+    const sellPriceDefault = parseImportNumberOptional(raw.sellPriceDefault);
+    if (avgCost === undefined && sellPriceDefault === undefined) return null;
+
+    const item = { name };
+    if (avgCost !== undefined) item.avgCost = avgCost;
+    if (sellPriceDefault !== undefined) item.sellPriceDefault = sellPriceDefault;
+    return item;
   },
 };

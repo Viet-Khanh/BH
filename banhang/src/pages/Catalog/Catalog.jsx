@@ -20,6 +20,7 @@ const Catalog = () => {
     update: updateProduct,
     remove: removeProduct,
     bulkAdd: bulkAddProducts,
+    bulkUpdatePricesByName,
     load: loadProducts,
   } = useProductStore();
   const {
@@ -52,6 +53,7 @@ const Catalog = () => {
   const [editing, setEditing] = useState(null);
   const [codeEdited, setCodeEdited] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -61,10 +63,15 @@ const Catalog = () => {
     bootstrap();
   }, [loadProducts, loadCustomers, loadSuppliers, loadUnits]);
 
+  const activeProducts = useMemo(() => products.filter((item) => !item.isDeleted), [products]);
+  const activeCustomers = useMemo(() => customers.filter((item) => !item.isDeleted), [customers]);
+  const activeSuppliers = useMemo(() => suppliers.filter((item) => !item.isDeleted), [suppliers]);
+  const activeUnits = useMemo(() => units.filter((item) => !item.isDeleted), [units]);
 
   const {
     importing,
     importTarget,
+    importMode,
     fileInputRef,
     handleDownloadTemplate,
     triggerImport,
@@ -72,16 +79,13 @@ const Catalog = () => {
     resetImportState,
   } = useCatalogImport({
     activeKey,
+    products: activeProducts,
     bulkAddProducts,
     bulkAddCustomers,
     bulkAddSuppliers,
     bulkAddUnits,
+    bulkUpdatePricesByName,
   });
-
-  const activeProducts = useMemo(() => products.filter((item) => !item.isDeleted), [products]);
-  const activeCustomers = useMemo(() => customers.filter((item) => !item.isDeleted), [customers]);
-  const activeSuppliers = useMemo(() => suppliers.filter((item) => !item.isDeleted), [suppliers]);
-  const activeUnits = useMemo(() => units.filter((item) => !item.isDeleted), [units]);
 
   const dataSource = useMemo(() => {
     let source = activeProducts;
@@ -144,44 +148,57 @@ const Catalog = () => {
   };
 
   const handleSave = async () => {
-    const values = await form.validateFields();
-    if (activeKey === 'products') {
-      const payload = {
-        ...values,
-        code: values.code || buildCodeFromName(values.name || ''),
-        avgCost: Number(values.avgCost || 0),
-        sellPriceDefault: Number(values.sellPriceDefault || 0),
-        sellPriceWholesale: Number(values.sellPriceWholesale || 0),
-        openingStock: Number(values.openingStock || 0),
-      };
-      if (editing) {
-        await updateProduct(editing.id, payload);
-      } else {
-        await addProduct({
-          ...payload,
-          id: uuid(),
-          createdAt: new Date().toISOString(),
-        });
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (activeKey === 'products') {
+        const payload = {
+          ...values,
+          code: values.code || buildCodeFromName(values.name || ''),
+          avgCost: Number(values.avgCost || 0),
+          sellPriceDefault: Number(values.sellPriceDefault || 0),
+          sellPriceWholesale: Number(values.sellPriceWholesale || 0),
+          openingStock: Number(values.openingStock || 0),
+        };
+        if (editing) {
+          await updateProduct(editing.id, payload);
+        } else {
+          await addProduct({
+            ...payload,
+            id: uuid(),
+            createdAt: new Date().toISOString(),
+          });
+        }
       }
-    }
 
-    if (activeKey === 'customers') {
-      if (editing) await updateCustomer(editing.id, values);
-      else await addCustomer({ ...values, id: uuid() });
-    }
+      if (activeKey === 'customers') {
+        if (editing) await updateCustomer(editing.id, values);
+        else await addCustomer({ ...values, id: uuid() });
+      }
 
-    if (activeKey === 'suppliers') {
-      if (editing) await updateSupplier(editing.id, values);
-      else await addSupplier({ ...values, id: uuid() });
-    }
+      if (activeKey === 'suppliers') {
+        if (editing) await updateSupplier(editing.id, values);
+        else await addSupplier({ ...values, id: uuid() });
+      }
 
-    if (activeKey === 'units') {
-      if (editing) await updateUnit(editing.id, values);
-      else await addUnit({ ...values, id: uuid(), createdAt: new Date().toISOString() });
-    }
+      if (activeKey === 'units') {
+        if (editing) await updateUnit(editing.id, values);
+        else await addUnit({ ...values, id: uuid(), createdAt: new Date().toISOString() });
+      }
 
-    message.success('Đã lưu.');
-    setModalOpen(false);
+      message.success('Đã lưu.');
+      setModalOpen(false);
+    } catch (error) {
+      message.error(error.message || 'Không thể lưu dữ liệu.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const columns = useMemo(
@@ -221,9 +238,14 @@ const Catalog = () => {
                 searchText={searchText}
                 onSearchTextChange={setSearchText}
                 onDownloadTemplate={handleDownloadTemplate}
+                onDownloadPriceUpdateTemplate={(tabKey) =>
+                  handleDownloadTemplate(tabKey, 'price-update')
+                }
                 onTriggerImport={triggerImport}
+                onTriggerPriceUpdate={(tabKey) => triggerImport(tabKey, 'price-update')}
                 importing={importing}
                 importTarget={importTarget}
+                importMode={importMode}
                 exportConfig={exportConfig}
                 dataSource={dataSource}
                 columns={columns}
@@ -242,9 +264,14 @@ const Catalog = () => {
                 searchText={searchText}
                 onSearchTextChange={setSearchText}
                 onDownloadTemplate={handleDownloadTemplate}
+                onDownloadPriceUpdateTemplate={(tabKey) =>
+                  handleDownloadTemplate(tabKey, 'price-update')
+                }
                 onTriggerImport={triggerImport}
+                onTriggerPriceUpdate={(tabKey) => triggerImport(tabKey, 'price-update')}
                 importing={importing}
                 importTarget={importTarget}
+                importMode={importMode}
                 exportConfig={exportConfig}
                 dataSource={dataSource}
                 columns={columns}
@@ -263,9 +290,14 @@ const Catalog = () => {
                 searchText={searchText}
                 onSearchTextChange={setSearchText}
                 onDownloadTemplate={handleDownloadTemplate}
+                onDownloadPriceUpdateTemplate={(tabKey) =>
+                  handleDownloadTemplate(tabKey, 'price-update')
+                }
                 onTriggerImport={triggerImport}
+                onTriggerPriceUpdate={(tabKey) => triggerImport(tabKey, 'price-update')}
                 importing={importing}
                 importTarget={importTarget}
+                importMode={importMode}
                 exportConfig={exportConfig}
                 dataSource={dataSource}
                 columns={columns}
@@ -286,6 +318,7 @@ const Catalog = () => {
         onSave={handleSave}
         onNameChange={handleNameChange}
         onCodeChange={handleCodeChange}
+        confirmLoading={saving}
       />
     </div>
   );
