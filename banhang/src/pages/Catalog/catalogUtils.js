@@ -46,17 +46,24 @@ export const parseNumberInput = sharedParseNumberInput;
 
 export const formatNumberInput = sharedFormatNumberInput;
 
+const normalizeImportedNumericValue = (numeric) => {
+  if (!Number.isFinite(numeric)) return numeric;
+
+  const rounded = Math.round(numeric);
+  return Math.abs(numeric - rounded) < 1e-9 ? rounded : numeric;
+};
+
 export const parseImportNumber = (value) => {
   const cleaned = sharedParseFlexibleNumberInput(value);
   const numeric = Number(cleaned || 0);
-  return Number.isNaN(numeric) ? 0 : numeric;
+  return Number.isNaN(numeric) ? 0 : normalizeImportedNumericValue(numeric);
 };
 
 export const parseImportNumberOptional = (value) => {
   const cleaned = sharedParseFlexibleNumberInput(value);
   if (cleaned === '' || cleaned === null || cleaned === undefined) return undefined;
   const numeric = Number(cleaned);
-  return Number.isNaN(numeric) ? undefined : numeric;
+  return Number.isNaN(numeric) ? undefined : normalizeImportedNumericValue(numeric);
 };
 
 export const buildTemplateRow = (headers) =>
