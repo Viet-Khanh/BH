@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Tabs } from 'antd';
 
 const ReportStockTab = lazy(() => import('./ReportStockTab.jsx'));
-const ReportStockMovementTab = lazy(() => import('./ReportStockMovementTab.jsx'));
+const ReportStockMovementTab = lazy(
+  () => import('./ReportStockMovementTab.jsx')
+);
 
 const ReportStockPage = () => {
   const navigate = useNavigate();
@@ -12,7 +14,9 @@ const ReportStockPage = () => {
     <div className="page-card">
       <div className="page-title">Báo cáo kho</div>
       <div className="action-row">
-        <Button size="large" onClick={() => navigate('/')}>Quay lại</Button>
+        <Button size="large" onClick={() => navigate('/')}>
+          Quay lại
+        </Button>
       </div>
       <Tabs
         type="card"

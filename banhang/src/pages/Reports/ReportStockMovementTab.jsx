@@ -1,33 +1,31 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Input, message } from 'antd';
-import dayjs from 'dayjs';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportActions from '../../components/ExportActions.jsx';
-import { apiRequest } from '../../db/repository.js';
+import { getStockMovementReport } from '../../features/reports/api/reportsApi.js';
+import { buildMonthToDateRange } from '../../features/reports/domain/reportFilters.js';
+import { useReportFilters } from '../../features/reports/hooks/useReportFilters.js';
 
 const buildExportRow = (row) => ({
   'Tên hàng': row.name,
-  'ĐVT': row.unit,
+  ĐVT: row.unit,
   'Tồn đầu': row.openingStock,
-  'Nhập': row.inQty,
-  'Xuất': row.outQty,
+  Nhập: row.inQty,
+  Xuất: row.outQty,
   'Tồn cuối': row.closingStock,
 });
 
 const ReportStockMovementTab = () => {
-  const [range, setRange] = useState(() => [
-    dayjs().startOf('month').toISOString(),
-    dayjs().endOf('day').toISOString(),
-  ]);
+  const defaultRange = useMemo(() => buildMonthToDateRange(), []);
+  const { range, setRange } = useReportFilters({
+    defaultRange,
+    syncPagination: false,
+  });
   const [keyword, setKeyword] = useState('');
   const [rows, setRows] = useState([]);
 
   const fetchReport = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (range[0]) params.set('from', range[0]);
-    if (range[1]) params.set('to', range[1]);
-    const query = params.toString();
-    const data = await apiRequest(`/reports/stock-movement${query ? `?${query}` : ''}`);
+    const data = await getStockMovementReport({ range });
     setRows(Array.isArray(data?.rows) ? data.rows : []);
   }, [range]);
 
@@ -38,7 +36,9 @@ const ReportStockMovementTab = () => {
         await fetchReport();
       } catch (error) {
         if (active) {
-          message.error(`Không thể tải nhập xuất tồn kho: ${error.message || 'Lỗi không xác định'}`);
+          message.error(
+            `Không thể tải nhập xuất tồn kho: ${error.message || 'Lỗi không xác định'}`
+          );
         }
       }
     };
@@ -51,10 +51,17 @@ const ReportStockMovementTab = () => {
   const filteredRows = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
     if (!normalized) return rows;
-    return rows.filter((row) => String(row.name || '').toLowerCase().includes(normalized));
+    return rows.filter((row) =>
+      String(row.name || '')
+        .toLowerCase()
+        .includes(normalized)
+    );
   }, [rows, keyword]);
 
-  const exportRows = useMemo(() => filteredRows.map(buildExportRow), [filteredRows]);
+  const exportRows = useMemo(
+    () => filteredRows.map(buildExportRow),
+    [filteredRows]
+  );
 
   return (
     <div>

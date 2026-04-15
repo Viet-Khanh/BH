@@ -24,7 +24,9 @@ const PurchaseTopSection = ({
 }) => (
   <div className="pos-top">
     <div className="pos-info-box">
-      <div className="pos-info-row">Phiếu: <strong>{code}</strong></div>
+      <div className="pos-info-row">
+        Phiếu: <strong>{code}</strong>
+      </div>
       <div className="pos-info-row">
         Ngày:
         <DatePicker
@@ -33,13 +35,22 @@ const PurchaseTopSection = ({
           disabled={readOnly}
         />
       </div>
-      <div className="pos-info-row">NV: <strong>admin</strong></div>
+      <div className="pos-info-row">
+        NV: <strong>admin</strong>
+      </div>
       <div className="pos-actions-row">
-        <Button danger onClick={onCancelTicket}>F3 - Hủy phiếu</Button>
+        <Button danger onClick={onCancelTicket}>
+          F3 - Hủy phiếu
+        </Button>
         <Button type="primary" className="btn-primary" onClick={onNewTicket}>
           F2 - Tạo phiếu
         </Button>
-        <Button type="primary" className="btn-primary" onClick={onSave} disabled={disableSave}>
+        <Button
+          type="primary"
+          className="btn-primary"
+          onClick={onSave}
+          disabled={disableSave}
+        >
           F6 - Lưu
         </Button>
       </div>

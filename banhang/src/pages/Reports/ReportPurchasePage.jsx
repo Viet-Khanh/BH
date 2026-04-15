@@ -2,11 +2,19 @@ import { Button, Tabs } from 'antd';
 import { lazy, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-const ReportPurchaseInvoicesTab = lazy(() => import('./ReportPurchaseInvoicesTab.jsx'));
-const ReportPurchaseDetailsTab = lazy(() => import('./ReportPurchaseDetailsTab.jsx'));
+const ReportPurchaseInvoicesTab = lazy(
+  () => import('./ReportPurchaseInvoicesTab.jsx')
+);
+const ReportPurchaseDetailsTab = lazy(
+  () => import('./ReportPurchaseDetailsTab.jsx')
+);
 const ReportPurchaseDebtTab = lazy(() => import('./ReportPurchaseDebtTab.jsx'));
 
-const TAB_KEYS = new Set(['purchase-debt', 'purchase-invoices', 'purchase-details']);
+const TAB_KEYS = new Set([
+  'purchase-debt',
+  'purchase-invoices',
+  'purchase-details',
+]);
 
 const ReportPurchasePage = () => {
   const navigate = useNavigate();
@@ -33,7 +41,9 @@ const ReportPurchasePage = () => {
     <div className="page-card">
       <div className="page-title">Báo cáo nhập hàng</div>
       <div className="action-row">
-        <Button size="large" onClick={() => navigate('/')}>Quay lại</Button>
+        <Button size="large" onClick={() => navigate('/')}>
+          Quay lại
+        </Button>
       </div>
 
       <Tabs
@@ -70,7 +80,7 @@ const ReportPurchasePage = () => {
                 <ReportPurchaseDetailsTab />
               </Suspense>
             ),
-          }
+          },
         ]}
       />
     </div>

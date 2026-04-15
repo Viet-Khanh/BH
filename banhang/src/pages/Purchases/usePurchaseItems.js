@@ -1,22 +1,11 @@
-const getLineTotal = (item, product) => {
-  const qty = Number(item.qty || 0);
-  const unitCost = Number(item.unitCost || 0);
-  let lineTotal = qty * unitCost;
-  const length = Number(item.length || 0);
-  const width = Number(item.width || 0);
-  if (length > 0 && width > 0) {
-    lineTotal *= length * width;
-  }
-  return lineTotal;
-};
+import { getPurchaseLineTotal } from '../../features/purchases/domain/purchasesDomain.js';
 
 const usePurchaseItems = ({ items, setItems, products, readOnly = false }) => {
   const updateItem = (index, field, value) => {
     if (readOnly) return;
     const next = [...items];
     const item = { ...next[index], [field]: value };
-    const product = products.find((productItem) => productItem.id === item.productId);
-    item.lineTotal = getLineTotal(item, product);
+    item.lineTotal = getPurchaseLineTotal(item);
     next[index] = item;
     setItems(next);
   };

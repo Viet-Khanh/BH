@@ -3,10 +3,17 @@ import dayjs from 'dayjs';
 import { message } from 'antd';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportActions from '../../components/ExportActions.jsx';
-import { apiRequest } from '../../db/repository.js';
+import { getProfitReport } from '../../features/reports/api/reportsApi.js';
+import { buildRollingDaysRange } from '../../features/reports/domain/reportFilters.js';
+import { useReportFilters } from '../../features/reports/hooks/useReportFilters.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const ReportProfitTab = ({ range, onRangeChange }) => {
+const ReportProfitTab = () => {
+  const defaultRange = useMemo(() => buildRollingDaysRange(), []);
+  const { range, setRange } = useReportFilters({
+    defaultRange,
+    syncPagination: false,
+  });
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState({
     revenue: 0,
@@ -20,11 +27,7 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
     let active = true;
     const load = async () => {
       try {
-        const params = new URLSearchParams();
-        if (range[0]) params.set('from', range[0]);
-        if (range[1]) params.set('to', range[1]);
-        const query = params.toString();
-        const data = await apiRequest(`/reports/profit${query ? `?${query}` : ''}`);
+        const data = await getProfitReport({ range });
         if (!active) return;
         setRows(data?.rows || []);
         setSummary({
@@ -36,7 +39,9 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
         });
       } catch (error) {
         if (active) {
-          message.error(`Không thể tải doanh thu: ${error.message || 'Lỗi không xác định'}`);
+          message.error(
+            `Không thể tải doanh thu: ${error.message || 'Lỗi không xác định'}`
+          );
         }
       }
     };
@@ -49,10 +54,10 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
   const profitExport = useMemo(
     () =>
       rows.map((row) => ({
-        'Ngày': dayjs(row.date).format('DD/MM/YYYY'),
+        Ngày: dayjs(row.date).format('DD/MM/YYYY'),
         'Doanh thu': row.revenue,
         'Giá vốn': row.cost,
-        'Lãi': row.profit,
+        Lãi: row.profit,
       })),
     [rows]
   );
@@ -60,22 +65,31 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
   return (
     <div>
       <div className="action-row">
-        <DateRangeFilter value={range} onChange={onRangeChange} />
+        <DateRangeFilter value={range} onChange={setRange} />
         <div style={{ marginLeft: 'auto' }}>
-          <ExportActions rows={profitExport} fileName="doanh-thu" sheetName="DoanhThu" title="Doanh thu" />
+          <ExportActions
+            rows={profitExport}
+            fileName="doanh-thu"
+            sheetName="DoanhThu"
+            title="Doanh thu"
+          />
         </div>
       </div>
       <div className="section-title">Tổng hợp</div>
       <div className="invoice-summary">
         <span>
-          Doanh thu: <span className="text-success">{formatMoney(summary.revenue)}</span>
+          Doanh thu:{' '}
+          <span className="text-success">{formatMoney(summary.revenue)}</span>
         </span>
         <span>
-          Giá vốn: <span className="text-danger">{formatMoney(summary.cost)}</span>
+          Giá vốn:{' '}
+          <span className="text-danger">{formatMoney(summary.cost)}</span>
         </span>
         <span>
           Lãi:{' '}
-          <span className={summary.profit >= 0 ? 'text-success' : 'text-danger'}>
+          <span
+            className={summary.profit >= 0 ? 'text-success' : 'text-danger'}
+          >
             {formatMoney(summary.profit)}
           </span>
         </span>
@@ -102,7 +116,9 @@ const ReportProfitTab = ({ range, onRangeChange }) => {
                 <td>{dayjs(row.date).format('DD/MM/YYYY')}</td>
                 <td className="text-success">{formatMoney(row.revenue)}</td>
                 <td className="text-danger">{formatMoney(row.cost)}</td>
-                <td className={row.profit >= 0 ? 'text-success' : 'text-danger'}>
+                <td
+                  className={row.profit >= 0 ? 'text-success' : 'text-danger'}
+                >
                   {formatMoney(row.profit)}
                 </td>
               </tr>

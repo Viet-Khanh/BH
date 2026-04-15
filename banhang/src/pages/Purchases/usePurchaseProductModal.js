@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
+import { getPurchaseLineTotal } from '../../features/purchases/domain/purchasesDomain.js';
 import { hasSearchMatch, normalizeSearchText } from '../../utils/searchText.js';
 
 const getValidDimension = (value) => {
@@ -7,17 +8,12 @@ const getValidDimension = (value) => {
   return numeric > 0 ? numeric : null;
 };
 
-const getLineTotal = ({ qty, unitCost, length, width }) => {
-  let total = Number(qty || 0) * Number(unitCost || 0);
-  const lengthValue = Number(length || 0);
-  const widthValue = Number(width || 0);
-  if (lengthValue > 0 && widthValue > 0) {
-    total *= lengthValue * widthValue;
-  }
-  return total;
-};
-
-const usePurchaseProductModal = ({ activeProducts, setItems, readOnly = false, onSearchProducts }) => {
+const usePurchaseProductModal = ({
+  activeProducts,
+  setItems,
+  readOnly = false,
+  onSearchProducts,
+}) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [pendingProduct, setPendingProduct] = useState(null);
@@ -75,7 +71,9 @@ const usePurchaseProductModal = ({ activeProducts, setItems, readOnly = false, o
   const filteredQuick = useMemo(() => {
     const key = normalizeSearchText(searchKeyword);
     if (!key) return [];
-    return activeProducts.filter((item) => hasSearchMatch(item, key)).slice(0, 5);
+    return activeProducts
+      .filter((item) => hasSearchMatch(item, key))
+      .slice(0, 5);
   }, [searchKeyword, activeProducts]);
 
   const handleQuickAdd = () => {
@@ -101,7 +99,12 @@ const usePurchaseProductModal = ({ activeProducts, setItems, readOnly = false, o
       return false;
     }
 
-    const lineTotal = getLineTotal({ qty, unitCost, length: lengthValue, width: widthValue });
+    const lineTotal = getPurchaseLineTotal({
+      qty,
+      unitCost,
+      length: lengthValue,
+      width: widthValue,
+    });
 
     setItems((prev) => [
       ...prev,

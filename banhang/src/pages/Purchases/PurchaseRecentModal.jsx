@@ -37,7 +37,11 @@ const PurchaseRecentModal = ({
         showSearch
         optionFilterProp="label"
       />
-      <ExportButton rows={exportRows} fileName="phieu-nhap" sheetName="PhieuNhap" />
+      <ExportButton
+        rows={exportRows}
+        fileName="phieu-nhap"
+        sheetName="PhieuNhap"
+      />
     </div>
     <div className="table-wrapper">
       <table className="invoice-items-table">
@@ -53,7 +57,9 @@ const PurchaseRecentModal = ({
         </thead>
         <tbody>
           {filteredPurchases.map((purchase) => {
-            const supplierItem = suppliers.find((s) => s.id === purchase.supplierId);
+            const supplierItem = suppliers.find(
+              (s) => s.id === purchase.supplierId
+            );
             return (
               <tr key={purchase.id}>
                 <td>{purchase.code}</td>
@@ -63,7 +69,12 @@ const PurchaseRecentModal = ({
                 <td>{purchase.note}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <Button size="small" onClick={() => onSelectDetail(purchase)}>Xem</Button>
+                    <Button
+                      size="small"
+                      onClick={() => onSelectDetail(purchase)}
+                    >
+                      Xem
+                    </Button>
                     <Button
                       size="small"
                       type="primary"

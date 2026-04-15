@@ -12,7 +12,14 @@ const InvoicePaymentsSection = ({
   if (!isEdit) return null;
 
   return (
-    <div style={{padding : 16 , border : '1.5px solid #e1eeec' , margin : 16 , borderRadius : 12}}>
+    <div
+      style={{
+        padding: 16,
+        border: '1.5px solid #e1eeec',
+        margin: 16,
+        borderRadius: 12,
+      }}
+    >
       <div>
         <div className="section-title">{title}</div>
         <div className="table-wrapper">

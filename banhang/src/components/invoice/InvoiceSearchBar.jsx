@@ -49,8 +49,12 @@ const InvoiceSearchBar = ({
             className="product-option"
             onClick={() => onQuickSelect(item.id)}
           >
-            <div><strong>{item.name}</strong></div>
-            <div>{item.code || '---'} · {item.unit}</div>
+            <div>
+              <strong>{item.name}</strong>
+            </div>
+            <div>
+              {item.code || '---'} · {item.unit}
+            </div>
           </button>
         ))}
       </div>

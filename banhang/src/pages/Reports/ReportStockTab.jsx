@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Input, InputNumber, Modal, message } from 'antd';
 import ExportActions from '../../components/ExportActions.jsx';
-import { apiRequest, updateItem } from '../../db/repository.js';
+import {
+  getStockReport,
+  updateProductOpeningStock,
+} from '../../features/reports/api/reportsApi.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 import { hasSearchMatch } from '../../utils/searchText.js';
 
@@ -14,7 +17,7 @@ const ReportStockTab = () => {
   const [keyword, setKeyword] = useState('');
 
   const loadStock = useCallback(async () => {
-    const data = await apiRequest('/reports/stock');
+    const data = await getStockReport();
     setRows(data?.rows || []);
     setLowStockThreshold(data?.lowStockThreshold ?? 0);
   }, []);
@@ -26,7 +29,9 @@ const ReportStockTab = () => {
         await loadStock();
       } catch (error) {
         if (active) {
-          message.error(`Không thể tải tồn kho: ${error.message || 'Lỗi không xác định'}`);
+          message.error(
+            `Không thể tải tồn kho: ${error.message || 'Lỗi không xác định'}`
+          );
         }
       }
     };
@@ -56,20 +61,25 @@ const ReportStockTab = () => {
 
     try {
       setSaving(true);
-      await updateItem('products', selectedItem.id, { openingStock: nextOpeningStock });
+      await updateProductOpeningStock(selectedItem.id, nextOpeningStock);
       await loadStock();
       message.success('Đã cập nhật tồn kho.');
       setSelectedItem(null);
       setEditingStock(null);
     } catch (error) {
-      message.error(`Không thể cập nhật tồn kho: ${error.message || 'Lỗi không xác định'}`);
+      message.error(
+        `Không thể cập nhật tồn kho: ${error.message || 'Lỗi không xác định'}`
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const filteredRows = useMemo(
-    () => rows.filter((row) => hasSearchMatch({ name: row.name, code: row.code }, keyword)),
+    () =>
+      rows.filter((row) =>
+        hasSearchMatch({ name: row.name, code: row.code }, keyword)
+      ),
     [rows, keyword]
   );
 
@@ -99,7 +109,12 @@ const ReportStockTab = () => {
           style={{ maxWidth: 360 }}
         />
         <div style={{ marginLeft: 'auto' }}>
-          <ExportActions rows={stockExport} fileName="ton-kho" sheetName="TonKho" title="Tồn kho" />
+          <ExportActions
+            rows={stockExport}
+            fileName="ton-kho"
+            sheetName="TonKho"
+            title="Tồn kho"
+          />
         </div>
       </div>
       <div className="table-wrapper">
@@ -117,8 +132,11 @@ const ReportStockTab = () => {
           </thead>
           <tbody>
             {filteredRows.map((row) => {
-              const isLowStock = Number(row.stock || 0) <= Number(lowStockThreshold || 0);
-              const lowStockCellStyle = isLowStock ? { background: '#fff59d' } : undefined;
+              const isLowStock =
+                Number(row.stock || 0) <= Number(lowStockThreshold || 0);
+              const lowStockCellStyle = isLowStock
+                ? { background: '#fff59d' }
+                : undefined;
               return (
                 <tr
                   key={row.id}

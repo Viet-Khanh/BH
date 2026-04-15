@@ -1,6 +1,9 @@
 import { Button, Input, InputNumber, Modal, Select } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
-import { formatNumberInput, parseNumberInput } from '../../pages/Catalog/catalogUtils.js';
+import {
+  formatNumberInput,
+  parseNumberInput,
+} from '../../pages/Catalog/catalogUtils.js';
 
 const InvoicePaymentModal = ({
   open,
@@ -27,12 +30,7 @@ const InvoicePaymentModal = ({
   onCheckoutPrint,
   onCheckout,
 }) => (
-  <Modal
-    title={title}
-    open={open}
-    onCancel={onClose}
-    footer={null}
-  >
+  <Modal title={title} open={open} onCancel={onClose} footer={null}>
     <div className="pos-payment">
       <div className="pos-payment-row">
         <span>{partnerLabel}:</span>
@@ -84,11 +82,18 @@ const InvoicePaymentModal = ({
       </div>
       <div className="pos-payment-row">
         <span>Ghi chú:</span>
-        <Input value={paymentNote} onChange={(event) => onPaymentNoteChange(event.target.value)} />
+        <Input
+          value={paymentNote}
+          onChange={(event) => onPaymentNoteChange(event.target.value)}
+        />
       </div>
 
       <div className="pos-payment-actions">
-        <Button type="primary" className="btn-success" onClick={onCheckoutPrint}>
+        <Button
+          type="primary"
+          className="btn-success"
+          onClick={onCheckoutPrint}
+        >
           F8 - Lưu và in
         </Button>
         <Button type="primary" className="btn-primary" onClick={onCheckout}>

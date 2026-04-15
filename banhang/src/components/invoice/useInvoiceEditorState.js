@@ -1,29 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
-import { generateCode } from '../../utils/codeGenerator.js';
-import { hasSearchMatch, normalizeSearchText } from '../../utils/searchText.js';
-import { getLineBase, getPaymentStatus } from './invoiceUtils.js';
-import { createConfirmAddHandler } from './invoiceItemHandlers.js';
 import { createPersistInvoice } from './invoicePayload.js';
-import { createCheckoutHandler } from './invoicePaymentHandlers.js';
-import {
-  createAddProductHandler,
-  createOpenAddModal,
-  createPendingProductChangeHandler,
-} from './invoiceProductHandlers.js';
-import { buildInvoiceItems, createCancelTicketHandler, createNewTicketHandler } from './invoiceTicketHandlers.js';
 import { buildInvoiceViewProps } from './invoiceViewProps.js';
-import { printHtml } from '../../utils/printUtils.js';
+import { useInvoiceComputedState } from './hooks/useInvoiceComputedState.js';
+import { useInvoiceDraftState } from './hooks/useInvoiceDraftState.js';
+import { useInvoicePaymentFlow } from './hooks/useInvoicePaymentFlow.js';
+import { useInvoicePreview } from './hooks/useInvoicePreview.js';
+import { useInvoiceProductSelection } from './hooks/useInvoiceProductSelection.js';
+import { useInvoiceTicketActions } from './hooks/useInvoiceTicketActions.js';
 
-const DEFAULT_CUSTOMER_PRICE_KEY = '__default__';
-
-const buildProductPriceKey = (customerId, productId) =>
-  `${customerId || DEFAULT_CUSTOMER_PRICE_KEY}::${productId}`;
-
-const buildDefaultCustomerId = (customers) =>
-  customers.find(
-    (item) => !item.isDeleted && (item.name === 'Khách lẻ' || item.name === 'Khach le')
-  )?.id || '';
 const useInvoiceEditorState = ({
   invoice,
   customers = [],
@@ -48,380 +31,88 @@ const useInvoiceEditorState = ({
   onCreateProduct,
 }) => {
   const isEdit = Boolean(invoice);
-  const defaultCustomerId = useMemo(() => buildDefaultCustomerId(customers), [customers]);
-  const [customerId, setCustomerId] = useState(invoice?.customerId || defaultCustomerId);
-  const [date, setDate] = useState(invoice?.date || new Date().toISOString());
-  const [items, setItems] = useState([]);
-  const [note, setNote] = useState(invoice?.note || '');
-  const [printNote, setPrintNote] = useState('');
-  const [draftCode, setDraftCode] = useState(invoice?.code || generateCode('INV'));
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('cash');
-  const [paymentNote, setPaymentNote] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [pendingProduct, setPendingProduct] = useState(null);
-  const [pendingQty, setPendingQty] = useState(1);
-  const [pendingPrice, setPendingPrice] = useState(0);
-  const [pendingLength, setPendingLength] = useState(null);
-  const [pendingWidth, setPendingWidth] = useState(null);
-
-  useEffect(() => {
-    if (invoice) {
-      setCustomerId(invoice.customerId || defaultCustomerId);
-      setDate(invoice.date || new Date().toISOString());
-      setNote(invoice.note || '');
-      setPrintNote('');
-      setDraftCode(invoice.code || generateCode('INV'));
-      setItems(buildInvoiceItems(invoice));
-      return;
-    }
-
-    setCustomerId(defaultCustomerId);
-    setDate(new Date().toISOString());
-    setNote('');
-    setPrintNote('');
-    setDraftCode(generateCode('INV'));
-    setItems([]);
-  }, [invoice, defaultCustomerId]);
-
-  useEffect(() => {
-    if (!onCustomerChange || !customerId) return;
-    onCustomerChange(customerId, invoice?.id || null, date);
-  }, [customerId, date, invoice?.id, onCustomerChange]);
-
-  useEffect(() => {
-    if (!onSearchProducts) return;
-    const keyword = searchKeyword.trim();
-    if (!keyword) return;
-    const timer = setTimeout(() => {
-      onSearchProducts(keyword);
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [searchKeyword, onSearchProducts]);
-  const paidTotal = useMemo(
-    () => payments.reduce((sum, p) => sum + Number(p.amount || 0), 0),
-    [payments]
-  );
-  useEffect(() => {
-    if (!paymentModalOpen) return;
-    const basePaid = isEdit ? paidTotal : 0;
-    setPaymentAmount(basePaid);
-    setPaymentNote('');
-    setPaymentMethod('cash');
-  }, [paymentModalOpen, isEdit, paidTotal]);
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key !== 'F2') return;
-      event.preventDefault();
-      setSearchOpen(true);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-  const totals = useMemo(() => {
-    const subTotal = items.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
-    const total = subTotal;
-    return { discountTotal: 0, subTotal, total };
-  }, [items]);
-  const totalQty = useMemo(
-    () => items.reduce((sum, item) => sum + Number(item.qty || 0), 0),
-    [items]
-  );
-
-  const status = getPaymentStatus(totals.total, paidTotal);
-
-  const customer = useMemo(
-    () => customers.find((item) => item.id === customerId),
-    [customers, customerId]
-  );
-
-  const activeCustomers = useMemo(
-    () => customers.filter((item) => !item.isDeleted),
-    [customers]
-  );
-
-  const activeProducts = useMemo(
-    () => products.filter((item) => !item.isDeleted),
-    [products]
-  );
-
-  const computedCustomerDebt = useMemo(() => {
-    if (!customerId) return 0;
-    const related = invoices.filter(
-      (inv) => inv.customerId === customerId && inv.id !== invoice?.id
-    );
-    const total = related.reduce((sum, inv) => sum + Number(inv.total || 0), 0);
-    const paid = related.reduce((sum, inv) => {
-      const invPaid = allPayments
-        .filter((p) => p.invoiceId === inv.id)
-        .reduce((acc, p) => acc + Number(p.amount || 0), 0);
-      return sum + invPaid;
-    }, 0);
-    return total - paid;
-  }, [customerId, invoices, allPayments, invoice]);
-
-  const customerDebt =
-    customerDebtOverride !== undefined && customerDebtOverride !== null
-      ? Number(customerDebtOverride || 0)
-      : computedCustomerDebt;
-
-  const previousInvoicePrices = useMemo(() => {
-    const latestByKey = {};
-
-    invoices.forEach((inv, invoiceIndex) => {
-      if (!inv || inv.isDeleted || inv.id === invoice?.id || !inv.customerId) return;
-      const invItems = Array.isArray(inv.items) ? inv.items : [];
-      if (!invItems.length) return;
-
-      const dateMs = new Date(inv.date || 0).getTime();
-      const sortDate = Number.isFinite(dateMs) ? dateMs : -1;
-
-      invItems.forEach((invItem, itemIndex) => {
-        const productId = invItem?.productId;
-        if (!productId) return;
-        const unitPrice = Number(invItem.unitPrice);
-        if (!Number.isFinite(unitPrice) || unitPrice < 0) return;
-
-        const priceKey = buildProductPriceKey(inv.customerId, productId);
-        const current = latestByKey[priceKey];
-        if (
-          !current ||
-          sortDate > current.sortDate ||
-          (sortDate === current.sortDate &&
-            (invoiceIndex > current.invoiceIndex ||
-              (invoiceIndex === current.invoiceIndex && itemIndex > current.itemIndex)))
-        ) {
-          latestByKey[priceKey] = {
-            unitPrice,
-            sortDate,
-            invoiceIndex,
-            itemIndex,
-          };
-        }
-      });
-    });
-
-    return Object.entries(latestByKey).reduce((acc, [key, value]) => {
-      acc[key] = Number(value.unitPrice || 0);
-      return acc;
-    }, {});
-  }, [invoices, invoice?.id]);
-
-  const getPreviousProductPrice = useCallback((productId, nextCustomerId = customerId) => {
-    if (!productId) return null;
-    const invoicePrice = Number(previousInvoicePrices[buildProductPriceKey(nextCustomerId, productId)]);
-    return Number.isFinite(invoicePrice) ? invoicePrice : null;
-  }, [customerId, previousInvoicePrices]);
-
-  const getProductPrice = useCallback((product) => {
-    return Number(product.sellPriceDefault || 0);
-  }, []);
-
-  const openAddModal = createOpenAddModal({
-    setPendingProduct,
-    setPendingQty,
-    setPendingPrice,
-    setPendingLength,
-    setPendingWidth,
-    setSearchOpen,
-    getProductPrice,
+  const draft = useInvoiceDraftState({
+    invoice,
+    customers,
+    onCustomerChange,
   });
-
-  const handleProductCreated = useCallback(
-    (product) => {
-      openAddModal(product);
-    },
-    [openAddModal]
-  );
-
-  const handleAddProduct = createAddProductHandler({
-    activeProducts,
-    openAddModal,
+  const computed = useInvoiceComputedState({
+    customerId: draft.customerId,
+    customers,
+    products,
+    payments,
+    allPayments,
+    invoices,
+    invoice,
+    items: draft.items,
+    customerDebtOverride,
   });
-
-  const handlePendingProductChange = createPendingProductChangeHandler({
-    activeProducts,
-    setPendingProduct,
-    setPendingQty,
-    setPendingPrice,
-    setPendingLength,
-    setPendingWidth,
-    getProductPrice,
+  const productSelection = useInvoiceProductSelection({
+    items: draft.items,
+    setItems: draft.setItems,
+    products,
+    activeProducts: computed.activeProducts,
+    onSearchProducts,
+    getProductPrice: computed.getProductPrice,
+    getPreviousProductPrice: computed.getPreviousProductPrice,
   });
-
-  const handlePendingPriceChange = useCallback(
-    (value) => {
-      setPendingPrice(value);
-    },
-    []
-  );
-
-  const updateItem = (index, field, value) => {
-    const next = [...items];
-    const item = { ...next[index], [field]: value };
-    const product = products.find((p) => p.id === item.productId);
-    item.lineTotal = getLineBase(item, product);
-    next[index] = item;
-    setItems(next);
-  };
-
-  const pendingPreviousPrice = useMemo(() => {
-    if (!pendingProduct?.id) return null;
-    const price = getPreviousProductPrice(pendingProduct.id);
-    return Number.isFinite(price) ? Number(price) : null;
-  }, [pendingProduct, getPreviousProductPrice]);
-
-  const applyPendingPreviousPrice = useCallback(() => {
-    if (!Number.isFinite(pendingPreviousPrice)) return;
-    setPendingPrice(Number(pendingPreviousPrice));
-  }, [pendingPreviousPrice]);
-
-  const removeItem = (index) => {
-    const next = [...items];
-    next.splice(index, 1);
-    setItems(next);
-  };
 
   const persistInvoice = createPersistInvoice({
     onSave,
     invoice,
-    items,
+    items: draft.items,
     products,
-    draftCode,
-    customerId,
-    defaultCustomerId,
-    date,
-    totals,
-    status,
-    note,
+    draftCode: draft.draftCode,
+    customerId: draft.customerId,
+    defaultCustomerId: draft.defaultCustomerId,
+    date: draft.date,
+    totals: computed.totals,
+    status: computed.status,
+    note: draft.note,
   });
-
-  const buildPreviewHtml = useCallback((paymentsOverride = payments) => {
-    if (!settings) return '';
-    const baseInvoice = invoice || {};
-    return renderInvoiceTemplate({
-      template: settings.invoiceTemplateHtml,
-      invoice: {
-        ...baseInvoice,
-        items,
-        total: totals.total,
-        date,
-        code: baseInvoice.code || draftCode,
-        customerDebt,
-        printNote,
-      },
-      customer,
-      payments: paymentsOverride,
-      products,
-      settings,
-    });
-  }, [
+  const ticketActions = useInvoiceTicketActions({
+    invoice,
+    onNewInvoice,
+    defaultCustomerId: draft.defaultCustomerId,
+    setItems: draft.setItems,
+    setNote: draft.setNote,
+    setPrintNote: draft.setPrintNote,
+    setDate: draft.setDate,
+    setDraftCode: draft.setDraftCode,
+    setCustomerId: draft.setCustomerId,
+    setSearchKeyword: productSelection.setSearchKeyword,
+    setPendingProduct: productSelection.setPendingProduct,
+    setPendingQty: productSelection.setPendingQty,
+    setPendingPrice: productSelection.setPendingPrice,
+    setPendingLength: productSelection.setPendingLength,
+    setPendingWidth: productSelection.setPendingWidth,
+  });
+  const preview = useInvoicePreview({
     settings,
     invoice,
-    items,
-    totals.total,
-    date,
-    customer,
+    items: draft.items,
+    total: computed.totals.total,
+    date: draft.date,
+    draftCode: draft.draftCode,
+    customerDebt: computed.customerDebt,
+    printNote: draft.printNote,
+    customer: computed.customer,
     payments,
     products,
-    draftCode,
-    customerDebt,
-    printNote,
-  ]);
-
-  const previewHtml = useMemo(() => buildPreviewHtml(), [buildPreviewHtml]);
-
-  const handlePrint = async (paymentsOverride) => {
-    const html = buildPreviewHtml(paymentsOverride);
-    if (!html) return;
-    const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
-    await printHtml(html, { copies: printCopies, autoPageSize: true });
-  };
-
-  const handleCancelTicket = createCancelTicketHandler({
-    invoice,
-    setItems,
-    setNote,
-    setPrintNote,
-    setDate,
-    setDraftCode,
   });
-
-  const handleNewTicket = createNewTicketHandler({
-    onNewInvoice,
-    setItems,
-    setNote,
-    setPrintNote,
-    setDate,
-    setDraftCode,
-    setCustomerId,
-    defaultCustomerId,
-    setSearchKeyword,
-    setPendingProduct,
-    setPendingQty,
-    setPendingPrice,
-    setPendingLength,
-    setPendingWidth,
-  });
-
-  const handleCheckout = createCheckoutHandler({
+  const paymentFlow = useInvoicePaymentFlow({
     isEdit,
-    paidTotal,
-    paymentAmount,
+    paidTotal: computed.paidTotal,
     payments,
     onAddPayment,
     onUpdatePayment,
     onRemovePayment,
-    paymentMethod,
-    paymentNote,
+    customerDebt: computed.customerDebt,
+    total: computed.totals.total,
     persistInvoice,
-    handlePrint,
-    handleNewTicket,
-    setPaymentAmount,
-    setPaymentNote,
-    setPaymentMethod,
-    setPaymentModalOpen,
+    handlePrint: preview.handlePrint,
+    handleNewTicket: ticketActions.handleNewTicket,
   });
-
-  const filteredQuick = useMemo(() => {
-    const key = normalizeSearchText(searchKeyword);
-    if (!key) return [];
-    return activeProducts
-      .filter((item) => hasSearchMatch(item, key))
-      .slice(0, 5);
-  }, [searchKeyword, activeProducts]);
-
-  const handleQuickAdd = () => {
-    if (!filteredQuick.length) {
-      setSearchOpen(true);
-      return;
-    }
-    openAddModal(filteredQuick[0]);
-    setSearchKeyword('');
-  };
-
-  const confirmAdd = createConfirmAddHandler({
-    pendingProduct,
-    pendingQty,
-    pendingPrice,
-    pendingLength,
-    pendingWidth,
-    setItems,
-    setSearchOpen,
-    setPendingQty,
-    setPendingLength,
-    setPendingWidth,
-  });
-
-  const handleConfirmAdd = (options) => {
-    return confirmAdd(options);
-  };
-
-  const totalPayment = totals.total + customerDebt;
-  const remainingPayment = totalPayment - Number(paymentAmount || 0);
 
   return buildInvoiceViewProps({
     onCancel,
@@ -431,67 +122,67 @@ const useInvoiceEditorState = ({
     onShowTemplate,
     showNewTicket: false,
     invoice,
-    draftCode,
-    date,
-    setDate,
-    handleCancelTicket,
-    handleNewTicket,
-    items,
-    totalQty,
-    customerDebt,
-    totals,
-    customerId,
-    setCustomerId,
-    activeCustomers,
-    customer,
-    note,
-    setNote,
-    printNote,
-    setPrintNote,
-    searchKeyword,
-    setSearchKeyword,
-    filteredQuick,
-    handleQuickAdd,
-    setSearchOpen,
-    handleAddProduct,
-    handlePrint,
+    draftCode: draft.draftCode,
+    date: draft.date,
+    setDate: draft.setDate,
+    handleCancelTicket: ticketActions.handleCancelTicket,
+    handleNewTicket: ticketActions.handleNewTicket,
+    items: draft.items,
+    totalQty: computed.totalQty,
+    customerDebt: computed.customerDebt,
+    totals: computed.totals,
+    customerId: draft.customerId,
+    setCustomerId: draft.setCustomerId,
+    activeCustomers: computed.activeCustomers,
+    customer: computed.customer,
+    note: draft.note,
+    setNote: draft.setNote,
+    printNote: draft.printNote,
+    setPrintNote: draft.setPrintNote,
+    searchKeyword: productSelection.searchKeyword,
+    setSearchKeyword: productSelection.setSearchKeyword,
+    filteredQuick: productSelection.filteredQuick,
+    handleQuickAdd: productSelection.handleQuickAdd,
+    setSearchOpen: productSelection.setSearchOpen,
+    handleAddProduct: productSelection.handleAddProduct,
+    handlePrint: preview.handlePrint,
     products,
-    updateItem,
-    removeItem,
+    updateItem: productSelection.updateItem,
+    removeItem: productSelection.removeItem,
     isEdit,
     payments,
-    paymentModalOpen,
-    setPaymentModalOpen,
-    totalPayment,
-    remainingPayment,
-    paymentAmount,
-    setPaymentAmount,
-    paymentMethod,
-    setPaymentMethod,
-    paymentNote,
-    setPaymentNote,
-    handleCheckout,
-    searchOpen,
-    activeProducts,
-    pendingProduct,
-    pendingQty,
-    pendingPrice,
-    pendingLength,
-    pendingWidth,
-    handlePendingProductChange,
-    pendingPreviousPrice,
-    applyPendingPreviousPrice,
-    setPendingQty,
-    setPendingPrice: handlePendingPriceChange,
-    setPendingLength,
-    setPendingWidth,
-    handleConfirmAdd,
-    previewOpen,
-    setPreviewOpen,
-    previewHtml,
+    paymentModalOpen: paymentFlow.paymentModalOpen,
+    setPaymentModalOpen: paymentFlow.setPaymentModalOpen,
+    totalPayment: paymentFlow.totalPayment,
+    remainingPayment: paymentFlow.remainingPayment,
+    paymentAmount: paymentFlow.paymentAmount,
+    setPaymentAmount: paymentFlow.setPaymentAmount,
+    paymentMethod: paymentFlow.paymentMethod,
+    setPaymentMethod: paymentFlow.setPaymentMethod,
+    paymentNote: paymentFlow.paymentNote,
+    setPaymentNote: paymentFlow.setPaymentNote,
+    handleCheckout: paymentFlow.handleCheckout,
+    searchOpen: productSelection.searchOpen,
+    activeProducts: computed.activeProducts,
+    pendingProduct: productSelection.pendingProduct,
+    pendingQty: productSelection.pendingQty,
+    pendingPrice: productSelection.pendingPrice,
+    pendingLength: productSelection.pendingLength,
+    pendingWidth: productSelection.pendingWidth,
+    handlePendingProductChange: productSelection.handlePendingProductChange,
+    pendingPreviousPrice: productSelection.pendingPreviousPrice,
+    applyPendingPreviousPrice: productSelection.applyPendingPreviousPrice,
+    setPendingQty: productSelection.setPendingQty,
+    setPendingPrice: productSelection.setPendingPrice,
+    setPendingLength: productSelection.setPendingLength,
+    setPendingWidth: productSelection.setPendingWidth,
+    handleConfirmAdd: productSelection.handleConfirmAdd,
+    previewOpen: preview.previewOpen,
+    setPreviewOpen: preview.setPreviewOpen,
+    previewHtml: preview.previewHtml,
     onSearchProducts,
     onCreateProduct,
-    onProductCreated: handleProductCreated,
+    onProductCreated: productSelection.handleProductCreated,
   });
 };
 

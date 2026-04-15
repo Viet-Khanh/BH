@@ -6,9 +6,22 @@ import fs from 'fs/promises';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const normalizePageSize = (value) => {
-  const normalized = String(value || '').trim().toUpperCase();
+  const normalized = String(value || '')
+    .trim()
+    .toUpperCase();
   if (!normalized) return '';
-  const supported = ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'LEGAL', 'LETTER', 'TABLOID'];
+  const supported = [
+    'A0',
+    'A1',
+    'A2',
+    'A3',
+    'A4',
+    'A5',
+    'A6',
+    'LEGAL',
+    'LETTER',
+    'TABLOID',
+  ];
   if (!supported.includes(normalized)) return '';
   if (normalized === 'LEGAL') return 'Legal';
   if (normalized === 'LETTER') return 'Letter';
@@ -53,7 +66,9 @@ const createPrintWindow = async (html, showWindow) => {
       nodeIntegration: false,
     },
   });
-  await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+  await printWindow.loadURL(
+    `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
+  );
   return printWindow;
 };
 
@@ -100,7 +115,10 @@ ipcMain.handle('save-file', async (event, payload = {}) => {
   const { defaultPath, filters } = options;
   if (!data) return { canceled: true, error: 'missing_data' };
 
-  const { canceled, filePath } = await dialog.showSaveDialog({ defaultPath, filters });
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    defaultPath,
+    filters,
+  });
   if (canceled || !filePath) return { canceled: true };
 
   const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);

@@ -24,7 +24,9 @@ export const renderDebtReceiptTemplate = ({
   const amount = Number(receipt?.amount || 0);
   const remainingDebt = Number(debtBefore || 0) - amount;
   const methodLabel = METHOD_LABELS[receipt?.method] || receipt?.method || '';
-  const receiptDate = receipt?.date ? dayjs(receipt.date).format('DD/MM/YYYY HH:mm') : '';
+  const receiptDate = receipt?.date
+    ? dayjs(receipt.date).format('DD/MM/YYYY HH:mm')
+    : '';
   const printDate = dayjs().format('DD/MM/YYYY HH:mm');
   const note = String(receipt?.note || '').trim();
 

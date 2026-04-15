@@ -1,5 +1,12 @@
-export const computeStock = (productId, purchases = [], invoices = [], products = []) => {
-  const baseStock = Number(products.find((item) => item.id === productId)?.openingStock || 0);
+export const computeStock = (
+  productId,
+  purchases = [],
+  invoices = [],
+  products = []
+) => {
+  const baseStock = Number(
+    products.find((item) => item.id === productId)?.openingStock || 0
+  );
   const inQty = purchases.reduce((sum, purchase) => {
     if (purchase?.appliedToStock) return sum;
     const qty = (purchase.items || [])

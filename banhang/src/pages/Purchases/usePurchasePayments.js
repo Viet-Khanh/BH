@@ -6,13 +6,16 @@ const buildPaymentsByPurchase = (payments = []) =>
   payments.reduce((acc, payment) => {
     if (!payment.purchaseId) return acc;
     if (payment.paymentType === 'supplier_debt_payment') return acc;
-    acc[payment.purchaseId] = (acc[payment.purchaseId] || 0) + Number(payment.amount || 0);
+    acc[payment.purchaseId] =
+      (acc[payment.purchaseId] || 0) + Number(payment.amount || 0);
     return acc;
   }, {});
 
 const getPaymentsByPurchaseId = (payments, purchaseId) =>
   payments.filter(
-    (payment) => payment.purchaseId === purchaseId && payment.paymentType !== 'supplier_debt_payment'
+    (payment) =>
+      payment.purchaseId === purchaseId &&
+      payment.paymentType !== 'supplier_debt_payment'
   );
 
 const usePurchasePayments = ({
@@ -38,7 +41,10 @@ const usePurchasePayments = ({
   removePayment,
 }) => {
   const isEdit = Boolean(editing);
-  const paymentsByPurchase = useMemo(() => buildPaymentsByPurchase(payments), [payments]);
+  const paymentsByPurchase = useMemo(
+    () => buildPaymentsByPurchase(payments),
+    [payments]
+  );
   const paidTotal = useMemo(() => {
     if (!editing?.id) return 0;
     return getPaymentsByPurchaseId(payments, editing.id).reduce(
@@ -49,7 +55,10 @@ const usePurchasePayments = ({
   const computedSupplierDebt = useMemo(() => {
     if (!supplierId) return 0;
     return purchases
-      .filter((purchase) => purchase.supplierId === supplierId && purchase.id !== editing?.id)
+      .filter(
+        (purchase) =>
+          purchase.supplierId === supplierId && purchase.id !== editing?.id
+      )
       .reduce((sum, purchase) => {
         const paid = paymentsByPurchase[purchase.id] || 0;
         return sum + Number(purchase.total || 0) - paid;
@@ -67,7 +76,14 @@ const usePurchasePayments = ({
     setPaymentAmount(isEdit ? paidTotal : 0);
     setPaymentNote('');
     setPaymentMethod('cash');
-  }, [paymentModalOpen, isEdit, paidTotal, setPaymentAmount, setPaymentNote, setPaymentMethod]);
+  }, [
+    paymentModalOpen,
+    isEdit,
+    paidTotal,
+    setPaymentAmount,
+    setPaymentNote,
+    setPaymentMethod,
+  ]);
 
   const purchasePayments = useMemo(() => {
     if (!editing?.id) return [];
@@ -75,7 +91,8 @@ const usePurchasePayments = ({
   }, [payments, editing]);
 
   const handleCheckout = async () => {
-    const target = editing && !persistOnEdit ? editing : await persistPurchase();
+    const target =
+      editing && !persistOnEdit ? editing : await persistPurchase();
     if (!target) return;
     const existingPayments = getPaymentsByPurchaseId(payments, target.id);
     const existingPaid = existingPayments.reduce(
@@ -99,7 +116,9 @@ const usePurchasePayments = ({
       if (!existingPayments.length || !updatePayment) {
         await addPaymentEntry(enteredPaid - existingPaid);
       } else {
-        const sortedPayments = [...existingPayments].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const sortedPayments = [...existingPayments].sort(
+          (a, b) => new Date(a.date) - new Date(b.date)
+        );
         const lastPayment = sortedPayments[sortedPayments.length - 1];
         const sumExceptLast = existingPaid - Number(lastPayment.amount || 0);
         const newLastAmount = enteredPaid - sumExceptLast;

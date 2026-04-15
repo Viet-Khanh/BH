@@ -55,6 +55,7 @@ Tại các màn hình danh sách, bấm **Xuất Excel** để tải file `.xlsx
 ## Dữ liệu mẫu + Reset
 
 Vào **Hệ thống**:
+
 - **Nạp dữ liệu mẫu**: gọi API seed để tạo dữ liệu demo.
 - **Reset dữ liệu**: xóa toàn bộ dữ liệu MongoDB và reset cài đặt.
 

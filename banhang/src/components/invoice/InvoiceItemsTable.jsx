@@ -1,6 +1,9 @@
 import { Button, Input, InputNumber } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
-import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
+import {
+  formatNumberInput,
+  parseNumberInput,
+} from '../../utils/numberInput.js';
 
 const InvoiceItemsTable = ({
   items,
@@ -37,7 +40,9 @@ const InvoiceItemsTable = ({
             <tr key={`${item.productId}-${index}`}>
               <td>{index + 1}</td>
               <td>
-                <div><strong>{product?.name || 'Sản phẩm'}</strong></div>
+                <div>
+                  <strong>{product?.name || 'Sản phẩm'}</strong>
+                </div>
                 <div>{product?.code || ''}</div>
               </td>
               <td>{product?.unit || ''}</td>
@@ -82,13 +87,19 @@ const InvoiceItemsTable = ({
               <td>
                 <Input
                   value={item.lineNote}
-                  onChange={(event) => onUpdateItem(index, 'lineNote', event.target.value)}
+                  onChange={(event) =>
+                    onUpdateItem(index, 'lineNote', event.target.value)
+                  }
                   disabled={readOnly}
                 />
               </td>
               <td>
                 {!readOnly && (
-                  <Button danger size="small" onClick={() => onRemoveItem(index)}>
+                  <Button
+                    danger
+                    size="small"
+                    onClick={() => onRemoveItem(index)}
+                  >
                     Xóa
                   </Button>
                 )}
@@ -98,7 +109,10 @@ const InvoiceItemsTable = ({
         })}
         {!items.length && (
           <tr>
-            <td colSpan={showDimensions ? 10 : 8} style={{ textAlign: 'center' }}>
+            <td
+              colSpan={showDimensions ? 10 : 8}
+              style={{ textAlign: 'center' }}
+            >
               Chưa có hàng hóa. Dùng ô tìm kiếm để thêm nhanh.
             </td>
           </tr>

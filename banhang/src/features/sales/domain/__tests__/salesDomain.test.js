@@ -1,0 +1,44 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildCreatedInvoicePayload,
+  computePaymentStatus,
+  mergeProducts,
+  sumPayments,
+} from '../salesDomain.js';
+
+describe('salesDomain', () => {
+  it('computes payment status correctly', () => {
+    expect(computePaymentStatus(100, 0)).toBe('CHUA THU');
+    expect(computePaymentStatus(100, 40)).toBe('THU 1 PHAN');
+    expect(computePaymentStatus(100, 100)).toBe('DA THU');
+  });
+
+  it('sums payments and merges product snapshots by id', () => {
+    expect(sumPayments([{ amount: 10 }, { amount: '15' }])).toBe(25);
+
+    expect(
+      mergeProducts(
+        [{ id: 'p1', name: 'Old Name' }],
+        [
+          { id: 'p1', name: 'New Name' },
+          { id: 'p2', name: 'Other' },
+        ]
+      )
+    ).toEqual([
+      { id: 'p1', name: 'New Name' },
+      { id: 'p2', name: 'Other' },
+    ]);
+  });
+
+  it('builds a new invoice payload with default metadata', () => {
+    const payload = buildCreatedInvoicePayload({
+      id: 'invoice-1',
+      data: { total: 50, customerId: 'customer-1' },
+    });
+
+    expect(payload.id).toBe('invoice-1');
+    expect(payload.customerId).toBe('customer-1');
+    expect(payload.paymentStatus).toBe('CHUA THU');
+    expect(payload.changeLog).toHaveLength(1);
+  });
+});

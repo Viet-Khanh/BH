@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Select, message } from 'antd';
-import dayjs from 'dayjs';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportActions from '../../components/ExportActions.jsx';
-import { apiRequest } from '../../db/repository.js';
+import { getSalesDetailsReport } from '../../features/reports/api/reportsApi.js';
+import { buildDefaultRange } from '../../features/reports/domain/reportFilters.js';
+import { useReportFilters } from '../../features/reports/hooks/useReportFilters.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const buildExportRow = (row, { formatted = false, includeProfit = true } = {}) => ({
+const buildExportRow = (
+  row,
+  { formatted = false, includeProfit = true } = {}
+) => ({
   'Tên hàng': row.name,
-  'ĐVT': row.unit,
+  ĐVT: row.unit,
   'Quy cách': row.spec,
   'Số lượng': row.qty,
   'Thành tiền': formatted ? formatMoney(row.amount) : row.amount,
@@ -19,11 +23,17 @@ const buildExportRow = (row, { formatted = false, includeProfit = true } = {}) =
 });
 
 const ReportStockOutTab = ({ showSensitiveInfo = false }) => {
-  const [range, setRange] = useState(() => [
-    dayjs().startOf('day').toISOString(),
-    dayjs().endOf('day').toISOString(),
-  ]);
-  const [customerId, setCustomerId] = useState('');
+  const defaultRange = useMemo(() => buildDefaultRange(), []);
+  const {
+    range,
+    setRange,
+    entityId: customerId,
+    setEntityId: setCustomerId,
+  } = useReportFilters({
+    entityKey: 'customerId',
+    defaultRange,
+    syncPagination: false,
+  });
   const [rows, setRows] = useState([]);
   const [customers, setCustomers] = useState([]);
 
@@ -36,13 +46,7 @@ const ReportStockOutTab = ({ showSensitiveInfo = false }) => {
     : 'Báo cáo xuất kho';
 
   const fetchReport = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (range[0]) params.set('from', range[0]);
-    if (range[1]) params.set('to', range[1]);
-    if (customerId) params.set('customerId', customerId);
-    const query = params.toString();
-
-    const data = await apiRequest(`/reports/sales-details${query ? `?${query}` : ''}`);
+    const data = await getSalesDetailsReport({ range, customerId });
     setRows(Array.isArray(data?.rows) ? data.rows : []);
     setCustomers(Array.isArray(data?.customers) ? data.customers : []);
   }, [range, customerId]);
@@ -54,7 +58,9 @@ const ReportStockOutTab = ({ showSensitiveInfo = false }) => {
         await fetchReport();
       } catch (error) {
         if (active) {
-          message.error(`Không thể tải báo cáo xuất kho: ${error.message || 'Lỗi không xác định'}`);
+          message.error(
+            `Không thể tải báo cáo xuất kho: ${error.message || 'Lỗi không xác định'}`
+          );
         }
       }
     };
@@ -94,7 +100,9 @@ const ReportStockOutTab = ({ showSensitiveInfo = false }) => {
     });
 
     return Array.from(map.values()).sort((a, b) =>
-      String(a.name || '').localeCompare(String(b.name || ''), 'vi', { sensitivity: 'base' })
+      String(a.name || '').localeCompare(String(b.name || ''), 'vi', {
+        sensitivity: 'base',
+      })
     );
   }, [rows]);
 
@@ -145,7 +153,10 @@ const ReportStockOutTab = ({ showSensitiveInfo = false }) => {
             placeholder="Chọn khách hàng"
             value={customerId || undefined}
             onChange={(value) => setCustomerId(value || '')}
-            options={customers.map((item) => ({ value: item.id, label: item.name }))}
+            options={customers.map((item) => ({
+              value: item.id,
+              label: item.name,
+            }))}
             style={{ minWidth: 220 }}
             size="large"
             showSearch
@@ -166,15 +177,19 @@ const ReportStockOutTab = ({ showSensitiveInfo = false }) => {
       <div className="section-title">Tổng hợp</div>
       <div className="invoice-summary">
         <span>
-          Thành tiền: <span className="text-success">{formatMoney(summary.amount)}</span>
+          Thành tiền:{' '}
+          <span className="text-success">{formatMoney(summary.amount)}</span>
         </span>
         <span>
-          Tiền vốn: <span className="text-danger">{formatMoney(summary.cost)}</span>
+          Tiền vốn:{' '}
+          <span className="text-danger">{formatMoney(summary.cost)}</span>
         </span>
         {showSensitiveInfo && (
           <span>
             Lợi nhuận:{' '}
-            <span className={summary.profit >= 0 ? 'text-success' : 'text-danger'}>
+            <span
+              className={summary.profit >= 0 ? 'text-success' : 'text-danger'}
+            >
               {formatMoney(summary.profit)}
             </span>
           </span>
@@ -203,7 +218,9 @@ const ReportStockOutTab = ({ showSensitiveInfo = false }) => {
                 <td className="text-success">{formatMoney(row.amount)}</td>
                 <td className="text-danger">{formatMoney(row.cost)}</td>
                 {showSensitiveInfo && (
-                  <td className={row.profit >= 0 ? 'text-success' : 'text-danger'}>
+                  <td
+                    className={row.profit >= 0 ? 'text-success' : 'text-danger'}
+                  >
                     {formatMoney(row.profit)}
                   </td>
                 )}

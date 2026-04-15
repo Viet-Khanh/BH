@@ -1,7 +1,13 @@
 import { Button, Input, InputNumber } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const PurchaseItemsTable = ({ items, products, onUpdateItem, onRemoveItem, readOnly = false }) => (
+const PurchaseItemsTable = ({
+  items,
+  products,
+  onUpdateItem,
+  onRemoveItem,
+  readOnly = false,
+}) => (
   <div className="pos-table">
     <table>
       <thead>
@@ -23,8 +29,12 @@ const PurchaseItemsTable = ({ items, products, onUpdateItem, onRemoveItem, readO
             <tr key={item.productId}>
               <td>{index + 1}</td>
               <td>
-                <div><strong>{product?.name || '---'}</strong></div>
-                <div>{product?.code || '---'} · {product?.unit || ''}</div>
+                <div>
+                  <strong>{product?.name || '---'}</strong>
+                </div>
+                <div>
+                  {product?.code || '---'} · {product?.unit || ''}
+                </div>
               </td>
               <td>{product?.unit || ''}</td>
               <td>
@@ -47,13 +57,17 @@ const PurchaseItemsTable = ({ items, products, onUpdateItem, onRemoveItem, readO
               <td>
                 <Input
                   value={item.lineNote}
-                  onChange={(event) => onUpdateItem(index, 'lineNote', event.target.value)}
+                  onChange={(event) =>
+                    onUpdateItem(index, 'lineNote', event.target.value)
+                  }
                   disabled={readOnly}
                 />
               </td>
               <td>
                 {!readOnly && (
-                  <Button danger onClick={() => onRemoveItem(index)}>Xóa</Button>
+                  <Button danger onClick={() => onRemoveItem(index)}>
+                    Xóa
+                  </Button>
                 )}
               </td>
             </tr>

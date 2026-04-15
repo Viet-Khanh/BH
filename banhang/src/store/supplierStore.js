@@ -1,28 +1,7 @@
-import { create } from 'zustand';
-import { addItem, getAll, updateItem, deleteItem, bulkAdd } from '../db/repository.js';
+import { createCrudStore } from './createCrudStore.js';
 
 const TABLE = 'suppliers';
 
-export const useSupplierStore = create((set, get) => ({
-  items: [],
-  load: async () => {
-    const data = await getAll(TABLE, { includeDeleted: true });
-    set({ items: data });
-  },
-  add: async (item) => {
-    await addItem(TABLE, item);
-    await get().load();
-  },
-  update: async (id, data) => {
-    await updateItem(TABLE, id, data);
-    await get().load();
-  },
-  remove: async (id) => {
-    await deleteItem(TABLE, id);
-    await get().load();
-  },
-  bulkAdd: async (items) => {
-    await bulkAdd(TABLE, items);
-    await get().load();
-  },
-}));
+export const useSupplierStore = createCrudStore(TABLE, {
+  includeDeleted: true,
+});

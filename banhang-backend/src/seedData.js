@@ -108,9 +108,27 @@ export const buildSeedData = () => {
   ];
 
   const groupDefs = [
-    { group: 'Nhôm', unit: 'cây', prefix: 'NHOM', baseCost: 36000, baseSell: 47000 },
-    { group: 'Sắt', unit: 'cây', prefix: 'SAT', baseCost: 42000, baseSell: 56000 },
-    { group: 'Kính', unit: 'm2', prefix: 'KINH', baseCost: 140000, baseSell: 200000 },
+    {
+      group: 'Nhôm',
+      unit: 'cây',
+      prefix: 'NHOM',
+      baseCost: 36000,
+      baseSell: 47000,
+    },
+    {
+      group: 'Sắt',
+      unit: 'cây',
+      prefix: 'SAT',
+      baseCost: 42000,
+      baseSell: 56000,
+    },
+    {
+      group: 'Kính',
+      unit: 'm2',
+      prefix: 'KINH',
+      baseCost: 140000,
+      baseSell: 200000,
+    },
   ];
 
   const extraProducts = [];
@@ -140,19 +158,54 @@ export const buildSeedData = () => {
 
   const customers = markActive([
     { id: uuid(), name: 'Khách lẻ', phone: '', address: '' },
-    { id: uuid(), name: 'Công ty An Phát', phone: '0909 111 222', address: 'Quận 7' },
+    {
+      id: uuid(),
+      name: 'Công ty An Phát',
+      phone: '0909 111 222',
+      address: 'Quận 7',
+    },
     { id: uuid(), name: 'Anh Bình', phone: '0903 456 789', address: 'Thủ Đức' },
     { id: uuid(), name: 'Chị Lan', phone: '0912 888 999', address: 'Gò Vấp' },
-    { id: uuid(), name: 'Đại lý Minh Đức', phone: '0988 222 333', address: 'Bình Tân' },
+    {
+      id: uuid(),
+      name: 'Đại lý Minh Đức',
+      phone: '0988 222 333',
+      address: 'Bình Tân',
+    },
     { id: uuid(), name: 'Anh Nam', phone: '0901 111 111', address: 'Quận 2' },
-    { id: uuid(), name: 'Chị Hương', phone: '0913 222 333', address: 'Quận 12' },
-    { id: uuid(), name: 'Cửa hàng Minh Tâm', phone: '0977 444 555', address: 'Bình Thạnh' },
-    { id: uuid(), name: 'Đại lý Hoàng Long', phone: '0982 666 777', address: 'Bình Chánh' },
-    { id: uuid(), name: 'Công ty Phú An', phone: '0908 555 999', address: 'Quận 9' },
+    {
+      id: uuid(),
+      name: 'Chị Hương',
+      phone: '0913 222 333',
+      address: 'Quận 12',
+    },
+    {
+      id: uuid(),
+      name: 'Cửa hàng Minh Tâm',
+      phone: '0977 444 555',
+      address: 'Bình Thạnh',
+    },
+    {
+      id: uuid(),
+      name: 'Đại lý Hoàng Long',
+      phone: '0982 666 777',
+      address: 'Bình Chánh',
+    },
+    {
+      id: uuid(),
+      name: 'Công ty Phú An',
+      phone: '0908 555 999',
+      address: 'Quận 9',
+    },
   ]);
 
   const suppliers = markActive([
-    { id: uuid(), name: 'Nhà cung cấp A', phone: '0901 222 333', address: 'Bình Dương' },
+    {
+      id: uuid(),
+      name: 'Nhà cung cấp A',
+      phone: '0901 222 333',
+      address: 'Bình Dương',
+    },
   ]);
 
   const purchaseId = uuid();

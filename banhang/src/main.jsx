@@ -20,11 +20,11 @@ const Router = isElectron ? HashRouter : BrowserRouter;
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   // <React.StrictMode>
-    <ConfigProvider locale={viVN}>
-      <Router>
-        <App />
-      </Router>
-    </ConfigProvider>
+  <ConfigProvider locale={viVN}>
+    <Router>
+      <App />
+    </Router>
+  </ConfigProvider>
   // </React.StrictMode>
 );
 
@@ -35,4 +35,3 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator && !isElectron) {
     });
   });
 }
-

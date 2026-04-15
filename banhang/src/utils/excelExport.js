@@ -8,7 +8,8 @@ export const saveWorkbook = async (workbook, fileName) => {
     : `${baseName}.xlsx`;
 
   const hasElectronSave =
-    typeof window !== 'undefined' && typeof window.electronAPI?.saveFile === 'function';
+    typeof window !== 'undefined' &&
+    typeof window.electronAPI?.saveFile === 'function';
 
   if (hasElectronSave) {
     try {
@@ -19,7 +20,9 @@ export const saveWorkbook = async (workbook, fileName) => {
       });
       return !result?.canceled;
     } catch (error) {
-      message.error(`Khong the luu file: ${error.message || 'Loi khong xac dinh'}`);
+      message.error(
+        `Khong the luu file: ${error.message || 'Loi khong xac dinh'}`
+      );
       return false;
     }
   }

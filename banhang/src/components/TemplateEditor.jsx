@@ -43,11 +43,14 @@ const TemplateEditor = ({
               discount: 0,
               length: sampleLength,
               width: sampleWidth,
-              lineTotal: sampleUnitPrice * sampleQty * sampleLength * sampleWidth,
+              lineTotal:
+                sampleUnitPrice * sampleQty * sampleLength * sampleWidth,
             },
           ]
         : [],
-      total: product ? sampleUnitPrice * sampleQty * sampleLength * sampleWidth : 0,
+      total: product
+        ? sampleUnitPrice * sampleQty * sampleLength * sampleWidth
+        : 0,
     };
   }, [products]);
 
@@ -84,7 +87,11 @@ const TemplateEditor = ({
         <Form form={form} layout="vertical">
           {showShopFields && (
             <>
-              <Form.Item label="Tên shop" name="shopName" rules={[{ required: true }]}>
+              <Form.Item
+                label="Tên shop"
+                name="shopName"
+                rules={[{ required: true }]}
+              >
                 <Input size="large" />
               </Form.Item>
               <Form.Item label="Số điện thoại" name="shopPhone">
@@ -103,7 +110,12 @@ const TemplateEditor = ({
             />
           </Form.Item>
         </Form>
-        <Button size="large" type="primary" className="btn-primary" onClick={handleSave}>
+        <Button
+          size="large"
+          type="primary"
+          className="btn-primary"
+          onClick={handleSave}
+        >
           Lưu mẫu hóa đơn
         </Button>
       </div>

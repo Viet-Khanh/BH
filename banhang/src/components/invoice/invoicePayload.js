@@ -41,9 +41,11 @@ export const buildInvoicePayload = ({
   };
 };
 
-export const createPersistInvoice = ({ onSave, invoice, ...payloadDeps }) => async () => {
-  const payload = buildInvoicePayload(payloadDeps);
-  if (!payload) return null;
-  const saved = await onSave(payload);
-  return saved || invoice || null;
-};
+export const createPersistInvoice =
+  ({ onSave, invoice, ...payloadDeps }) =>
+  async () => {
+    const payload = buildInvoicePayload(payloadDeps);
+    if (!payload) return null;
+    const saved = await onSave(payload);
+    return saved || invoice || null;
+  };

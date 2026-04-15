@@ -1,14 +1,25 @@
 import { useMemo } from 'react';
 import dayjs from 'dayjs';
 
-const usePurchaseFilters = ({ purchases, filterSupplier, filterRange, suppliers, products }) => {
+const usePurchaseFilters = ({
+  purchases,
+  filterSupplier,
+  filterRange,
+  suppliers,
+  products,
+}) => {
   const filteredPurchases = useMemo(() => {
     return purchases.filter((purchase) => {
-      const matchSupplier = filterSupplier ? purchase.supplierId === filterSupplier : true;
-      const matchRange = filterRange[0] && filterRange[1]
-        ? !dayjs(purchase.date).isBefore(dayjs(filterRange[0]).startOf('day')) &&
-          !dayjs(purchase.date).isAfter(dayjs(filterRange[1]).endOf('day'))
+      const matchSupplier = filterSupplier
+        ? purchase.supplierId === filterSupplier
         : true;
+      const matchRange =
+        filterRange[0] && filterRange[1]
+          ? !dayjs(purchase.date).isBefore(
+              dayjs(filterRange[0]).startOf('day')
+            ) &&
+            !dayjs(purchase.date).isAfter(dayjs(filterRange[1]).endOf('day'))
+          : true;
       return matchSupplier && matchRange;
     });
   }, [purchases, filterSupplier, filterRange]);

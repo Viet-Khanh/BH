@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Form, InputNumber, Modal, Space, message } from 'antd';
 import ProductPicker from '../ProductPicker.jsx';
-import { formatNumberInput, parseNumberInput } from '../../utils/numberInput.js';
+import {
+  formatNumberInput,
+  parseNumberInput,
+} from '../../utils/numberInput.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 import CatalogFormModal from '../../pages/Catalog/CatalogFormModal.jsx';
 import { buildCodeFromName } from '../../pages/Catalog/catalogUtils.js';
@@ -69,7 +72,11 @@ const InvoiceProductModal = ({
       return;
     }
     const nextId = pendingProduct?.id || null;
-    if (nextId && nextId !== lastProductIdRef.current && !isFirstOpenCycleRef.current) {
+    if (
+      nextId &&
+      nextId !== lastProductIdRef.current &&
+      !isFirstOpenCycleRef.current
+    ) {
       requestAnimationFrame(() => {
         qtyInputRef.current?.focus();
       });
@@ -100,7 +107,8 @@ const InvoiceProductModal = ({
 
   const hasPreviousPrice = Number.isFinite(previousPrice);
   const isSamePrice =
-    hasPreviousPrice && Number(pendingPrice || 0) === Number(previousPrice || 0);
+    hasPreviousPrice &&
+    Number(pendingPrice || 0) === Number(previousPrice || 0);
   const canCreateProduct = typeof onCreateProduct === 'function';
 
   const handleOpenCreateProduct = () => {
@@ -151,7 +159,9 @@ const InvoiceProductModal = ({
       message.success('Đã tạo sản phẩm.');
       focusSearchInput({ selectAll: true });
     } catch (error) {
-      message.error(`Không thể tạo sản phẩm: ${error.message || 'Lỗi không xác định'}`);
+      message.error(
+        `Không thể tạo sản phẩm: ${error.message || 'Lỗi không xác định'}`
+      );
     } finally {
       setCreateProductLoading(false);
     }
@@ -172,11 +182,21 @@ const InvoiceProductModal = ({
     >
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ flex: 3 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
             <div className="section-title" style={{ margin: 0 }}>
               Danh sách hàng hóa
             </div>
-            <Button onClick={handleOpenCreateProduct} disabled={!canCreateProduct}>
+            <Button
+              onClick={handleOpenCreateProduct}
+              disabled={!canCreateProduct}
+            >
               Thêm mặt hàng
             </Button>
           </div>
@@ -196,7 +216,12 @@ const InvoiceProductModal = ({
             <div>
               <strong>{pendingProduct?.name || 'Chưa chọn sản phẩm'}</strong>
               <div>{pendingProduct?.code || ''}</div>
-              <div>Tồn kho: {Number(pendingProduct?.stock ?? pendingProduct?.openingStock ?? 0)}</div>
+              <div>
+                Tồn kho:{' '}
+                {Number(
+                  pendingProduct?.stock ?? pendingProduct?.openingStock ?? 0
+                )}
+              </div>
             </div>
             <div>
               <div>Số lượng</div>

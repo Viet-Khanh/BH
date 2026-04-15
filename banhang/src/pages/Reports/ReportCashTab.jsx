@@ -2,21 +2,24 @@ import { useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportActions from '../../components/ExportActions.jsx';
-import { apiRequest } from '../../db/repository.js';
+import { getCashReport } from '../../features/reports/api/reportsApi.js';
+import { buildRollingDaysRange } from '../../features/reports/domain/reportFilters.js';
+import { useReportFilters } from '../../features/reports/hooks/useReportFilters.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-const ReportCashTab = ({ range, onRangeChange }) => {
+const ReportCashTab = () => {
+  const defaultRange = useMemo(() => buildRollingDaysRange(), []);
+  const { range, setRange } = useReportFilters({
+    defaultRange,
+    syncPagination: false,
+  });
   const [summary, setSummary] = useState({ cashIn: 0, cashOut: 0 });
 
   useEffect(() => {
     let active = true;
     const load = async () => {
       try {
-        const params = new URLSearchParams();
-        if (range[0]) params.set('from', range[0]);
-        if (range[1]) params.set('to', range[1]);
-        const query = params.toString();
-        const data = await apiRequest(`/reports/cash${query ? `?${query}` : ''}`);
+        const data = await getCashReport({ range });
         if (!active) return;
         setSummary({
           cashIn: data?.cashIn || 0,
@@ -24,7 +27,9 @@ const ReportCashTab = ({ range, onRangeChange }) => {
         });
       } catch (error) {
         if (active) {
-          message.error(`Không thể tải thu chi: ${error.message || 'Lỗi không xác định'}`);
+          message.error(
+            `Không thể tải thu chi: ${error.message || 'Lỗi không xác định'}`
+          );
         }
       }
     };
@@ -46,9 +51,14 @@ const ReportCashTab = ({ range, onRangeChange }) => {
   return (
     <div>
       <div className="action-row">
-        <DateRangeFilter value={range} onChange={onRangeChange} />
+        <DateRangeFilter value={range} onChange={setRange} />
         <div style={{ marginLeft: 'auto' }}>
-          <ExportActions rows={cashExport} fileName="thu-chi" sheetName="ThuChi" title="Thu/Chi" />
+          <ExportActions
+            rows={cashExport}
+            fileName="thu-chi"
+            sheetName="ThuChi"
+            title="Thu/Chi"
+          />
         </div>
       </div>
       <div className="invoice-summary">

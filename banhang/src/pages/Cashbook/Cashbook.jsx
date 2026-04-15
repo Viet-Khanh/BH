@@ -8,11 +8,18 @@ import { useInvoiceStore } from '../../store/invoiceStore.js';
 import DateRangeFilter from '../../components/DateRangeFilter.jsx';
 import ExportButton from '../../components/ExportButton.jsx';
 import { formatMoney } from '../../utils/moneyFormat.js';
-import { formatNumberInput, parseNumberInput } from '../Catalog/catalogUtils.js';
+import {
+  formatNumberInput,
+  parseNumberInput,
+} from '../Catalog/catalogUtils.js';
 
 const Cashbook = () => {
   const navigate = useNavigate();
-  const { items: cashbook, load: loadCashbook, add: addEntry } = useCashbookStore();
+  const {
+    items: cashbook,
+    load: loadCashbook,
+    add: addEntry,
+  } = useCashbookStore();
   const { items: invoices, load: loadInvoices } = useInvoiceStore();
 
   const [mode, setMode] = useState('list');
@@ -31,13 +38,13 @@ const Cashbook = () => {
     bootstrap();
   }, [loadCashbook, loadInvoices]);
 
-
   const filtered = useMemo(() => {
     return cashbook.filter((entry) => {
-      const matchRange = filterRange[0] && filterRange[1]
-        ? !dayjs(entry.date).isBefore(dayjs(filterRange[0]).startOf('day')) &&
-          !dayjs(entry.date).isAfter(dayjs(filterRange[1]).endOf('day'))
-        : true;
+      const matchRange =
+        filterRange[0] && filterRange[1]
+          ? !dayjs(entry.date).isBefore(dayjs(filterRange[0]).startOf('day')) &&
+            !dayjs(entry.date).isAfter(dayjs(filterRange[1]).endOf('day'))
+          : true;
       return matchRange;
     });
   }, [cashbook, filterRange]);
@@ -81,16 +88,29 @@ const Cashbook = () => {
     <div className="page-card">
       <div className="page-title">Thu chi</div>
       <div className="action-row">
-        <Button size="large" onClick={() => (mode === 'list' ? navigate('/') : setMode('list'))}>
+        <Button
+          size="large"
+          onClick={() => (mode === 'list' ? navigate('/') : setMode('list'))}
+        >
           Quay lại
         </Button>
         {mode === 'list' && (
-          <Button size="large" type="primary" className="btn-primary" onClick={() => setMode('new')}>
+          <Button
+            size="large"
+            type="primary"
+            className="btn-primary"
+            onClick={() => setMode('new')}
+          >
             Tạo mới
           </Button>
         )}
         {mode === 'new' && (
-          <Button size="large" type="primary" className="btn-primary" onClick={handleSave}>
+          <Button
+            size="large"
+            type="primary"
+            className="btn-primary"
+            onClick={handleSave}
+          >
             Lưu
           </Button>
         )}
@@ -100,7 +120,11 @@ const Cashbook = () => {
         <div>
           <div className="flex-row" style={{ marginBottom: 12 }}>
             <DateRangeFilter value={filterRange} onChange={setFilterRange} />
-            <ExportButton rows={exportRows} fileName="thu-chi" sheetName="ThuChi" />
+            <ExportButton
+              rows={exportRows}
+              fileName="thu-chi"
+              sheetName="ThuChi"
+            />
           </div>
           <div className="table-wrapper">
             <table className="invoice-items-table">
@@ -141,7 +165,9 @@ const Cashbook = () => {
             <DatePicker
               size="large"
               value={dayjs(date)}
-              onChange={(val) => setDate(val?.toISOString() || new Date().toISOString())}
+              onChange={(val) =>
+                setDate(val?.toISOString() || new Date().toISOString())
+              }
               style={{ width: '100%' }}
             />
           </div>
@@ -172,7 +198,11 @@ const Cashbook = () => {
           </div>
           <div>
             <div className="section-title">Danh mục</div>
-            <Input size="large" value={category} onChange={(event) => setCategory(event.target.value)} />
+            <Input
+              size="large"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+            />
           </div>
           <div>
             <div className="section-title">Liên kết hóa đơn (tùy chọn)</div>
@@ -182,12 +212,19 @@ const Cashbook = () => {
               value={invoiceId || undefined}
               onChange={(value) => setInvoiceId(value || '')}
               style={{ width: '100%' }}
-              options={invoices.map((item) => ({ value: item.id, label: item.code }))}
+              options={invoices.map((item) => ({
+                value: item.id,
+                label: item.code,
+              }))}
             />
           </div>
           <div>
             <div className="section-title">Ghi chú</div>
-            <Input size="large" value={note} onChange={(event) => setNote(event.target.value)} />
+            <Input
+              size="large"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+            />
           </div>
         </div>
       )}

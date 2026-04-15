@@ -36,13 +36,20 @@ const CatalogTabContent = ({
         <div className="export-actions" style={{ marginLeft: 'auto' }}>
           {tabKey === 'products' && (
             <>
-              <Button size="large" onClick={() => onDownloadPriceUpdateTemplate?.(tabKey)}>
+              <Button
+                size="large"
+                onClick={() => onDownloadPriceUpdateTemplate?.(tabKey)}
+              >
                 Tải file giá
               </Button>
               <Button
                 size="large"
                 onClick={() => onTriggerPriceUpdate?.(tabKey)}
-                loading={importing && importTarget === tabKey && importMode === 'price-update'}
+                loading={
+                  importing &&
+                  importTarget === tabKey &&
+                  importMode === 'price-update'
+                }
               >
                 Cập nhật giá Excel
               </Button>
@@ -54,7 +61,9 @@ const CatalogTabContent = ({
           <Button
             size="large"
             onClick={() => onTriggerImport(tabKey)}
-            loading={importing && importTarget === tabKey && importMode === 'catalog'}
+            loading={
+              importing && importTarget === tabKey && importMode === 'catalog'
+            }
           >
             Nhập Excel
           </Button>

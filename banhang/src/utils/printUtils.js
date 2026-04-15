@@ -8,9 +8,22 @@ const A4_HEIGHT_MM = 297;
 const toPx = (mm) => mm * PX_PER_MM;
 
 const normalizePageSize = (value) => {
-  const normalized = String(value || '').trim().toUpperCase();
+  const normalized = String(value || '')
+    .trim()
+    .toUpperCase();
   if (!normalized) return '';
-  const supported = ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'LEGAL', 'LETTER', 'TABLOID'];
+  const supported = [
+    'A0',
+    'A1',
+    'A2',
+    'A3',
+    'A4',
+    'A5',
+    'A6',
+    'LEGAL',
+    'LETTER',
+    'TABLOID',
+  ];
   if (!supported.includes(normalized)) return '';
   if (normalized === 'LEGAL') return 'Legal';
   if (normalized === 'LETTER') return 'Letter';
@@ -95,7 +108,10 @@ const estimateContentHeightPx = async (htmlDocument, widthMm) => {
 
 const resolveAutoPageSize = async (htmlDocument) => {
   const htmlForMeasure = injectPageSizeCss(htmlDocument, 'A5');
-  const contentHeightPx = await estimateContentHeightPx(htmlForMeasure, A5_WIDTH_MM);
+  const contentHeightPx = await estimateContentHeightPx(
+    htmlForMeasure,
+    A5_WIDTH_MM
+  );
   if (!Number.isFinite(contentHeightPx)) return 'A4';
   const safeA5HeightPx = toPx(A5_HEIGHT_MM) - 64;
   return contentHeightPx <= safeA5HeightPx ? 'A5' : 'A4';
@@ -138,7 +154,8 @@ export const printHtml = async (
   const htmlForPrint = injectPageSizeCss(documentHtml, resolvedPageSize);
 
   const hasElectronPrint =
-    typeof window !== 'undefined' && typeof window.electronAPI?.printHtml === 'function';
+    typeof window !== 'undefined' &&
+    typeof window.electronAPI?.printHtml === 'function';
 
   if (hasElectronPrint) {
     try {

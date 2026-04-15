@@ -20,7 +20,12 @@ body {
   margin: 0;
   font-family: var(--font-main);
   color: var(--text);
-  background: radial-gradient(circle at top, #f2fbfa 0%, var(--bg) 45%, var(--bg-accent) 100%);
+  background: radial-gradient(
+    circle at top,
+    #f2fbfa 0%,
+    var(--bg) 45%,
+    var(--bg-accent) 100%
+  );
 }
 
 .app-shell {
@@ -101,7 +106,10 @@ body {
   border-radius: 12px;
   padding: 8px 14px;
   margin: 0;
-  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .page-tabs .ant-tabs-tab + .ant-tabs-tab {
@@ -183,7 +191,9 @@ body {
   color: #ffffff;
   text-align: center;
   box-shadow: var(--shadow);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .big-tile:hover {
@@ -236,7 +246,9 @@ body {
   background: #ffffff;
   text-align: left;
   cursor: pointer;
-  transition: background 0.2s ease, border 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border 0.2s ease;
 }
 
 .product-option:hover {

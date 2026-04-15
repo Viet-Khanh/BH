@@ -3,20 +3,27 @@ export const buildPaymentsByInvoice = (payments = []) => {
   payments.forEach((payment) => {
     if (!payment.invoiceId) return;
     if (payment.paymentType === 'debt_receipt') return;
-    map[payment.invoiceId] = (map[payment.invoiceId] || 0) + Number(payment.amount || 0);
+    map[payment.invoiceId] =
+      (map[payment.invoiceId] || 0) + Number(payment.amount || 0);
   });
   return map;
 };
 
-export const buildOldDebtByInvoice = (invoices = [], paymentsByInvoice = {}) => {
-  const sorted = [...invoices].sort((a, b) => new Date(a.date) - new Date(b.date));
+export const buildOldDebtByInvoice = (
+  invoices = [],
+  paymentsByInvoice = {}
+) => {
+  const sorted = [...invoices].sort(
+    (a, b) => new Date(a.date) - new Date(b.date)
+  );
   const customerDebt = {};
   const map = {};
   sorted.forEach((invoice) => {
     const paid = paymentsByInvoice[invoice.id] || 0;
     const total = Number(invoice.total || 0);
     map[invoice.id] = customerDebt[invoice.customerId] || 0;
-    customerDebt[invoice.customerId] = (customerDebt[invoice.customerId] || 0) + total - paid;
+    customerDebt[invoice.customerId] =
+      (customerDebt[invoice.customerId] || 0) + total - paid;
   });
   return map;
 };

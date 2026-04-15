@@ -51,7 +51,10 @@ const useCatalogImport = ({
         worksheet,
         PRODUCT_PRICE_UPDATE_TEMPLATE_CONFIG.sheetName
       );
-      await saveWorkbook(workbook, PRODUCT_PRICE_UPDATE_TEMPLATE_CONFIG.fileName);
+      await saveWorkbook(
+        workbook,
+        PRODUCT_PRICE_UPDATE_TEMPLATE_CONFIG.fileName
+      );
       return;
     }
 
@@ -60,7 +63,9 @@ const useCatalogImport = ({
       message.warning('Chưa hỗ trợ tải mẫu cho tab này.');
       return;
     }
-    const worksheet = XLSX.utils.json_to_sheet([buildTemplateRow(config.headers)]);
+    const worksheet = XLSX.utils.json_to_sheet([
+      buildTemplateRow(config.headers),
+    ]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, config.sheetName);
     await saveWorkbook(workbook, config.fileName);
@@ -78,7 +83,8 @@ const useCatalogImport = ({
           reject(error);
         }
       };
-      reader.onerror = () => reject(reader.error || new Error('File read error'));
+      reader.onerror = () =>
+        reject(reader.error || new Error('File read error'));
       reader.readAsArrayBuffer(file);
     });
 
@@ -105,9 +111,13 @@ const useCatalogImport = ({
       const field = config.columnMap[headerKey];
       if (field) fieldPresence[field] = true;
     });
-    const missingFields = config.requiredFields.filter((field) => !fieldPresence[field]);
+    const missingFields = config.requiredFields.filter(
+      (field) => !fieldPresence[field]
+    );
     if (missingFields.length) {
-      const labels = missingFields.map((field) => config.requiredLabels[field] || field);
+      const labels = missingFields.map(
+        (field) => config.requiredLabels[field] || field
+      );
       throw new Error(`Thiếu cột bắt buộc: ${labels.join(', ')}.`);
     }
 
@@ -155,12 +165,16 @@ const useCatalogImport = ({
 
       await bulkAdd(items);
       if (skipped > 0) {
-        message.success(`Đã nhập ${items.length} dòng. Bỏ qua ${skipped} dòng trống hoặc thiếu dữ liệu.`);
+        message.success(
+          `Đã nhập ${items.length} dòng. Bỏ qua ${skipped} dòng trống hoặc thiếu dữ liệu.`
+        );
       } else {
         message.success(`Đã nhập ${items.length} dòng.`);
       }
     } catch (error) {
-      message.error(`Không thể nhập dữ liệu: ${error.message || 'Lỗi không xác định'}`);
+      message.error(
+        `Không thể nhập dữ liệu: ${error.message || 'Lỗi không xác định'}`
+      );
     } finally {
       setImporting(false);
     }
@@ -175,7 +189,10 @@ const useCatalogImport = ({
     setImporting(true);
     try {
       const workbook = await readWorkbook(file);
-      const { items, skipped } = parseWorkbookItems(workbook, PRODUCT_PRICE_UPDATE_IMPORT_CONFIG);
+      const { items, skipped } = parseWorkbookItems(
+        workbook,
+        PRODUCT_PRICE_UPDATE_IMPORT_CONFIG
+      );
       if (!items.length) {
         message.warning('Không có dòng hợp lệ để cập nhật giá.');
         return;
@@ -189,16 +206,27 @@ const useCatalogImport = ({
         parts.push(`Không tìm thấy ${result.missingNames.length} tên sản phẩm`);
       }
       if (result?.duplicateNamesInFile?.length) {
-        parts.push(`Trùng ${result.duplicateNamesInFile.length} tên trong file`);
+        parts.push(
+          `Trùng ${result.duplicateNamesInFile.length} tên trong file`
+        );
       }
       if (result?.ambiguousNames?.length) {
-        parts.push(`Có ${result.ambiguousNames.length} tên đang bị trùng trong hệ thống`);
+        parts.push(
+          `Có ${result.ambiguousNames.length} tên đang bị trùng trong hệ thống`
+        );
       }
       const invalidCount = skipped + Number(result?.invalidRows?.length || 0);
-      if (invalidCount > 0) parts.push(`Bỏ qua ${invalidCount} dòng không hợp lệ`);
+      if (invalidCount > 0)
+        parts.push(`Bỏ qua ${invalidCount} dòng không hợp lệ`);
 
       const summary = parts.join('. ');
-      if (updatedCount > 0 && !result?.missingNames?.length && !result?.duplicateNamesInFile?.length && !result?.ambiguousNames?.length && invalidCount === 0) {
+      if (
+        updatedCount > 0 &&
+        !result?.missingNames?.length &&
+        !result?.duplicateNamesInFile?.length &&
+        !result?.ambiguousNames?.length &&
+        invalidCount === 0
+      ) {
         message.success(summary || 'Đã cập nhật giá sản phẩm.');
       } else if (updatedCount > 0) {
         message.warning(summary || 'Đã cập nhật một phần dữ liệu giá.');
@@ -206,7 +234,9 @@ const useCatalogImport = ({
         message.error(summary || 'Không có sản phẩm nào được cập nhật.');
       }
     } catch (error) {
-      message.error(`Không thể cập nhật giá: ${error.message || 'Lỗi không xác định'}`);
+      message.error(
+        `Không thể cập nhật giá: ${error.message || 'Lỗi không xác định'}`
+      );
     } finally {
       setImporting(false);
     }
@@ -225,7 +255,10 @@ const useCatalogImport = ({
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const target = importTargetRef.current || { tabKey: activeKey, mode: 'catalog' };
+    const target = importTargetRef.current || {
+      tabKey: activeKey,
+      mode: 'catalog',
+    };
     if (target.mode === 'price-update') {
       await handlePriceUpdateExcel(file, target.tabKey);
     } else {

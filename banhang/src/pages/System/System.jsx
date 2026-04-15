@@ -18,9 +18,18 @@ import { getSystemPasswordFromSettings } from './systemPassword.js';
 
 const System = () => {
   const navigate = useNavigate();
-  const { settings, update: updateSettings, reset: resetSettings, load: loadSettings } = useSettingsStore();
+  const {
+    settings,
+    update: updateSettings,
+    reset: resetSettings,
+    load: loadSettings,
+  } = useSettingsStore();
   const { items: products, load: loadProducts } = useProductStore();
-  const { items: customers, load: loadCustomers, ensureDefaultCustomer } = useCustomerStore();
+  const {
+    items: customers,
+    load: loadCustomers,
+    ensureDefaultCustomer,
+  } = useCustomerStore();
   const { load: loadSuppliers } = useSupplierStore();
   const { load: loadUnits } = useUnitStore();
   const { load: loadPurchases } = usePurchaseStore();
@@ -102,15 +111,26 @@ const System = () => {
     <div className="page-card">
       <div className="page-title">Hệ thống</div>
       <div className="action-row">
-        <Button size="large" onClick={() => navigate('/')}>Quay lại</Button>
-        <Button size="large" type="primary" className="btn-primary" onClick={handleSave}>
+        <Button size="large" onClick={() => navigate('/')}>
+          Quay lại
+        </Button>
+        <Button
+          size="large"
+          type="primary"
+          className="btn-primary"
+          onClick={handleSave}
+        >
           Lưu
         </Button>
       </div>
 
       <Form form={form} layout="vertical">
         <div className="form-grid">
-          <Form.Item label="Tên shop" name="shopName" rules={[{ required: true }]}>
+          <Form.Item
+            label="Tên shop"
+            name="shopName"
+            rules={[{ required: true }]}
+          >
             <Input size="large" />
           </Form.Item>
           <Form.Item label="Số điện thoại" name="shopPhone">
@@ -119,7 +139,11 @@ const System = () => {
           <Form.Item label="Địa chỉ" name="shopAddress">
             <Input size="large" />
           </Form.Item>
-          <Form.Item label="Cho phép âm kho" name="allowNegativeStock" valuePropName="checked">
+          <Form.Item
+            label="Cho phép âm kho"
+            name="allowNegativeStock"
+            valuePropName="checked"
+          >
             <Switch />
           </Form.Item>
           <Form.Item
@@ -159,7 +183,9 @@ const System = () => {
 
       <div className="section-title">Dữ liệu mẫu</div>
       <div className="action-row">
-        <Button size="large" onClick={handleSeed}>Nạp dữ liệu mẫu</Button>
+        <Button size="large" onClick={handleSeed}>
+          Nạp dữ liệu mẫu
+        </Button>
         {/* <Button size="large" danger onClick={handleReset}>Reset dữ liệu</Button> */}
       </div>
     </div>

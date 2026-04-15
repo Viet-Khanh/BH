@@ -46,7 +46,9 @@ const SalesRecent = () => {
         to: todayRange.to,
       });
       try {
-        const data = await apiRequest(`/reports/sales-invoices?${params.toString()}`);
+        const data = await apiRequest(
+          `/reports/sales-invoices?${params.toString()}`
+        );
         if (cancelled) return;
         setRows(Array.isArray(data?.rows) ? data.rows : []);
       } catch (error) {
@@ -106,11 +108,20 @@ const SalesRecent = () => {
       products: selectedProducts,
       settings,
     });
-  }, [selectedInvoice, selectedCustomer, selectedPayments, selectedProducts, settings]);
+  }, [
+    selectedInvoice,
+    selectedCustomer,
+    selectedPayments,
+    selectedProducts,
+    settings,
+  ]);
 
   const handlePrint = async () => {
     if (!previewHtml) return;
-    const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
+    const printCopies = Math.max(
+      1,
+      Math.round(Number(settings?.printCopies || 1))
+    );
     await printHtml(previewHtml, { copies: printCopies, autoPageSize: true });
   };
 
@@ -144,7 +155,9 @@ const SalesRecent = () => {
       okText: 'Xóa',
       cancelText: 'Hủy',
       onOk: async () => {
-        await apiRequest(`/reports/invoices/${selectedInvoice.id}`, { method: 'DELETE' });
+        await apiRequest(`/reports/invoices/${selectedInvoice.id}`, {
+          method: 'DELETE',
+        });
         setRows((prev) => prev.filter((row) => row.id !== selectedInvoice.id));
         setSelectedInvoiceId(null);
         message.success('Đã xóa hóa đơn.');
@@ -218,8 +231,12 @@ const SalesRecent = () => {
                 <td>{formatMoney(row.amount)}</td>
                 <td className="text-danger">{formatMoney(row.oldDebt)}</td>
                 <td>{formatMoney(row.totalPay)}</td>
-                <td className={row.paid > 0 ? 'text-success' : ''}>{formatMoney(row.paid)}</td>
-                <td className={row.remain > 0 ? 'text-danger' : 'text-success'}>{formatMoney(row.remain)}</td>
+                <td className={row.paid > 0 ? 'text-success' : ''}>
+                  {formatMoney(row.paid)}
+                </td>
+                <td className={row.remain > 0 ? 'text-danger' : 'text-success'}>
+                  {formatMoney(row.remain)}
+                </td>
                 <td>{row.customerName}</td>
                 <td>{row.phone}</td>
                 <td>{row.address}</td>
@@ -246,10 +263,23 @@ const SalesRecent = () => {
       >
         {selectedInvoice && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
-              <div>HĐ: <strong>{selectedInvoice.code}</strong></div>
-              <div>KH: <strong>{selectedCustomer?.name || 'Khách lẻ'}</strong></div>
-              <div>Tổng tiền: <strong>{formatMoney(selectedInvoice.total || 0)}</strong></div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 16,
+              }}
+            >
+              <div>
+                HĐ: <strong>{selectedInvoice.code}</strong>
+              </div>
+              <div>
+                KH: <strong>{selectedCustomer?.name || 'Khách lẻ'}</strong>
+              </div>
+              <div>
+                Tổng tiền:{' '}
+                <strong>{formatMoney(selectedInvoice.total || 0)}</strong>
+              </div>
             </div>
             <div className="pos-table" style={{ marginTop: 12 }}>
               <table>
@@ -284,17 +314,38 @@ const SalesRecent = () => {
                 </tbody>
               </table>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, gap: 12 }}>
-              <Button danger size="large" onClick={handleDelete}>XÓA</Button>
-              <Button size="large" onClick={handleEdit}>SỬA</Button>
-              <Button size="large" type="primary" className="btn-primary" onClick={handlePrint}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 16,
+                gap: 12,
+              }}
+            >
+              <Button danger size="large" onClick={handleDelete}>
+                XÓA
+              </Button>
+              <Button size="large" onClick={handleEdit}>
+                SỬA
+              </Button>
+              <Button
+                size="large"
+                type="primary"
+                className="btn-primary"
+                onClick={handlePrint}
+              >
                 IN LẠI
               </Button>
-              <Button size="large" onClick={handleExport}>Xuất File...</Button>
-              <Button size="large" onClick={() => setSelectedInvoiceId(null)}>THOÁT</Button>
+              <Button size="large" onClick={handleExport}>
+                Xuất File...
+              </Button>
+              <Button size="large" onClick={() => setSelectedInvoiceId(null)}>
+                THOÁT
+              </Button>
             </div>
             <div style={{ marginTop: 12, color: '#b91c1c', fontSize: 12 }}>
-              * Chức năng SỬA, XÓA hóa đơn chỉ dành cho Khách lẻ, nếu khách có công nợ, chỉ áp dụng cho hóa đơn gần đây nhất.
+              * Chức năng SỬA, XÓA hóa đơn chỉ dành cho Khách lẻ, nếu khách có
+              công nợ, chỉ áp dụng cho hóa đơn gần đây nhất.
             </div>
           </div>
         )}

@@ -16,7 +16,9 @@ const escapeHtml = (value) =>
 const buildPrintHtml = ({ title, rows, summaryItems = [] }) => {
   const safeTitle = escapeHtml(title || 'Du lieu');
   const headers = rows.length ? Object.keys(rows[0]) : [];
-  const headerCells = headers.map((key) => `<th>${escapeHtml(key.replace(/_/g, ' '))}</th>`).join('');
+  const headerCells = headers
+    .map((key) => `<th>${escapeHtml(key.replace(/_/g, ' '))}</th>`)
+    .join('');
   const summaryHtml = summaryItems.length
     ? `<div style="margin-bottom: 12px; display: flex; gap: 20px; flex-wrap: wrap;">
         ${summaryItems
@@ -77,7 +79,10 @@ const ExportActions = ({
     loadSettings();
   }, [loadSettings]);
 
-  const printCopies = Math.max(1, Math.round(Number(settings?.printCopies || 1)));
+  const printCopies = Math.max(
+    1,
+    Math.round(Number(settings?.printCopies || 1))
+  );
 
   const handleExcel = async () => {
     if (!rows.length) {
@@ -95,7 +100,11 @@ const ExportActions = ({
       message.warning('Không có dữ liệu để in.');
       return;
     }
-    const html = buildPrintHtml({ title: title || fileName, rows: rowsForPdf, summaryItems });
+    const html = buildPrintHtml({
+      title: title || fileName,
+      rows: rowsForPdf,
+      summaryItems,
+    });
     await printHtml(html, { copies: printCopies });
   };
 
@@ -104,7 +113,11 @@ const ExportActions = ({
       message.warning('Không có dữ liệu để xuất.');
       return;
     }
-    const html = buildPrintHtml({ title: title || fileName, rows: rowsForPdf, summaryItems });
+    const html = buildPrintHtml({
+      title: title || fileName,
+      rows: rowsForPdf,
+      summaryItems,
+    });
     await printHtml(html, { copies: printCopies, forceDialog: true });
   };
 
@@ -119,19 +132,33 @@ const ExportActions = ({
   };
 
   return (
-    <div className="export-actions" style={{ display: 'flex', alignItems: 'flex-end', gap: 16, justifyContent: 'space-between'}}>
+    <div
+      className="export-actions"
+      style={{
+        display: 'flex',
+        alignItems: 'flex-end',
+        gap: 16,
+        justifyContent: 'space-between',
+      }}
+    >
       <div style={{ display: 'flex', gap: 8 }}>
         <Button size="large" onClick={handlePrint}>
           In
         </Button>
-        <Dropdown menu={{ items: exportItems, onClick: handleMenuClick }} trigger={['click']}>
+        <Dropdown
+          menu={{ items: exportItems, onClick: handleMenuClick }}
+          trigger={['click']}
+        >
           <Button size="large">Xuất</Button>
         </Dropdown>
       </div>
       {!!summaryItems.length && (
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           {summaryItems.map((item, index) => (
-            <span key={`${item?.label || 'summary'}-${index}`} className="text-gray-600">
+            <span
+              key={`${item?.label || 'summary'}-${index}`}
+              className="text-gray-600"
+            >
               {item?.label}:{' '}
               <strong className={item?.className || ''}>{item?.value}</strong>
             </span>

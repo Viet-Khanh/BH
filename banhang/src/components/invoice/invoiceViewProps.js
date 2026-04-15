@@ -80,7 +80,8 @@ export const buildInvoiceViewProps = ({
   const topSectionProps = {
     code: invoice?.code || draftCode,
     date,
-    onDateChange: (val) => setDate(val?.toISOString() || new Date().toISOString()),
+    onDateChange: (val) =>
+      setDate(val?.toISOString() || new Date().toISOString()),
     onCancelTicket: handleCancelTicket,
     onShowRecent: () => onShowRecent?.(),
     onNewTicket: handleNewTicket,

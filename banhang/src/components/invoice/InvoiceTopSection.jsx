@@ -41,7 +41,9 @@ const InvoiceTopSection = ({
 }) => (
   <div className="pos-top">
     <div className="pos-info-box">
-      <div className="pos-info-row">{codeLabel}: <strong>{code}</strong></div>
+      <div className="pos-info-row">
+        {codeLabel}: <strong>{code}</strong>
+      </div>
       <div className="pos-info-row">
         Ngày:
         <DatePicker
@@ -50,12 +52,14 @@ const InvoiceTopSection = ({
           disabled={readOnly}
         />
       </div>
-      <div className="pos-info-row">NV: <strong>admin</strong></div>
+      <div className="pos-info-row">
+        NV: <strong>admin</strong>
+      </div>
       <div className="pos-actions-row">
-        <Button danger onClick={onCancelTicket}>F3 - Hủy phiếu</Button>
-        {showRecent && (
-          <Button onClick={onShowRecent}>{recentLabel}</Button>
-        )}
+        <Button danger onClick={onCancelTicket}>
+          F3 - Hủy phiếu
+        </Button>
+        {showRecent && <Button onClick={onShowRecent}>{recentLabel}</Button>}
         {showNewTicket && (
           <Button type="primary" className="btn-primary" onClick={onNewTicket}>
             F2 - Tạo phiếu
@@ -100,7 +104,10 @@ const InvoiceTopSection = ({
         />
       </div>
       {customerLocked && (
-        <div className="pos-info-row" style={{ marginTop: -4, color: '#8c8c8c', fontSize: 12 }}>
+        <div
+          className="pos-info-row"
+          style={{ marginTop: -4, color: '#8c8c8c', fontSize: 12 }}
+        >
           Khóa khách hàng khi sửa hóa đơn để tránh sai công nợ.
         </div>
       )}

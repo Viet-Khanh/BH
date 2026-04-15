@@ -25,7 +25,11 @@ const CatalogFormModal = ({
       <Form form={form} layout="vertical">
         <Row gutter={16}>
           <Col xs={24} md={12}>
-            <Form.Item label="Tên hàng" name="name" rules={[{ required: true }]}>
+            <Form.Item
+              label="Tên hàng"
+              name="name"
+              rules={[{ required: true }]}
+            >
               <Input onChange={onNameChange} />
             </Form.Item>
           </Col>

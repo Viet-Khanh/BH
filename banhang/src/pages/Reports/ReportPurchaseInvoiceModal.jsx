@@ -21,7 +21,9 @@ const ReportPurchaseInvoiceModal = ({
   >
     {purchase && (
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+        <div
+          style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}
+        >
           <div>
             Phiếu: <strong>{purchase.code}</strong>
           </div>
@@ -79,7 +81,12 @@ const ReportPurchaseInvoiceModal = ({
           <Button size="large" onClick={onEdit}>
             SỬA
           </Button>
-          <Button size="large" type="primary" className="btn-primary" onClick={onPrint}>
+          <Button
+            size="large"
+            type="primary"
+            className="btn-primary"
+            onClick={onPrint}
+          >
             IN LẠI
           </Button>
           <Button size="large" onClick={onExport}>

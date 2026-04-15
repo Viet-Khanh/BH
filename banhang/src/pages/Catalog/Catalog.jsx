@@ -58,15 +58,32 @@ const Catalog = () => {
 
   useEffect(() => {
     const bootstrap = async () => {
-      await Promise.all([loadProducts(), loadCustomers(), loadSuppliers(), loadUnits()]);
+      await Promise.all([
+        loadProducts(),
+        loadCustomers(),
+        loadSuppliers(),
+        loadUnits(),
+      ]);
     };
     bootstrap();
   }, [loadProducts, loadCustomers, loadSuppliers, loadUnits]);
 
-  const activeProducts = useMemo(() => products.filter((item) => !item.isDeleted), [products]);
-  const activeCustomers = useMemo(() => customers.filter((item) => !item.isDeleted), [customers]);
-  const activeSuppliers = useMemo(() => suppliers.filter((item) => !item.isDeleted), [suppliers]);
-  const activeUnits = useMemo(() => units.filter((item) => !item.isDeleted), [units]);
+  const activeProducts = useMemo(
+    () => products.filter((item) => !item.isDeleted),
+    [products]
+  );
+  const activeCustomers = useMemo(
+    () => customers.filter((item) => !item.isDeleted),
+    [customers]
+  );
+  const activeSuppliers = useMemo(
+    () => suppliers.filter((item) => !item.isDeleted),
+    [suppliers]
+  );
+  const activeUnits = useMemo(
+    () => units.filter((item) => !item.isDeleted),
+    [units]
+  );
 
   const {
     importing,
@@ -94,7 +111,14 @@ const Catalog = () => {
     if (activeKey === 'units') source = activeUnits;
     if (activeKey === 'units') return source;
     return source.filter((item) => hasSearchMatch(item, searchText));
-  }, [activeKey, activeProducts, activeCustomers, activeSuppliers, activeUnits, searchText]);
+  }, [
+    activeKey,
+    activeProducts,
+    activeCustomers,
+    activeSuppliers,
+    activeUnits,
+    searchText,
+  ]);
 
   const handleTabChange = (key) => {
     setActiveKey(key);
@@ -189,7 +213,12 @@ const Catalog = () => {
 
       if (activeKey === 'units') {
         if (editing) await updateUnit(editing.id, values);
-        else await addUnit({ ...values, id: uuid(), createdAt: new Date().toISOString() });
+        else
+          await addUnit({
+            ...values,
+            id: uuid(),
+            createdAt: new Date().toISOString(),
+          });
       }
 
       message.success('Đã lưu.');
@@ -214,8 +243,15 @@ const Catalog = () => {
     <div className="page-card">
       <div className="page-title">Danh mục</div>
       <div className="action-row">
-        <Button size="large" onClick={() => navigate('/')}>Quay lại</Button>
-        <Button size="large" type="primary" className="btn-primary" onClick={openCreate}>
+        <Button size="large" onClick={() => navigate('/')}>
+          Quay lại
+        </Button>
+        <Button
+          size="large"
+          type="primary"
+          className="btn-primary"
+          onClick={openCreate}
+        >
           Tạo mới
         </Button>
       </div>
@@ -242,7 +278,9 @@ const Catalog = () => {
                   handleDownloadTemplate(tabKey, 'price-update')
                 }
                 onTriggerImport={triggerImport}
-                onTriggerPriceUpdate={(tabKey) => triggerImport(tabKey, 'price-update')}
+                onTriggerPriceUpdate={(tabKey) =>
+                  triggerImport(tabKey, 'price-update')
+                }
                 importing={importing}
                 importTarget={importTarget}
                 importMode={importMode}
@@ -268,7 +306,9 @@ const Catalog = () => {
                   handleDownloadTemplate(tabKey, 'price-update')
                 }
                 onTriggerImport={triggerImport}
-                onTriggerPriceUpdate={(tabKey) => triggerImport(tabKey, 'price-update')}
+                onTriggerPriceUpdate={(tabKey) =>
+                  triggerImport(tabKey, 'price-update')
+                }
                 importing={importing}
                 importTarget={importTarget}
                 importMode={importMode}
@@ -294,7 +334,9 @@ const Catalog = () => {
                   handleDownloadTemplate(tabKey, 'price-update')
                 }
                 onTriggerImport={triggerImport}
-                onTriggerPriceUpdate={(tabKey) => triggerImport(tabKey, 'price-update')}
+                onTriggerPriceUpdate={(tabKey) =>
+                  triggerImport(tabKey, 'price-update')
+                }
                 importing={importing}
                 importTarget={importTarget}
                 importMode={importMode}

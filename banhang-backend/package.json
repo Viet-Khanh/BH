@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "backup": "node scripts/backup-mongo.js"
+    "backup": "node scripts/backup-mongo.js",
+    "lint": "eslint \"src/**/*.js\" \"scripts/**/*.js\"",
+    "test": "vitest run",
+    "format": "prettier --check ."
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -15,5 +18,11 @@
     "express": "^4.19.2",
     "mongoose": "^8.1.1",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.5.3",
+    "supertest": "^7.1.0",
+    "vitest": "^3.1.1"
   }
 }

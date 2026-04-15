@@ -53,7 +53,8 @@ export const parseImportNumber = (value) => {
 
 export const parseImportNumberOptional = (value) => {
   const cleaned = parseNumberInput(value);
-  if (cleaned === '' || cleaned === null || cleaned === undefined) return undefined;
+  if (cleaned === '' || cleaned === null || cleaned === undefined)
+    return undefined;
   const numeric = Number(cleaned);
   return Number.isNaN(numeric) ? undefined : numeric;
 };
@@ -73,7 +74,15 @@ export const buildProductPriceUpdateRows = (products = []) =>
 
 export const TEMPLATE_CONFIGS = {
   products: {
-    headers: ['Ma_hang', 'Ten_hang', 'DVT', 'Don_gia_le', 'Don_gia_si', 'Gia_von', 'Ton_dau'],
+    headers: [
+      'Ma_hang',
+      'Ten_hang',
+      'DVT',
+      'Don_gia_le',
+      'Don_gia_si',
+      'Gia_von',
+      'Ton_dau',
+    ],
     fileName: 'mau-danh-muc-san-pham',
     sheetName: 'SanPham',
   },
@@ -220,7 +229,8 @@ export const PRODUCT_PRICE_UPDATE_IMPORT_CONFIG = {
 
     const item = { name };
     if (avgCost !== undefined) item.avgCost = avgCost;
-    if (sellPriceDefault !== undefined) item.sellPriceDefault = sellPriceDefault;
+    if (sellPriceDefault !== undefined)
+      item.sellPriceDefault = sellPriceDefault;
     return item;
   },
 };

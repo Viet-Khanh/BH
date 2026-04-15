@@ -3,7 +3,10 @@ import { formatMoney } from './moneyFormat.js';
 const normalizeNumberString = (value) => {
   if (value === null || value === undefined || value === '') return '';
 
-  const sanitized = String(value).trim().replace(/\s+/g, '').replace(/[^\d.,-]/g, '');
+  const sanitized = String(value)
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/[^\d.,-]/g, '');
   if (!sanitized) return '';
 
   const hasDot = sanitized.includes('.');
@@ -36,7 +39,8 @@ export const parseNumberInput = (value) => {
 
 export const formatNumberInput = (value) => {
   if (value === null || value === undefined || value === '') return '';
-  const numeric = typeof value === 'number' ? value : Number(normalizeNumberString(value));
+  const numeric =
+    typeof value === 'number' ? value : Number(normalizeNumberString(value));
   if (Number.isNaN(numeric)) return '';
   return formatMoney(numeric);
 };

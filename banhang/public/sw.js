@@ -19,7 +19,11 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+        )
       )
   );
   self.clients.claim();
@@ -38,7 +42,9 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', responseClone));
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put('/index.html', responseClone));
           return response;
         })
         .catch(() => caches.match('/index.html'))
@@ -53,7 +59,9 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (!response || response.status !== 200) return response;
           const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(request, responseClone));
           return response;
         })
         .catch(() => cached);

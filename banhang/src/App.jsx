@@ -1,16 +1,16 @@
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Button, Space } from 'antd';
-import Home from './pages/Home.jsx';
-import System from './pages/System/System.jsx';
-import Catalog from './pages/Catalog/Catalog.jsx';
-import Sales from './pages/Sales/Sales.jsx';
-import SalesRecent from './pages/Sales/SalesRecent.jsx';
-import SalesHistory from './pages/Sales/SalesHistory.jsx';
-import Purchases from './pages/Purchases/Purchases.jsx';
+import { Button, Layout, Space } from 'antd';
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Cashbook from './pages/Cashbook/Cashbook.jsx';
-import Reports from './pages/Reports/Reports.jsx';
+import Catalog from './pages/Catalog/Catalog.jsx';
+import Home from './pages/Home.jsx';
+import Purchases from './pages/Purchases/Purchases.jsx';
 import ReportPurchasePage from './pages/Reports/ReportPurchasePage.jsx';
+import Reports from './pages/Reports/Reports.jsx';
 import ReportStockPage from './pages/Reports/ReportStockPage.jsx';
+import Sales from './pages/Sales/Sales.jsx';
+import SalesHistory from './pages/Sales/SalesHistory.jsx';
+import SalesRecent from './pages/Sales/SalesRecent.jsx';
+import System from './pages/System/System.jsx';
 
 const { Header, Content } = Layout;
 
@@ -26,8 +26,11 @@ const App = () => {
         <div className="app-title">PHẦN MỀM BÁN HÀNG NHÔM KÍNH/SẮT</div>
         <Space>
           {showBack && (
-            <Button size="large" onClick={() => navigate('/')}
-              className="btn-secondary">
+            <Button
+              size="large"
+              onClick={() => navigate('/')}
+              className="btn-secondary"
+            >
               Trang chủ
             </Button>
           )}

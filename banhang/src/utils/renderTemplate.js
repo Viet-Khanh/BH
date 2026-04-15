@@ -19,7 +19,8 @@ const formatMeasure = (value, { blankOnZero = false } = {}) => {
   }).format(number);
 };
 
-const formatTemplateText = (value) => escapeHtml(value).replaceAll('\n', '<br />');
+const formatTemplateText = (value) =>
+  escapeHtml(value).replaceAll('\n', '<br />');
 
 export const buildItemsHtml = (items = [], products = []) => {
   const rows = items
@@ -32,13 +33,21 @@ export const buildItemsHtml = (items = [], products = []) => {
       const length = Number(item.length || 0);
       const width = Number(item.width || 0);
       const hasDimensions = length > 0 && width > 0;
-      const qtyDisplay = hasDimensions ? formatMeasure(qty, { blankOnZero: true }) : '';
-      const lengthDisplay = hasDimensions ? formatMeasure(length, { blankOnZero: true }) : '';
-      const widthDisplay = hasDimensions ? formatMeasure(width, { blankOnZero: true }) : '';
+      const qtyDisplay = hasDimensions
+        ? formatMeasure(qty, { blankOnZero: true })
+        : '';
+      const lengthDisplay = hasDimensions
+        ? formatMeasure(length, { blankOnZero: true })
+        : '';
+      const widthDisplay = hasDimensions
+        ? formatMeasure(width, { blankOnZero: true })
+        : '';
       const areaQty = hasDimensions ? qty * length * width : qty;
       const areaQtyDisplay = formatMeasure(areaQty, { blankOnZero: true });
       const note = item.lineNote || '';
-      const noteCell = note ? `<div class="item-note">${escapeHtml(note)}</div>` : '';
+      const noteCell = note
+        ? `<div class="item-note">${escapeHtml(note)}</div>`
+        : '';
       return `
         <tr>
           <td>${index + 1}</td>
@@ -93,7 +102,10 @@ export const renderInvoiceTemplate = ({
   const itemsCount = items.length;
   const totalQty = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
   const totalQtyLabel = Number.isFinite(totalQty) ? totalQty.toFixed(1) : '0.0';
-  const paid = (payments || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const paid = (payments || []).reduce(
+    (sum, p) => sum + Number(p.amount || 0),
+    0
+  );
   const invoiceTotal = Number(invoice.total || 0);
   const debt = invoiceTotal - paid;
   const itemsHtml = buildItemsHtml(items, products || []);

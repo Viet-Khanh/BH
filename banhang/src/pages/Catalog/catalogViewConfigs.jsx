@@ -20,9 +20,21 @@ export const getColumns = ({ activeKey, onEdit, onDelete }) => {
       { title: 'Mã hàng', dataIndex: 'code' },
       { title: 'Tên hàng', dataIndex: 'name' },
       { title: 'ĐVT', dataIndex: 'unit' },
-      { title: 'Đơn giá lẻ', dataIndex: 'sellPriceDefault', render: (val) => formatMoney(val) },
-      { title: 'Đơn giá sỉ', dataIndex: 'sellPriceWholesale', render: (val) => formatMoney(val) },
-      { title: 'Giá vốn', dataIndex: 'avgCost', render: (val) => formatMoney(val) },
+      {
+        title: 'Đơn giá lẻ',
+        dataIndex: 'sellPriceDefault',
+        render: (val) => formatMoney(val),
+      },
+      {
+        title: 'Đơn giá sỉ',
+        dataIndex: 'sellPriceWholesale',
+        render: (val) => formatMoney(val),
+      },
+      {
+        title: 'Giá vốn',
+        dataIndex: 'avgCost',
+        render: (val) => formatMoney(val),
+      },
       { title: 'Tồn đầu', dataIndex: 'openingStock' },
       actionColumn,
     ];

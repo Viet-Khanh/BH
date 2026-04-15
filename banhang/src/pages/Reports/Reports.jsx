@@ -1,27 +1,29 @@
 import { Button, Tabs } from 'antd';
-import dayjs from 'dayjs';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../../store/settingsStore.js';
 
 const ReportDebtTab = lazy(() => import('./ReportDebtTab.jsx'));
 const ReportProfitTab = lazy(() => import('./ReportProfitTab.jsx'));
 const ReportStockOutTab = lazy(() => import('./ReportStockOutTab.jsx'));
-const ReportSalesInvoicesTab = lazy(() => import('./ReportSalesInvoicesTab.jsx'));
+const ReportSalesInvoicesTab = lazy(
+  () => import('./ReportSalesInvoicesTab.jsx')
+);
 const ReportSalesDetailsTab = lazy(() => import('./ReportSalesDetailsTab.jsx'));
 
 const BASE_TAB_KEYS = new Set(['debt', 'sales', 'sales-detail', 'stock-out']);
-const TAB_KEYS_WITH_PROFIT = new Set(['debt', 'sales', 'sales-detail', 'stock-out', 'profit']);
+const TAB_KEYS_WITH_PROFIT = new Set([
+  'debt',
+  'sales',
+  'sales-detail',
+  'stock-out',
+  'profit',
+]);
 
 const Reports = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { settings, load: loadSettings } = useSettingsStore();
-  const [profitRange, setProfitRange] = useState(() => {
-    const end = dayjs().endOf('day');
-    const start = end.subtract(30, 'day').startOf('day');
-    return [start.toISOString(), end.toISOString()];
-  });
 
   useEffect(() => {
     loadSettings();
@@ -51,12 +53,15 @@ const Reports = () => {
     <div className="page-card">
       <div className="page-title">Báo cáo</div>
       <div className="action-row">
-        <Button size="large" onClick={() => navigate('/')}>Quay lại</Button>
+        <Button size="large" onClick={() => navigate('/')}>
+          Quay lại
+        </Button>
       </div>
-      
+
       <Tabs
         activeKey={activeTab}
         onChange={handleTabChange}
+        destroyInactiveTabPane
         type="card"
         className="page-tabs"
         tabPosition="top"
@@ -105,7 +110,7 @@ const Reports = () => {
                   label: 'Doanh thu & Lãi',
                   children: (
                     <Suspense fallback={tabFallback}>
-                      <ReportProfitTab range={profitRange} onRangeChange={setProfitRange} />
+                      <ReportProfitTab />
                     </Suspense>
                   ),
                 },
@@ -116,7 +121,7 @@ const Reports = () => {
           //   label: 'Thu/Chi',
           //   children: (
           //     <Suspense fallback={tabFallback}>
-          //       <ReportCashTab range={profitRange} onRangeChange={setProfitRange} />
+          //       <ReportCashTab />
           //     </Suspense>
           //   ),
           // },

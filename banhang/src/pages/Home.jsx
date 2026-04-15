@@ -153,7 +153,9 @@ const Home = () => {
             <Input.Password size="large" autoFocus />
           </Form.Item>
         </Form>
-        {systemError ? <div style={{ color: '#ff4d4f' }}>{systemError}</div> : null}
+        {systemError ? (
+          <div style={{ color: '#ff4d4f' }}>{systemError}</div>
+        ) : null}
       </Modal>
     </div>
   );

@@ -55,17 +55,21 @@ const ProductPicker = ({
             type="button"
             className={`product-option ${value === item.id ? 'active' : ''}`}
             onClick={() => onChange(item.id)}
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
           >
             <div>
-              <div><strong>{item.name}</strong></div>
+              <div>
+                <strong>{item.name}</strong>
+              </div>
               <div>
                 {item.code || '---'} · {item.group} · {item.unit}
               </div>
             </div>
-            <div>
-              {showStock ? `Tồn: ${formatStock(item)}` : ''}
-            </div>
+            <div>{showStock ? `Tồn: ${formatStock(item)}` : ''}</div>
           </button>
         ))}
         {!filtered.length && <div>Không tìm thấy sản phẩm.</div>}

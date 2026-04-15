@@ -28,7 +28,9 @@ const SalesHistory = () => {
       if (customerId) params.set('customerId', customerId);
       const query = params.toString();
       try {
-        const data = await apiRequest(`/reports/invoice-history${query ? `?${query}` : ''}`);
+        const data = await apiRequest(
+          `/reports/invoice-history${query ? `?${query}` : ''}`
+        );
         if (!cancelled) {
           setRows(Array.isArray(data?.rows) ? data.rows : []);
           setCustomers(Array.isArray(data?.customers) ? data.customers : []);
@@ -57,7 +59,9 @@ const SalesHistory = () => {
     const loadInvoicePreview = async () => {
       setLoadingPreview(true);
       try {
-        const data = await apiRequest(`/reports/invoices/${selectedInvoiceId}/preview`);
+        const data = await apiRequest(
+          `/reports/invoices/${selectedInvoiceId}/preview`
+        );
         if (!cancelled) {
           setSelectedInvoiceData(data || null);
         }
@@ -83,7 +87,10 @@ const SalesHistory = () => {
   const selectedCustomer = selectedInvoiceData?.customer || null;
   const selectedItems = selectedInvoiceData?.items || [];
   const selectedPayments = selectedInvoiceData?.payments || [];
-  const selectedPaid = selectedPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const selectedPaid = selectedPayments.reduce(
+    (sum, payment) => sum + Number(payment.amount || 0),
+    0
+  );
   const selectedRemain = Number(selectedInvoice?.total || 0) - selectedPaid;
 
   return (
@@ -101,8 +108,22 @@ const SalesHistory = () => {
       </div>
 
       <div className="recent-filter">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 , marginBottom : '10px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 320 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 16,
+            marginBottom: '10px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              minWidth: 320,
+            }}
+          >
             <span style={{ fontWeight: 600 }}>Theo ngày</span>
             <DateRangeFilter value={range} onChange={setRange} />
           </div>
@@ -141,18 +162,29 @@ const SalesHistory = () => {
           <tbody>
             {rows.map((row) => {
               const actionLabel = row.action === 'delete' ? 'Xóa' : 'Sửa';
-              const actionClass = row.action === 'delete' ? 'text-danger' : 'text-success';
+              const actionClass =
+                row.action === 'delete' ? 'text-danger' : 'text-success';
               const canPreview = row.action === 'delete';
               return (
                 <tr
                   key={row.id}
-                  onClick={canPreview ? () => setSelectedInvoiceId(row.invoiceId) : undefined}
+                  onClick={
+                    canPreview
+                      ? () => setSelectedInvoiceId(row.invoiceId)
+                      : undefined
+                  }
                   style={canPreview ? { cursor: 'pointer' } : undefined}
                 >
-                  <td>{row.date ? dayjs(row.date).format('DD/MM/YY HH:mm') : ''}</td>
+                  <td>
+                    {row.date ? dayjs(row.date).format('DD/MM/YY HH:mm') : ''}
+                  </td>
                   <td className={actionClass}>{actionLabel}</td>
                   <td>{row.code}</td>
-                  <td>{row.invoiceDate ? dayjs(row.invoiceDate).format('DD/MM/YY HH:mm') : ''}</td>
+                  <td>
+                    {row.invoiceDate
+                      ? dayjs(row.invoiceDate).format('DD/MM/YY HH:mm')
+                      : ''}
+                  </td>
                   <td>{row.staff}</td>
                   <td>{row.customerName}</td>
                   <td>{formatMoney(row.total)}</td>
@@ -186,15 +218,46 @@ const SalesHistory = () => {
 
         {!loadingPreview && selectedInvoice && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
-              <div>HĐ: <strong>{selectedInvoice.code || ''}</strong></div>
-              <div>Ngày: <strong>{selectedInvoice.date ? dayjs(selectedInvoice.date).format('DD/MM/YY HH:mm') : ''}</strong></div>
-              <div>KH: <strong>{selectedCustomer?.name || 'Khách lẻ'}</strong></div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 16,
+              }}
+            >
+              <div>
+                HĐ: <strong>{selectedInvoice.code || ''}</strong>
+              </div>
+              <div>
+                Ngày:{' '}
+                <strong>
+                  {selectedInvoice.date
+                    ? dayjs(selectedInvoice.date).format('DD/MM/YY HH:mm')
+                    : ''}
+                </strong>
+              </div>
+              <div>
+                KH: <strong>{selectedCustomer?.name || 'Khách lẻ'}</strong>
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginTop: 8 }}>
-              <div>Tổng tiền: <strong>{formatMoney(selectedInvoice.total || 0)}</strong></div>
-              <div>Đã thu: <strong>{formatMoney(selectedPaid)}</strong></div>
-              <div>Còn nợ: <strong>{formatMoney(selectedRemain)}</strong></div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 16,
+                marginTop: 8,
+              }}
+            >
+              <div>
+                Tổng tiền:{' '}
+                <strong>{formatMoney(selectedInvoice.total || 0)}</strong>
+              </div>
+              <div>
+                Đã thu: <strong>{formatMoney(selectedPaid)}</strong>
+              </div>
+              <div>
+                Còn nợ: <strong>{formatMoney(selectedRemain)}</strong>
+              </div>
             </div>
 
             <div className="pos-table" style={{ marginTop: 12 }}>

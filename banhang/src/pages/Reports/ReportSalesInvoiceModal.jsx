@@ -1,5 +1,5 @@
-import { Button, Modal } from "antd";
-import { formatMoney } from "../../utils/moneyFormat.js";
+import { Button, Modal } from 'antd';
+import { formatMoney } from '../../utils/moneyFormat.js';
 
 const ReportSalesInvoiceModal = ({
   open,
@@ -21,12 +21,14 @@ const ReportSalesInvoiceModal = ({
   >
     {invoice && (
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+        <div
+          style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}
+        >
           <div>
             HĐ: <strong>{invoice.code}</strong>
           </div>
           <div>
-            KH: <strong>{customer?.name || "Khách lẻ"}</strong>
+            KH: <strong>{customer?.name || 'Khách lẻ'}</strong>
           </div>
           <div>
             Tổng tiền: <strong>{formatMoney(invoice.total || 0)}</strong>
@@ -57,7 +59,7 @@ const ReportSalesInvoiceModal = ({
               ))}
               {!items.length && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: "center" }}>
+                  <td colSpan={7} style={{ textAlign: 'center' }}>
                     Chưa có hàng hóa.
                   </td>
                 </tr>
@@ -67,8 +69,8 @@ const ReportSalesInvoiceModal = ({
         </div>
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
+            display: 'flex',
+            justifyContent: 'space-between',
             marginTop: 16,
             gap: 12,
           }}
@@ -79,7 +81,12 @@ const ReportSalesInvoiceModal = ({
           <Button size="large" onClick={onEdit}>
             SỬA
           </Button>
-          <Button size="large" type="primary" className="btn-primary" onClick={onPrint}>
+          <Button
+            size="large"
+            type="primary"
+            className="btn-primary"
+            onClick={onPrint}
+          >
             IN LẠI
           </Button>
           <Button size="large" onClick={onExport}>
@@ -89,8 +96,9 @@ const ReportSalesInvoiceModal = ({
             THOÁT
           </Button>
         </div>
-        <div style={{ marginTop: 12, color: "#b91c1c", fontSize: 12 }}>
-          * Chức năng SỬA, XÓA hóa đơn chỉ dành cho Khách lẻ, nếu khách có công nợ, chỉ áp dụng cho hóa đơn gần đây nhất.
+        <div style={{ marginTop: 12, color: '#b91c1c', fontSize: 12 }}>
+          * Chức năng SỬA, XÓA hóa đơn chỉ dành cho Khách lẻ, nếu khách có công
+          nợ, chỉ áp dụng cho hóa đơn gần đây nhất.
         </div>
       </div>
     )}
