@@ -20,6 +20,7 @@ import purchasesRouter from './routes/purchases.js';
 import productToolsRouter from './routes/productTools.js';
 import invoicesRouter from './routes/invoices.js';
 import paymentsRouter from './routes/payments.js';
+import openingImportRouter from './routes/openingImport.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,6 +71,7 @@ export const createApp = (options = {}) => {
   app.use('/api/sales', salesRouter);
   app.use('/api/purchases-tools', purchasesRouter);
   app.use('/api/products-tools', productToolsRouter);
+  app.use('/api/opening-import', openingImportRouter);
 
   if (shouldServeFrontend && fs.existsSync(frontendDist)) {
     app.use(express.static(frontendDist));

@@ -13,6 +13,7 @@ const PaymentSchema = new mongoose.Schema(
     method: String,
     amount: Number,
     note: String,
+    importBatchId: String,
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,
   },

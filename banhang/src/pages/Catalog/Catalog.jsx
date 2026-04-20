@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Button, Form, Modal, Tabs, message } from 'antd';
-import { v4 as uuid } from 'uuid';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProductStore } from '../../store/productStore.js';
+import { v4 as uuid } from 'uuid';
 import { useCustomerStore } from '../../store/customerStore.js';
+import { useProductStore } from '../../store/productStore.js';
 import { useSupplierStore } from '../../store/supplierStore.js';
 import { useUnitStore } from '../../store/unitStore.js';
 import CatalogFormModal from './CatalogFormModal.jsx';
+import OpeningImportPreviewModal from './OpeningImportPreviewModal.jsx';
 import CatalogTabContent from './CatalogTabContent.jsx';
 import { buildCodeFromName, hasSearchMatch } from './catalogUtils.js';
 import { getColumns, getExportConfig } from './catalogViewConfigs.jsx';
 import useCatalogImport from './useCatalogImport.js';
+import useOpeningImport from './useOpeningImport.js';
 
 const Catalog = () => {
   const navigate = useNavigate();
@@ -104,6 +106,24 @@ const Catalog = () => {
     bulkUpdatePricesByName,
   });
 
+  const {
+    previewing: openingImporting,
+    previewTarget: openingImportTarget,
+    previewResult,
+    previewOpen,
+    committing: openingImportCommitting,
+    fileInputRef: openingFileInputRef,
+    handleDownloadOpeningTemplate,
+    triggerOpeningImport,
+    handleOpeningFileChange,
+    handleConfirmOpeningImport,
+    closePreview,
+    resetOpeningImportState,
+  } = useOpeningImport({
+    loadCustomers,
+    loadSuppliers,
+  });
+
   const dataSource = useMemo(() => {
     let source = activeProducts;
     if (activeKey === 'customers') source = activeCustomers;
@@ -127,6 +147,7 @@ const Catalog = () => {
     setEditing(null);
     setCodeEdited(false);
     resetImportState();
+    resetOpeningImportState();
   };
 
   const openCreate = () => {
@@ -281,14 +302,20 @@ const Catalog = () => {
                 onTriggerPriceUpdate={(tabKey) =>
                   triggerImport(tabKey, 'price-update')
                 }
+                onDownloadOpeningTemplate={handleDownloadOpeningTemplate}
+                onTriggerOpeningImport={triggerOpeningImport}
                 importing={importing}
                 importTarget={importTarget}
                 importMode={importMode}
+                openingImporting={openingImporting}
+                openingImportTarget={openingImportTarget}
                 exportConfig={exportConfig}
                 dataSource={dataSource}
                 columns={columns}
                 onFileChange={handleFileChange}
                 fileInputRef={fileInputRef}
+                onOpeningFileChange={handleOpeningFileChange}
+                openingFileInputRef={openingFileInputRef}
               />
             ),
           },
@@ -309,14 +336,20 @@ const Catalog = () => {
                 onTriggerPriceUpdate={(tabKey) =>
                   triggerImport(tabKey, 'price-update')
                 }
+                onDownloadOpeningTemplate={handleDownloadOpeningTemplate}
+                onTriggerOpeningImport={triggerOpeningImport}
                 importing={importing}
                 importTarget={importTarget}
                 importMode={importMode}
+                openingImporting={openingImporting}
+                openingImportTarget={openingImportTarget}
                 exportConfig={exportConfig}
                 dataSource={dataSource}
                 columns={columns}
                 onFileChange={handleFileChange}
                 fileInputRef={fileInputRef}
+                onOpeningFileChange={handleOpeningFileChange}
+                openingFileInputRef={openingFileInputRef}
               />
             ),
           },
@@ -337,18 +370,32 @@ const Catalog = () => {
                 onTriggerPriceUpdate={(tabKey) =>
                   triggerImport(tabKey, 'price-update')
                 }
+                onDownloadOpeningTemplate={handleDownloadOpeningTemplate}
+                onTriggerOpeningImport={triggerOpeningImport}
                 importing={importing}
                 importTarget={importTarget}
                 importMode={importMode}
+                openingImporting={openingImporting}
+                openingImportTarget={openingImportTarget}
                 exportConfig={exportConfig}
                 dataSource={dataSource}
                 columns={columns}
                 onFileChange={handleFileChange}
                 fileInputRef={fileInputRef}
+                onOpeningFileChange={handleOpeningFileChange}
+                openingFileInputRef={openingFileInputRef}
               />
             ),
           },
         ]}
+      />
+
+      <OpeningImportPreviewModal
+        open={previewOpen}
+        previewResult={previewResult}
+        onCancel={closePreview}
+        onConfirm={handleConfirmOpeningImport}
+        confirmLoading={openingImportCommitting}
       />
 
       <CatalogFormModal

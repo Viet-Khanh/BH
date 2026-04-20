@@ -22,5 +22,8 @@ describe('createApp', () => {
     expect(
       mountedRouters.some((value) => value.includes('api\\/invoices'))
     ).toBe(true);
+    expect(
+      mountedRouters.some((value) => value.includes('api\\/opening-import'))
+    ).toBe(true);
   });
 });

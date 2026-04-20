@@ -23,6 +23,7 @@ const PurchaseSchema = new mongoose.Schema(
     total: Number,
     note: String,
     appliedToStock: { type: Boolean, default: false },
+    importBatchId: String,
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,
   },

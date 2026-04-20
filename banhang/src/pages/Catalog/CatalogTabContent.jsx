@@ -10,14 +10,20 @@ const CatalogTabContent = ({
   onDownloadPriceUpdateTemplate,
   onTriggerImport,
   onTriggerPriceUpdate,
+  onDownloadOpeningTemplate,
+  onTriggerOpeningImport,
   importing,
   importTarget,
   importMode,
+  openingImporting,
+  openingImportTarget,
   exportConfig,
   dataSource,
   columns,
   onFileChange,
   fileInputRef,
+  onOpeningFileChange,
+  openingFileInputRef,
 }) => {
   if (tabKey !== activeKey) return null;
 
@@ -55,6 +61,23 @@ const CatalogTabContent = ({
               </Button>
             </>
           )}
+          {(tabKey === 'customers' || tabKey === 'suppliers') && (
+            <>
+              <Button
+                size="large"
+                onClick={() => onDownloadOpeningTemplate?.(tabKey)}
+              >
+                Tải mẫu đầu kỳ
+              </Button>
+              <Button
+                size="large"
+                onClick={() => onTriggerOpeningImport?.(tabKey)}
+                loading={openingImporting && openingImportTarget === tabKey}
+              >
+                Nhập đầu kỳ
+              </Button>
+            </>
+          )}
           <Button size="large" onClick={() => onDownloadTemplate(tabKey)}>
             Tải mẫu Excel
           </Button>
@@ -80,6 +103,13 @@ const CatalogTabContent = ({
           accept=".xlsx,.xls"
           style={{ display: 'none' }}
           onChange={onFileChange}
+        />
+        <input
+          ref={openingFileInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          style={{ display: 'none' }}
+          onChange={onOpeningFileChange}
         />
       </div>
 

@@ -79,9 +79,9 @@ export const getExportConfig = ({ activeKey, dataSource }) => {
     return {
       rows: dataSource.map((item, index) => ({
         STT: index + 1,
-        Ten: item.name,
-        So_dien_thoai: item.phone,
-        Dia_chi: item.address,
+        'Tên khách hàng': item.name,
+        'Số điện thoại': item.phone,
+        'Địa chỉ': item.address,
       })),
       fileName: 'danh-muc-khach-hang',
       sheetName: 'KhachHang',
@@ -93,9 +93,9 @@ export const getExportConfig = ({ activeKey, dataSource }) => {
     return {
       rows: dataSource.map((item, index) => ({
         STT: index + 1,
-        Ten: item.name,
-        So_dien_thoai: item.phone,
-        Dia_chi: item.address,
+        'Tên nhà cung cấp': item.name,
+        'Số điện thoại': item.phone,
+        'Địa chỉ': item.address,
       })),
       fileName: 'danh-muc-nha-cung-cap',
       sheetName: 'NhaCungCap',

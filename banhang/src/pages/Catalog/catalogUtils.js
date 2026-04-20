@@ -87,12 +87,12 @@ export const TEMPLATE_CONFIGS = {
     sheetName: 'SanPham',
   },
   customers: {
-    headers: ['Ten', 'So_dien_thoai', 'Dia_chi'],
+    headers: ['Tên khách hàng', 'Số điện thoại', 'Địa chỉ'],
     fileName: 'mau-danh-muc-khach-hang',
     sheetName: 'KhachHang',
   },
   suppliers: {
-    headers: ['Ten', 'So_dien_thoai', 'Dia_chi'],
+    headers: ['Tên nhà cung cấp', 'Số điện thoại', 'Địa chỉ'],
     fileName: 'mau-danh-muc-nha-cung-cap',
     sheetName: 'NhaCungCap',
   },
@@ -154,7 +154,7 @@ export const IMPORT_CONFIGS = {
       address: 'address',
     },
     requiredFields: ['name'],
-    requiredLabels: { name: 'Ten' },
+    requiredLabels: { name: 'Tên khách hàng' },
     buildItem: (raw) => {
       const name = String(raw.name || '').trim();
       if (!name) return null;
@@ -178,7 +178,7 @@ export const IMPORT_CONFIGS = {
       address: 'address',
     },
     requiredFields: ['name'],
-    requiredLabels: { name: 'Ten' },
+    requiredLabels: { name: 'Tên nhà cung cấp' },
     buildItem: (raw) => {
       const name = String(raw.name || '').trim();
       if (!name) return null;

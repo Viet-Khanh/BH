@@ -35,6 +35,7 @@ const InvoiceSchema = new mongoose.Schema(
     paymentStatus: String,
     note: String,
     changeLog: [ChangeLogSchema],
+    importBatchId: String,
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,
   },
