@@ -25,5 +25,11 @@ describe('createApp', () => {
     expect(
       mountedRouters.some((value) => value.includes('api\\/opening-import'))
     ).toBe(true);
+    expect(
+      mountedRouters.some((value) => value.includes('api\\/dashboard'))
+    ).toBe(true);
+    expect(
+      mountedRouters.some((value) => value.includes('api\\/data-upgrade'))
+    ).toBe(true);
   });
 });

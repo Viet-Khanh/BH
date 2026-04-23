@@ -269,6 +269,8 @@ export const buildSeedData = () => {
   const payment = {
     id: uuid(),
     invoiceId,
+    customerId: invoice.customerId,
+    paymentType: 'invoice_payment',
     date: now.subtract(1, 'day').toISOString(),
     method: 'cash',
     amount: 800000,
@@ -276,6 +278,36 @@ export const buildSeedData = () => {
     isDeleted: false,
     deletedAt: null,
   };
+
+  const stockByProductId = products.reduce((acc, product) => {
+    acc[product.id] = Number(product.openingStock || 0);
+    return acc;
+  }, {});
+  purchase.items.forEach((item) => {
+    stockByProductId[item.productId] =
+      Number(stockByProductId[item.productId] || 0) + Number(item.qty || 0);
+  });
+  invoice.items.forEach((item) => {
+    stockByProductId[item.productId] =
+      Number(stockByProductId[item.productId] || 0) - Number(item.qty || 0);
+  });
+  products.forEach((product) => {
+    product.stock = Number(stockByProductId[product.id] || 0);
+    product.stockUpdatedAt = now.toISOString();
+  });
+
+  const debtByCustomerId = customers.reduce((acc, customer) => {
+    acc[customer.id] = 0;
+    return acc;
+  }, {});
+  debtByCustomerId[invoice.customerId] =
+    Number(debtByCustomerId[invoice.customerId] || 0) +
+    Number(invoice.total || 0) -
+    Number(payment.amount || 0);
+  customers.forEach((customer) => {
+    customer.currentDebt = Number(debtByCustomerId[customer.id] || 0);
+    customer.debtUpdatedAt = now.toISOString();
+  });
 
   const cashbook = markActive([
     {
@@ -307,6 +339,7 @@ export const buildSeedData = () => {
     lowStockThreshold: 5,
     printCopies: 1,
     invoiceTemplateHtml: '',
+    dataVersion: 2,
     isDeleted: false,
     deletedAt: null,
   };

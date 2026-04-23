@@ -12,10 +12,19 @@ export const DEFAULT_SETTINGS = {
   lowStockThreshold: 5,
   printCopies: 1,
   invoiceTemplateHtml: DEFAULT_TEMPLATE,
+  dataVersion: 2,
 };
 
 const normalizeSettings = (data) => {
+  const hasExistingData = Boolean(data);
+  const hasDataVersion = Object.prototype.hasOwnProperty.call(
+    data || {},
+    'dataVersion'
+  );
   const normalized = { ...DEFAULT_SETTINGS, ...(data || {}) };
+  if (hasExistingData && !hasDataVersion) {
+    normalized.dataVersion = 0;
+  }
   if (!normalized.invoiceTemplateHtml) {
     normalized.invoiceTemplateHtml = DEFAULT_TEMPLATE;
   }

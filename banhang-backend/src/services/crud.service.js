@@ -1,14 +1,51 @@
 import { v4 as uuid } from 'uuid';
+import Product from '../models/Product.js';
+import {
+  applyStockDeltas,
+  buildPurchaseStockDeltas,
+  buildQtyMapFromItems,
+  invertStockDeltas,
+} from './stockSnapshot.service.js';
 
 export const sanitizePayload = (payload) => {
   if (!payload || typeof payload !== 'object') return {};
-  const { _id, __v, ...rest } = payload;
+  const rest = { ...payload };
+  delete rest._id;
+  delete rest.__v;
   return rest;
 };
 
 export const ensureActive = (payload) => {
   if (payload.isDeleted === undefined) payload.isDeleted = false;
   if (payload.deletedAt === undefined) payload.deletedAt = null;
+  return payload;
+};
+
+const nowIso = () => new Date().toISOString();
+
+const applyProductSnapshotDefaults = (payload) => {
+  const next = { ...payload };
+  if (next.stock === undefined || next.stock === null) {
+    next.stock = Number(next.openingStock || 0);
+  }
+  if (!next.stockUpdatedAt) next.stockUpdatedAt = nowIso();
+  return next;
+};
+
+const applyCustomerSnapshotDefaults = (payload) => {
+  const next = { ...payload };
+  if (next.currentDebt === undefined || next.currentDebt === null) {
+    next.currentDebt = 0;
+  }
+  if (!next.debtUpdatedAt) next.debtUpdatedAt = nowIso();
+  return next;
+};
+
+const prepareCreatePayload = (Model, payload) => {
+  if (Model.modelName === 'Product')
+    return applyProductSnapshotDefaults(payload);
+  if (Model.modelName === 'Customer')
+    return applyCustomerSnapshotDefaults(payload);
   return payload;
 };
 
@@ -92,7 +129,7 @@ export const getItemById = async (Model, id) => {
 };
 
 export const createItem = async (Model, payload) => {
-  const cleanPayload = ensureActive(sanitizePayload(payload));
+  let cleanPayload = ensureActive(sanitizePayload(payload));
   if (Model.modelName === 'Product') {
     const duplicateNames = await findExistingProductNameConflicts(Model, [
       cleanPayload,
@@ -102,11 +139,12 @@ export const createItem = async (Model, payload) => {
     }
   }
   if (!cleanPayload.id) cleanPayload.id = uuid();
+  cleanPayload = prepareCreatePayload(Model, cleanPayload);
   return await Model.create(cleanPayload);
 };
 
 export const bulkCreateItems = async (Model, items) => {
-  const payload = items.map((item) => {
+  let payload = items.map((item) => {
     const clean = ensureActive(sanitizePayload(item));
     return { ...clean, id: clean.id || uuid() };
   });
@@ -126,13 +164,17 @@ export const bulkCreateItems = async (Model, items) => {
     }
   }
 
+  payload = payload.map((item) => prepareCreatePayload(Model, item));
+
   return await Model.insertMany(payload, { ordered: false });
 };
 
 export const updateItem = async (Model, id, payload) => {
   const cleanPayload = sanitizePayload(payload);
+  let existing = null;
 
   if (Model.modelName === 'Product') {
+    existing = await Model.findOne({ id }).lean();
     const duplicateNames = await findExistingProductNameConflicts(
       Model,
       [cleanPayload],
@@ -140,6 +182,16 @@ export const updateItem = async (Model, id, payload) => {
     );
     if (duplicateNames.length) {
       throw new Error(formatDuplicateProductMessage(duplicateNames));
+    }
+    if (
+      cleanPayload.openingStock !== undefined &&
+      cleanPayload.stock === undefined
+    ) {
+      const oldOpeningStock = Number(existing?.openingStock || 0);
+      const nextOpeningStock = Number(cleanPayload.openingStock || 0);
+      const currentStock = Number(existing?.stock ?? oldOpeningStock);
+      cleanPayload.stock = currentStock + nextOpeningStock - oldOpeningStock;
+      cleanPayload.stockUpdatedAt = nowIso();
     }
   }
 
@@ -153,9 +205,66 @@ export const updateItem = async (Model, id, payload) => {
 
 export const deleteItem = async (Model, id) => {
   const deletedAt = new Date().toISOString();
-  return await Model.findOneAndUpdate(
-    { id },
-    { $set: { isDeleted: true, deletedAt } },
-    { new: true }
-  ).lean();
+  let purchaseStockResult = null;
+  let purchaseQtyMap = null;
+  if (Model.modelName === 'Purchase') {
+    const existing = await Model.findOne({ id }).lean();
+    if (existing && !existing.isDeleted) {
+      const deltas = buildPurchaseStockDeltas(existing.items || [], []);
+      purchaseStockResult = await applyStockDeltas(deltas);
+      if (existing.appliedToStock) {
+        purchaseQtyMap = buildQtyMapFromItems(existing.items || []);
+        try {
+          await Product.bulkWrite(
+            Object.entries(purchaseQtyMap).map(([productId, qty]) => ({
+              updateOne: {
+                filter: { id: productId },
+                update: { $inc: { openingStock: -Number(qty || 0) } },
+              },
+            })),
+            { ordered: true }
+          );
+        } catch (error) {
+          if (purchaseStockResult.applied) {
+            await applyStockDeltas(
+              invertStockDeltas(purchaseStockResult.deltas),
+              {
+                force: true,
+              }
+            );
+          }
+          throw error;
+        }
+      }
+    }
+  }
+  try {
+    const deleted = await Model.findOneAndUpdate(
+      { id },
+      { $set: { isDeleted: true, deletedAt } },
+      { new: true }
+    ).lean();
+    if (!deleted && (purchaseQtyMap || purchaseStockResult?.applied)) {
+      throw new Error('Purchase not found');
+    }
+    return deleted;
+  } catch (error) {
+    if (purchaseQtyMap) {
+      await Product.bulkWrite(
+        Object.entries(purchaseQtyMap).map(([productId, qty]) => ({
+          updateOne: {
+            filter: { id: productId },
+            update: { $inc: { openingStock: Number(qty || 0) } },
+          },
+        })),
+        { ordered: true }
+      );
+    }
+    if (purchaseStockResult?.applied) {
+      await applyStockDeltas(invertStockDeltas(purchaseStockResult.deltas), {
+        force: true,
+      });
+    }
+    throw error;
+  }
 };

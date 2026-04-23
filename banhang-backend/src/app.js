@@ -21,6 +21,8 @@ import productToolsRouter from './routes/productTools.js';
 import invoicesRouter from './routes/invoices.js';
 import paymentsRouter from './routes/payments.js';
 import openingImportRouter from './routes/openingImport.js';
+import dashboardRouter from './routes/dashboard.js';
+import dataUpgradeRouter from './routes/dataUpgrade.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,6 +69,8 @@ export const createApp = (options = {}) => {
 
   app.use('/api/invoices', invoicesRouter);
   app.use('/api/payments', paymentsRouter);
+  app.use('/api/dashboard', dashboardRouter);
+  app.use('/api/data-upgrade', dataUpgradeRouter);
   app.use('/api/reports', reportRouter);
   app.use('/api/sales', salesRouter);
   app.use('/api/purchases-tools', purchasesRouter);
@@ -123,7 +127,7 @@ export const createApp = (options = {}) => {
     })
   );
 
-  app.use((err, req, res, next) => {
+  app.use((err, req, res, _next) => {
     console.error(err);
     res.status(500).json({ message: err.message || 'Server error' });
   });

@@ -2,6 +2,7 @@ import {
   aggregateSalesInvoices,
   aggregateSingleInvoice,
 } from '../../../utils/reportAggregators.js';
+import { deleteInvoiceItem } from '../../invoices/services/invoices.service.js';
 import {
   buildCustomerDebtTimeline,
   buildCustomerDebtTimelineByInvoiceOrder,
@@ -19,8 +20,6 @@ import {
   findOneCustomer,
   findOneInvoice,
   findPayments,
-  softDeleteInvoiceById,
-  softDeletePaymentsByInvoiceId,
 } from '../repositories/reports.repository.js';
 
 const buildSalesSummary = (rows = []) =>
@@ -303,10 +302,7 @@ export const getInvoiceDetail = async (id) => {
 };
 
 export const deleteInvoiceCascade = async (id) => {
-  const deletedAt = new Date().toISOString();
-  const invoice = await softDeleteInvoiceById(id, deletedAt);
+  const invoice = await deleteInvoiceItem(id);
   if (!invoice) throw new Error('Invoice not found');
-
-  await softDeletePaymentsByInvoiceId(id, deletedAt);
   return { ok: true };
 };

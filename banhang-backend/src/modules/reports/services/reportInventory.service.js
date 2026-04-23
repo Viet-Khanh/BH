@@ -1,4 +1,5 @@
 import { computeStock } from '../../../utils/stock.js';
+import { isSnapshotReady } from '../../../utils/snapshotStatus.js';
 import {
   buildProfitRows,
   inRange,
@@ -13,11 +14,30 @@ import {
 } from '../repositories/reports.repository.js';
 
 export const getStockReport = async () => {
-  const [products, purchases, invoices, settings] = await Promise.all([
-    findProducts({ isDeleted: { $ne: true } }),
+  const settings = await findMainSettings();
+  const products = await findProducts({ isDeleted: { $ne: true } });
+
+  if (isSnapshotReady(settings)) {
+    const rows = products.map((product) => {
+      const stock = Number(product.stock ?? product.openingStock ?? 0);
+      return {
+        id: product.id,
+        name: product.name,
+        group: product.group,
+        unit: product.unit,
+        code: product.code,
+        stock,
+        openingStock: Number(product.openingStock || 0),
+        avgCost: product.avgCost || 0,
+        value: stock * Number(product.avgCost || 0),
+      };
+    });
+    return { rows, lowStockThreshold: settings?.lowStockThreshold ?? 0 };
+  }
+
+  const [purchases, invoices] = await Promise.all([
     findPurchases({ isDeleted: { $ne: true } }),
     findInvoices({ isDeleted: { $ne: true } }),
-    findMainSettings(),
   ]);
 
   const rows = products.map((product) => {

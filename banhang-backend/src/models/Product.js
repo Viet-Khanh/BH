@@ -12,6 +12,13 @@ const ProductSchema = new mongoose.Schema(
     sellPriceDefault: Number,
     sellPriceWholesale: Number,
     openingStock: Number,
+    stock: {
+      type: Number,
+      default() {
+        return Number(this.openingStock || 0);
+      },
+    },
+    stockUpdatedAt: String,
     note: String,
     createdAt: String,
     isDeleted: { type: Boolean, default: false },

@@ -1,6 +1,8 @@
 import dayjs from 'dayjs';
 import { v4 as uuid } from 'uuid';
 import { computeStock } from '../../../utils/stock.js';
+import Settings from '../../../models/Settings.js';
+import { isSnapshotReady } from '../../../utils/snapshotStatus.js';
 import {
   parseRange,
   parsePagination,
@@ -29,6 +31,48 @@ import {
   updateProductById,
   updatePurchaseDoc,
 } from '../repositories/purchases.repository.js';
+
+const getMainSettings = () => Settings.findOne({ id: 'main' }).lean();
+
+const getCurrentStock = (product) =>
+  Number(product?.stock ?? product?.openingStock ?? 0);
+
+const withStockSnapshotUpdate = (product, update, deltaQty, snapshotReady) => {
+  if (!snapshotReady || !deltaQty) return update;
+  return {
+    ...update,
+    stock: getCurrentStock(product) + Number(deltaQty || 0),
+    stockUpdatedAt: new Date().toISOString(),
+  };
+};
+
+const buildProductRestoreFields = (product) => ({
+  openingStock: product.openingStock,
+  avgCost: product.avgCost,
+  ...(product.stock !== undefined ? { stock: product.stock } : {}),
+  ...(product.stockUpdatedAt !== undefined
+    ? { stockUpdatedAt: product.stockUpdatedAt }
+    : {}),
+});
+
+const restoreProducts = async (products = []) => {
+  if (!products.length) return;
+  await Promise.all(
+    products.map((product) =>
+      updateProductById(product.id, buildProductRestoreFields(product))
+    )
+  );
+};
+
+const updateProductsSequentially = async (updates = []) => {
+  const updatedProducts = [];
+  for (const { productId, fields } of updates) {
+    const product = await updateProductById(productId, fields);
+    if (!product) throw new Error('Product not found');
+    if (product) updatedProducts.push(product);
+  }
+  return updatedProducts;
+};
 
 export const getRecentPurchases = async (query) => {
   const { from, to } = parseRange(query);
@@ -320,6 +364,8 @@ export const getSupplierDebt = async (query) => {
 export const updatePurchase = async (id, payload) => {
   const existingPurchase = await findPurchaseById(id);
   if (!existingPurchase) throw new Error('Purchase not found');
+  const settings = await getMainSettings();
+  const snapshotReady = isSnapshotReady(settings);
 
   const supplierId = String(
     payload.supplierId || existingPurchase.supplierId || ''
@@ -346,32 +392,51 @@ export const updatePurchase = async (id, payload) => {
   if (products.length !== productIds.size) throw new Error('Product not found');
 
   let updatedProducts = [];
-  if (existingPurchase.appliedToStock) {
-    const updateTasks = products.map(async (product) => {
-      const oldQty = Number(oldQtyMap[product.id] || 0);
-      const newQty = Number(nextQtyMap[product.id] || 0);
-      const deltaQty = newQty - oldQty;
-      if (deltaQty === 0) return null;
-      const nextOpeningStock = Number(product.openingStock || 0) + deltaQty;
-      return updateProductById(product.id, { openingStock: nextOpeningStock });
-    });
-    updatedProducts = (await Promise.all(updateTasks)).filter(Boolean);
-  }
-
   const total = sanitizedItems.reduce(
     (sum, item) => sum + Number(item.lineTotal || 0),
     0
   );
-  const purchase = await updatePurchaseDoc(id, {
-    code: payload.code ?? existingPurchase.code ?? '',
-    supplierId,
-    date: payload.date || existingPurchase.date || new Date().toISOString(),
-    items: sanitizedItems,
-    total,
-    note: payload.note ?? existingPurchase.note ?? '',
-  });
 
-  return { purchase, products: updatedProducts };
+  try {
+    if (existingPurchase.appliedToStock || snapshotReady) {
+      const productUpdates = products
+        .map((product) => {
+          const oldQty = Number(oldQtyMap[product.id] || 0);
+          const newQty = Number(nextQtyMap[product.id] || 0);
+          const deltaQty = newQty - oldQty;
+          if (deltaQty === 0) return null;
+          const baseUpdate = {};
+          if (existingPurchase.appliedToStock) {
+            baseUpdate.openingStock =
+              Number(product.openingStock || 0) + deltaQty;
+          }
+          const update = withStockSnapshotUpdate(
+            product,
+            baseUpdate,
+            deltaQty,
+            snapshotReady
+          );
+          return { productId: product.id, fields: update };
+        })
+        .filter(Boolean);
+      updatedProducts = await updateProductsSequentially(productUpdates);
+    }
+
+    const purchase = await updatePurchaseDoc(id, {
+      code: payload.code ?? existingPurchase.code ?? '',
+      supplierId,
+      date: payload.date || existingPurchase.date || new Date().toISOString(),
+      items: sanitizedItems,
+      total,
+      note: payload.note ?? existingPurchase.note ?? '',
+    });
+    if (!purchase) throw new Error('Purchase not found');
+
+    return { purchase, products: updatedProducts };
+  } catch (error) {
+    await restoreProducts(products);
+    throw error;
+  }
 };
 
 export const createPurchase = async (payload) => {
@@ -388,6 +453,8 @@ export const createPurchase = async (payload) => {
   const products = await findProductsByIds(productIds, { activeOnly: true });
   if (products.length !== productIds.length)
     throw new Error('Product not found');
+  const settings = await getMainSettings();
+  const snapshotReady = isSnapshotReady(settings);
 
   const [pendingPurchases, invoices] = await Promise.all([
     findPurchases({
@@ -413,6 +480,7 @@ export const createPurchase = async (payload) => {
     const product = productMap[item.productId];
     const current = updates[item.productId] || {
       openingStock: Number(product.openingStock || 0),
+      stock: getCurrentStock(product),
       avgCost: Number(product.avgCost || 0),
     };
     const oldQty =
@@ -427,15 +495,13 @@ export const createPurchase = async (payload) => {
     );
     updates[item.productId] = {
       openingStock: Number(current.openingStock || 0) + Number(item.qty || 0),
+      ...(snapshotReady
+        ? { stock: Number(current.stock || 0) + Number(item.qty || 0) }
+        : {}),
       avgCost: nextAvgCost,
+      ...(snapshotReady ? { stockUpdatedAt: new Date().toISOString() } : {}),
     };
   });
-
-  const updatedProducts = await Promise.all(
-    Object.entries(updates).map(([productId, update]) =>
-      updateProductById(productId, update)
-    )
-  );
 
   const total = sanitizedItems.reduce(
     (sum, item) => sum + Number(item.lineTotal || 0),
@@ -454,6 +520,17 @@ export const createPurchase = async (payload) => {
     deletedAt: null,
   };
 
-  const purchase = await createPurchaseDoc(purchasePayload);
-  return { purchase, products: updatedProducts };
+  try {
+    const updatedProducts = await updateProductsSequentially(
+      Object.entries(updates).map(([productId, fields]) => ({
+        productId,
+        fields,
+      }))
+    );
+    const purchase = await createPurchaseDoc(purchasePayload);
+    return { purchase, products: updatedProducts };
+  } catch (error) {
+    await restoreProducts(products);
+    throw error;
+  }
 };

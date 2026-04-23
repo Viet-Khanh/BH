@@ -6,6 +6,8 @@ const CustomerSchema = new mongoose.Schema(
     name: String,
     phone: String,
     address: String,
+    currentDebt: { type: Number, default: 0 },
+    debtUpdatedAt: String,
     importBatchId: String,
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,

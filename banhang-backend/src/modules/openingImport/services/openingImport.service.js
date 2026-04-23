@@ -345,10 +345,17 @@ const buildValidationResult = async ({ target, rows }, deps = {}) => {
   }
 
   if (!rows.length) {
-    const errors = [createGlobalIssue('EMPTY_FILE', 'File không có dữ liệu để nhập.')];
+    const errors = [
+      createGlobalIssue('EMPTY_FILE', 'File không có dữ liệu để nhập.'),
+    ];
     return {
       target,
-      summary: buildSummary({ totalRows: 0, validRows: [], errors, warnings: [] }),
+      summary: buildSummary({
+        totalRows: 0,
+        validRows: [],
+        errors,
+        warnings: [],
+      }),
       errors,
       warnings: [],
       normalizedRows: [],
@@ -428,13 +435,20 @@ const buildImportDocuments = ({ target, rows, importBatchId, deps = {} }) => {
     const masterId = getId(deps);
     const codeSuffix = String(row.rowNumber).padStart(4, '0');
 
-    masters.push({
+    const master = {
       id: masterId,
       name: row.name,
       phone: row.phone || '',
       address: row.address || '',
       importBatchId,
-    });
+    };
+
+    if (target === 'customers') {
+      master.currentDebt = Number(row.openingBalance || 0);
+      master.debtUpdatedAt = now;
+    }
+
+    masters.push(master);
 
     if (target === 'customers') {
       if (row.openingBalance > 0) {

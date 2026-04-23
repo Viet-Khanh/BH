@@ -1,0 +1,135 @@
+.today-dashboard {
+  border: 1px solid #d9ece9;
+  border-radius: 22px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(238, 250, 248, 0.96)
+    ),
+    radial-gradient(
+      circle at top left,
+      rgba(21, 181, 106, 0.16),
+      transparent 32%
+    );
+  padding: 18px;
+  margin-bottom: 22px;
+}
+
+.today-dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.today-dashboard-header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.today-dashboard-header p {
+  margin: 4px 0;
+  color: #4d6866;
+}
+
+.today-dashboard-header small {
+  color: #6c7c7a;
+}
+
+.today-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.today-dashboard-card {
+  border-color: #dcefed;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.today-dashboard-card .ant-card-head {
+  background: #f5fbfa;
+  font-weight: 700;
+}
+
+.today-dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.today-dashboard-metric {
+  background: #f7fbfa;
+  border: 1px solid #e1eeec;
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.today-dashboard-metric span {
+  display: block;
+  color: #5b7471;
+  font-size: 13px;
+}
+
+.today-dashboard-metric strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+  color: #123b3a;
+}
+
+.metric-primary {
+  color: #087f7b !important;
+}
+
+.metric-success {
+  color: #1f7b33 !important;
+}
+
+.metric-danger {
+  color: #c62525 !important;
+}
+
+.today-dashboard-list {
+  margin-top: 12px;
+}
+
+.today-dashboard-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.today-dashboard-row small {
+  color: #78908d;
+}
+
+.today-dashboard-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.today-dashboard-shortcuts .ant-btn {
+  min-height: 52px;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 0 22px;
+}
+
+@media (max-width: 768px) {
+  .today-dashboard-header {
+    flex-direction: column;
+  }
+
+  .today-dashboard-metrics {
+    grid-template-columns: 1fr;
+  }
+}

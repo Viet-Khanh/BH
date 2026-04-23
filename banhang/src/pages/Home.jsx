@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Button, Form, Input, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import BigTileButton from '../components/BigTileButton.jsx';
+import TodayDashboard from '../features/dashboard/components/TodayDashboard.jsx';
 import { useSettingsStore } from '../store/settingsStore.js';
 import { grantSystemAccess } from './System/systemAccess.js';
 import { getSystemPasswordFromSettings } from './System/systemPassword.js';
+import './Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -52,44 +54,49 @@ const Home = () => {
   };
 
   return (
-    <div className="page-card">
+    <div className="page-card home-page">
       <div className="page-title">Màn hình chính</div>
-      <div className="home-grid">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <BigTileButton
-            label="HỆ THỐNG"
-            tone="linear-gradient(135deg, #0f6f75, #0d8f8a)"
-            onClick={handleOpenSystemModal}
-          />
-          <BigTileButton
-            to="/catalog"
-            label="DANH MỤC"
-            tone="linear-gradient(135deg, #118d6c, #0dbf6a)"
-          />
-          <BigTileButton
-            to="/sales"
-            label="BÁN HÀNG"
-            tone="linear-gradient(135deg, #0f8f8a, #14b36a)"
-          />
+      <TodayDashboard showShortcuts={false} />
+
+      <section className="home-actions-section">
+        <div className="home-actions-title">Thao tác nhanh</div>
+        <div className="home-grid home-grid-large">
+          <div className="home-button-column">
+            <BigTileButton
+              label="HỆ THỐNG"
+              tone="linear-gradient(135deg, #0f6f75, #0d8f8a)"
+              onClick={handleOpenSystemModal}
+            />
+            <BigTileButton
+              to="/catalog"
+              label="DANH MỤC"
+              tone="linear-gradient(135deg, #118d6c, #0dbf6a)"
+            />
+            <BigTileButton
+              to="/sales"
+              label="BÁN HÀNG"
+              tone="linear-gradient(135deg, #0f8f8a, #14b36a)"
+            />
+          </div>
+          <div className="home-button-column">
+            <BigTileButton
+              to="/purchases"
+              label="NHẬP HÀNG"
+              tone="linear-gradient(135deg, #12a36e, #0bc26b)"
+            />
+            <BigTileButton
+              to="/cashbook"
+              label="THU CHI"
+              tone="linear-gradient(135deg, #0f7f86, #0ea06d)"
+            />
+            <BigTileButton
+              label="BÁO CÁO"
+              tone="linear-gradient(135deg, #0c7c78, #0f9e8b)"
+              onClick={() => setReportModalOpen(true)}
+            />
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <BigTileButton
-            to="/purchases"
-            label="NHẬP HÀNG"
-            tone="linear-gradient(135deg, #12a36e, #0bc26b)"
-          />
-          <BigTileButton
-            to="/cashbook"
-            label="THU CHI"
-            tone="linear-gradient(135deg, #0f7f86, #0ea06d)"
-          />
-          <BigTileButton
-            label="BÁO CÁO"
-            tone="linear-gradient(135deg, #0c7c78, #0f9e8b)"
-            onClick={() => setReportModalOpen(true)}
-          />
-        </div>
-      </div>
+      </section>
 
       <Modal
         title="Chọn báo cáo"
@@ -99,13 +106,21 @@ const Home = () => {
         width={420}
         centered
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="home-report-modal-actions">
+          {/* <Button
+            size="large"
+            type="primary"
+            className="btn-primary home-report-button"
+            block
+            onClick={() => handleReportNavigate('/dashboard')}
+          >
+            Dashboard hôm nay
+          </Button> */}
           <Button
             size="large"
             type="primary"
-            className="btn-primary"
+            className="btn-primary home-report-button"
             block
-            style={{ height: 56, fontSize: 18 }}
             onClick={() => handleReportNavigate('/reports')}
           >
             Bán hàng
@@ -113,9 +128,8 @@ const Home = () => {
           <Button
             size="large"
             type="primary"
-            className="btn-primary"
+            className="btn-primary home-report-button"
             block
-            style={{ height: 56, fontSize: 18 }}
             onClick={() => handleReportNavigate('/report-purchase')}
           >
             Nhập hàng
@@ -123,9 +137,8 @@ const Home = () => {
           <Button
             size="large"
             type="primary"
-            className="btn-primary"
+            className="btn-primary home-report-button"
             block
-            style={{ height: 56, fontSize: 18 }}
             onClick={() => handleReportNavigate('/report-stock')}
           >
             Kho

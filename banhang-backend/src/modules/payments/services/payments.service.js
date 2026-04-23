@@ -7,10 +7,25 @@ import {
   createPayment,
   findPaymentById,
   findPayments,
-  insertPayments,
   softDeletePayment,
   upsertPayment,
 } from '../repositories/payments.repository.js';
+import {
+  applyCustomerDebtDeltas,
+  buildPaymentDebtDelta,
+  hydratePaymentCustomer,
+  invertDebtDeltas,
+} from '../../../services/customerDebtSnapshot.service.js';
+
+const applyPaymentSnapshot = async (deltas) => applyCustomerDebtDeltas(deltas);
+
+const rollbackPaymentSnapshot = async (snapshotResult) => {
+  if (snapshotResult?.applied) {
+    await applyCustomerDebtDeltas(invertDebtDeltas(snapshotResult.deltas), {
+      force: true,
+    });
+  }
+};
 
 export const getAllPayments = async (includeDeleted) => {
   const filter = includeDeleted ? {} : { isDeleted: { $ne: true } };
@@ -20,17 +35,26 @@ export const getAllPayments = async (includeDeleted) => {
 export const getPayment = async (id) => findPaymentById(id);
 
 export const createPaymentItem = async (payload) => {
-  const cleanPayload = ensureActive(sanitizePayload(payload));
+  let cleanPayload = ensureActive(sanitizePayload(payload));
   if (!cleanPayload.id) cleanPayload.id = uuid();
-  return createPayment(cleanPayload);
+  cleanPayload = await hydratePaymentCustomer(cleanPayload);
+  const snapshotResult = await applyPaymentSnapshot(
+    buildPaymentDebtDelta(cleanPayload)
+  );
+  try {
+    return await createPayment(cleanPayload);
+  } catch (error) {
+    await rollbackPaymentSnapshot(snapshotResult);
+    throw error;
+  }
 };
 
 export const bulkCreatePayments = async (items) => {
-  const payload = items.map((item) => {
-    const clean = ensureActive(sanitizePayload(item));
-    return { ...clean, id: clean.id || uuid() };
-  });
-  return insertPayments(payload);
+  const docs = [];
+  for (const item of items) {
+    docs.push(await createPaymentItem(item));
+  }
+  return docs;
 };
 
 export const updatePaymentItem = async (id, payload) => {
@@ -58,10 +82,41 @@ export const updatePaymentItem = async (id, payload) => {
     }
   }
 
-  return upsertPayment(id, cleanPayload);
+  const oldPayment = await hydratePaymentCustomer(existing || {});
+  const nextPayment = await hydratePaymentCustomer({
+    ...(existing || {}),
+    ...cleanPayload,
+    id,
+  });
+  const deltas = [
+    ...buildPaymentDebtDelta(oldPayment, -1),
+    ...buildPaymentDebtDelta(nextPayment),
+  ];
+  const snapshotResult = await applyPaymentSnapshot(deltas);
+  try {
+    return await upsertPayment(id, cleanPayload);
+  } catch (error) {
+    await rollbackPaymentSnapshot(snapshotResult);
+    throw error;
+  }
 };
 
 export const deletePaymentItem = async (id) => {
   const deletedAt = new Date().toISOString();
-  return softDeletePayment(id, deletedAt);
+  const existing = await findPaymentById(id);
+  if (!existing) return null;
+  if (existing.isDeleted) return existing;
+
+  const hydrated = await hydratePaymentCustomer(existing);
+  const snapshotResult = await applyPaymentSnapshot(
+    buildPaymentDebtDelta(hydrated, -1)
+  );
+  try {
+    const payment = await softDeletePayment(id, deletedAt);
+    if (!payment) throw new Error('Payment not found');
+    return payment;
+  } catch (error) {
+    await rollbackPaymentSnapshot(snapshotResult);
+    throw error;
+  }
 };

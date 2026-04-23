@@ -2,6 +2,7 @@ import { Button, Layout, Space } from 'antd';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Cashbook from './pages/Cashbook/Cashbook.jsx';
 import Catalog from './pages/Catalog/Catalog.jsx';
+import DashboardPage from './pages/Dashboard/DashboardPage.jsx';
 import Home from './pages/Home.jsx';
 import Purchases from './pages/Purchases/Purchases.jsx';
 import ReportPurchasePage from './pages/Reports/ReportPurchasePage.jsx';
@@ -39,6 +40,7 @@ const App = () => {
       <Content className="app-content">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/system" element={<System />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/sales" element={<Sales />} />

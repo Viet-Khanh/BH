@@ -1,0 +1,29 @@
+<service>
+  <id>BanHangBackend</id>
+  <name>BanHang Backend</name>
+  <description>BanHang local API service</description>
+
+  <executable>%BASE%\..\backend\node.exe</executable>
+  <arguments>src\index.js</arguments>
+  <workingdirectory>%BASE%\..\backend</workingdirectory>
+
+  <env name="NODE_ENV" value="production" />
+  <env name="PORT" value="5000" />
+  <env name="MONGODB_URI" value="mongodb://127.0.0.1:27017/banhang" />
+  <env name="BACKUP_DIR" value="%ProgramData%\BanHang\backups" />
+
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+  <depend>MongoDB</depend>
+
+  <onfailure action="restart" delay="10 sec" />
+  <onfailure action="restart" delay="30 sec" />
+  <onfailure action="restart" delay="60 sec" />
+  <resetfailure>1 hour</resetfailure>
+
+  <logpath>%ProgramData%\BanHang\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10485760</sizeThreshold>
+    <keepFiles>10</keepFiles>
+  </log>
+</service>

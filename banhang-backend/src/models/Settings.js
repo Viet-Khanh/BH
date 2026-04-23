@@ -12,6 +12,8 @@ const SettingsSchema = new mongoose.Schema(
     printCopies: { type: Number, default: 1 },
     invoiceTemplateHtml: String,
     systemPassword: { type: String, default: '123456' },
+    dataVersion: { type: Number, default: 2 },
+    stockDebtSnapshotAt: String,
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,
   },

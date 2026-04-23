@@ -1,7 +1,10 @@
 import { computeStock } from '../../../utils/stock.js';
 import { computeCustomerDebtBeforeDateByInvoiceOrder } from '../../../utils/customerDebt.js';
+import { isSnapshotReady } from '../../../utils/snapshotStatus.js';
 import {
+  findCustomerById,
   findInvoices,
+  findMainSettings,
   findPayments,
   findProducts,
   findPurchases,
@@ -40,8 +43,16 @@ export const getProductsForSales = async (query) => {
     ...searchFilter,
   };
 
-  const [products, purchases, invoices] = await Promise.all([
-    findProducts(filter, { sort: { name: 1 }, limit }),
+  const settings = await findMainSettings();
+  const products = await findProducts(filter, { sort: { name: 1 }, limit });
+  if (isSnapshotReady(settings)) {
+    return products.map((product) => ({
+      ...product,
+      stock: Number(product.stock ?? product.openingStock ?? 0),
+    }));
+  }
+
+  const [purchases, invoices] = await Promise.all([
     findPurchases({ isDeleted: { $ne: true } }),
     findInvoices({ isDeleted: { $ne: true } }),
   ]);
@@ -58,6 +69,20 @@ export const getCustomerDebtForSales = async (query) => {
 
   const excludeInvoiceId = String(query.excludeInvoiceId || '').trim();
   const asOfDate = String(query.asOfDate || '').trim();
+  const settings = await findMainSettings();
+
+  if (isSnapshotReady(settings) && !excludeInvoiceId && !asOfDate) {
+    const customer = await findCustomerById(customerId);
+    const debt = Number(customer?.currentDebt || 0);
+    return {
+      customerId,
+      total: debt,
+      paid: 0,
+      invoicePaid: 0,
+      debtReceiptPaid: 0,
+      debt,
+    };
+  }
 
   const invoices = await findInvoices({ customerId, isDeleted: { $ne: true } });
   const invoiceIds = invoices.map((invoice) => invoice.id);

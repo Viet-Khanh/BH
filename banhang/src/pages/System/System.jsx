@@ -10,9 +10,9 @@ import { usePurchaseStore } from '../../store/purchaseStore.js';
 import { useInvoiceStore } from '../../store/invoiceStore.js';
 import { usePaymentStore } from '../../store/paymentStore.js';
 import { useCashbookStore } from '../../store/cashbookStore.js';
-import { clearAll } from '../../db/repository.js';
 import { seedDemo } from '../../db/seed.js';
 import TemplateEditor from '../../components/TemplateEditor.jsx';
+import DataUpgradePanel from '../../features/dataUpgrade/components/DataUpgradePanel.jsx';
 import { consumeSystemAccess } from './systemAccess.js';
 import { getSystemPasswordFromSettings } from './systemPassword.js';
 
@@ -21,7 +21,6 @@ const System = () => {
   const {
     settings,
     update: updateSettings,
-    reset: resetSettings,
     load: loadSettings,
   } = useSettingsStore();
   const { items: products, load: loadProducts } = useProductStore();
@@ -76,21 +75,6 @@ const System = () => {
     const values = await form.validateFields();
     await updateSettings(values);
     message.success('Đã lưu hệ thống.');
-  };
-
-  const handleReset = () => {
-    Modal.confirm({
-      title: 'Reset dữ liệu?',
-      content: 'Toàn bộ dữ liệu sẽ bị xóa.',
-      okText: 'Reset',
-      cancelText: 'Hủy',
-      onOk: async () => {
-        await clearAll();
-        await resetSettings();
-        await reloadAll();
-        message.success('Đã reset dữ liệu.');
-      },
-    });
   };
 
   const handleSeed = () => {
@@ -181,12 +165,14 @@ const System = () => {
         }}
       />
 
+      <div className="section-title">Tối ưu dữ liệu</div>
+      <DataUpgradePanel onCommitted={reloadAll} />
+
       <div className="section-title">Dữ liệu mẫu</div>
       <div className="action-row">
         <Button size="large" onClick={handleSeed}>
           Nạp dữ liệu mẫu
         </Button>
-        {/* <Button size="large" danger onClick={handleReset}>Reset dữ liệu</Button> */}
       </div>
     </div>
   );
