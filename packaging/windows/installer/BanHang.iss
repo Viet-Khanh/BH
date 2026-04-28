@@ -63,3 +63,28 @@ var
 begin
   Result := Exec(ExpandConstant('{sys}\sc.exe'), 'query "' + ServiceName + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
 end;
+
+procedure StopServiceBeforeCopy(ServiceName: string);
+var
+  ResultCode: Integer;
+begin
+  if ServiceExists(ServiceName) then
+  begin
+    Exec(
+      'powershell.exe',
+      '-NoProfile -ExecutionPolicy Bypass -Command "Stop-Service -Name ''' + ServiceName + ''' -Force -ErrorAction SilentlyContinue; $svc = Get-Service -Name ''' + ServiceName + ''' -ErrorAction SilentlyContinue; if ($svc) { $svc.WaitForStatus(''Stopped'', ''00:00:30'') }"',
+      '',
+      SW_HIDE,
+      ewWaitUntilTerminated,
+      ResultCode
+    );
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssInstall then
+  begin
+    StopServiceBeforeCopy('BanHangBackend');
+  end;
+end;
