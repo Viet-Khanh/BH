@@ -18,6 +18,8 @@ const PurchaseDetailModal = ({ open, onClose, detail, products }) => (
               <tr>
                 <th>Tên hàng</th>
                 <th>ĐVT</th>
+                <th>Dài</th>
+                <th>Rộng</th>
                 <th>SL</th>
                 <th>Đơn giá</th>
                 <th>Thành tiền</th>
@@ -31,6 +33,8 @@ const PurchaseDetailModal = ({ open, onClose, detail, products }) => (
                   <tr key={`${item.productId}-${index}`}>
                     <td>{product?.name || ''}</td>
                     <td>{product?.unit || ''}</td>
+                    <td>{item.length ?? ''}</td>
+                    <td>{item.width ?? ''}</td>
                     <td>{item.qty}</td>
                     <td>{formatMoney(item.unitCost)}</td>
                     <td>{formatMoney(item.lineTotal)}</td>

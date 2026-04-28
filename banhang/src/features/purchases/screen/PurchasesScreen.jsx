@@ -121,7 +121,6 @@ const PurchasesScreen = () => {
         onUpdateItem={productSelection.updateItem}
         onRemoveItem={productSelection.removeItem}
         readOnly={draft.readOnlyEdit}
-        showDimensions={false}
         priceField="unitCost"
         qtyLabel="SL"
         priceMin={undefined}

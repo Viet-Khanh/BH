@@ -175,6 +175,9 @@ export const updateItem = async (Model, id, payload) => {
 
   if (Model.modelName === 'Product') {
     existing = await Model.findOne({ id }).lean();
+    if (!existing) {
+      throw new Error('Không tìm thấy sản phẩm.');
+    }
     const duplicateNames = await findExistingProductNameConflicts(
       Model,
       [cleanPayload],
@@ -196,10 +199,14 @@ export const updateItem = async (Model, id, payload) => {
   }
 
   cleanPayload.id = id;
+  const updateOptions = {
+    new: true,
+    upsert: Model.modelName !== 'Product',
+  };
   return await Model.findOneAndUpdate(
     { id },
     { $set: cleanPayload },
-    { new: true, upsert: true }
+    updateOptions
   ).lean();
 };
 
