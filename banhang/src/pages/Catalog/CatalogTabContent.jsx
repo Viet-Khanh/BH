@@ -1,5 +1,51 @@
 import { Button, Input, Table } from 'antd';
+import { useEffect, useState } from 'react';
 import ExportActions from '../../components/ExportActions.jsx';
+
+const SEARCH_PLACEHOLDERS = {
+  products: 'Tìm kiếm sản phẩm...',
+  customers: 'Tìm kiếm khách hàng/đại lý...',
+  suppliers: 'Tìm kiếm nhà cung cấp...',
+};
+
+const buildPaginationConfig = (tabKey) => ({
+  pageSize: tabKey === 'units' ? 8 : 100,
+  showSizeChanger: tabKey !== 'units',
+  pageSizeOptions: ['50', '100', '200'],
+  showTotal: (total, range) => `${range[0]}-${range[1]} / ${total} dòng`,
+});
+
+const CatalogSearchInput = ({
+  tabKey,
+  searchText,
+  onSearchTextChange,
+}) => {
+  const [searchInputValue, setSearchInputValue] = useState(searchText);
+
+  useEffect(() => {
+    setSearchInputValue(searchText);
+  }, [searchText]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (searchInputValue !== searchText) {
+        onSearchTextChange(searchInputValue);
+      }
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [onSearchTextChange, searchInputValue, searchText]);
+
+  return (
+    <Input
+      allowClear
+      placeholder={SEARCH_PLACEHOLDERS[tabKey] || 'Tìm kiếm...'}
+      value={searchInputValue}
+      onChange={(event) => setSearchInputValue(event.target.value)}
+      style={{ maxWidth: 360 }}
+    />
+  );
+};
 
 const CatalogTabContent = ({
   tabKey,
@@ -31,12 +77,10 @@ const CatalogTabContent = ({
     <>
       <div className="action-row">
         {tabKey !== 'units' && (
-          <Input
-            allowClear
-            placeholder="Tìm kiếm..."
-            value={searchText}
-            onChange={(event) => onSearchTextChange(event.target.value)}
-            style={{ maxWidth: 360 }}
+          <CatalogSearchInput
+            tabKey={tabKey}
+            searchText={searchText}
+            onSearchTextChange={onSearchTextChange}
           />
         )}
         <div className="export-actions" style={{ marginLeft: 'auto' }}>
@@ -118,7 +162,7 @@ const CatalogTabContent = ({
           rowKey="id"
           dataSource={dataSource}
           columns={columns}
-          pagination={tabKey === 'units' ? { pageSize: 8 } : false}
+          pagination={buildPaginationConfig(tabKey)}
           scroll={{ x: 1100 }}
         />
       </div>

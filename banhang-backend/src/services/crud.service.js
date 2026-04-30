@@ -88,17 +88,20 @@ export const findDuplicateNamesInPayload = (items = []) => {
   return uniqueNames(duplicates);
 };
 
-export const findExistingProductNameConflicts = async (
-  Model,
-  items = [],
-  { excludeId } = {}
-) => {
-  const candidates = items
+const buildProductNameCandidates = (items = []) =>
+  items
     .map((item) => ({
       rawName: String(item?.name ?? '').trim(),
       normalized: normalizeProductName(item?.name),
     }))
     .filter((item) => item.normalized);
+
+const findExistingProductNameConflictRecords = async (
+  Model,
+  items = [],
+  { excludeId } = {}
+) => {
+  const candidates = buildProductNameCandidates(items);
 
   if (!candidates.length) return [];
 
@@ -106,17 +109,32 @@ export const findExistingProductNameConflicts = async (
   if (excludeId) filter.id = { $ne: excludeId };
 
   const existingProducts = await Model.find(filter, { id: 1, name: 1 }).lean();
-  const existingNameSet = new Set(
+  const existingNameMap = new Map(
     existingProducts
-      .map((item) => normalizeProductName(item?.name))
-      .filter(Boolean)
+      .map((item) => [normalizeProductName(item?.name), item])
+      .filter(([normalized]) => normalized)
   );
 
-  return uniqueNames(
-    candidates
-      .filter((item) => existingNameSet.has(item.normalized))
-      .map((item) => item.rawName)
+  return candidates
+    .filter((item) => existingNameMap.has(item.normalized))
+    .map((item) => ({
+      ...item,
+      existing: existingNameMap.get(item.normalized),
+    }));
+};
+
+export const findExistingProductNameConflicts = async (
+  Model,
+  items = [],
+  options = {}
+) => {
+  const conflicts = await findExistingProductNameConflictRecords(
+    Model,
+    items,
+    options
   );
+
+  return uniqueNames(conflicts.map((item) => item.rawName));
 };
 
 export const getAllItems = async (Model, includeDeleted) => {
@@ -155,12 +173,20 @@ export const bulkCreateItems = async (Model, items) => {
       throw new Error(formatDuplicateProductMessage(duplicateNamesInPayload));
     }
 
-    const duplicateNames = await findExistingProductNameConflicts(
+    const existingConflicts = await findExistingProductNameConflictRecords(
       Model,
       payload
     );
-    if (duplicateNames.length) {
-      throw new Error(formatDuplicateProductMessage(duplicateNames));
+    if (existingConflicts.length) {
+      const existingNameSet = new Set(
+        existingConflicts.map((item) => item.normalized)
+      );
+      payload = payload.filter(
+        (item) => !existingNameSet.has(normalizeProductName(item?.name))
+      );
+      if (!payload.length) {
+        return existingConflicts.map((item) => item.existing);
+      }
     }
   }
 
