@@ -9,5 +9,9 @@ router.post(
   '/price-update-by-name',
   asyncHandler(ProductToolsController.updatePriceByName)
 );
+router.post(
+  '/fill-missing-avg-cost-from-retail',
+  asyncHandler(ProductToolsController.fillMissingAvgCostFromRetail)
+);
 
 export default router;

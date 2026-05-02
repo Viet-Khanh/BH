@@ -12,6 +12,13 @@ const normalizeProductName = (value) =>
 
 const uniqueStrings = (items = []) => [...new Set(items.filter(Boolean))];
 
+const normalizeIds = (ids = []) =>
+  uniqueStrings(
+    ids
+      .map((id) => String(id ?? '').trim())
+      .filter(Boolean)
+  );
+
 const toOptionalNumber = (value) => {
   if (value === '' || value === null || value === undefined) return null;
   const numeric = Number(value);
@@ -117,5 +124,57 @@ export const updatePriceByName = async (rows) => {
     duplicateNamesInFile: uniqueStrings(duplicateNamesInFile),
     ambiguousNames: uniqueStrings(ambiguousNames),
     invalidRows,
+  };
+};
+
+export const fillMissingAvgCostFromRetail = async ({ ids } = {}) => {
+  const productIds = Array.isArray(ids) ? normalizeIds(ids) : [];
+  const filter = {
+    isDeleted: { $ne: true },
+    sellPriceDefault: { $gt: 0 },
+    $or: [
+      { avgCost: { $exists: false } },
+      { avgCost: null },
+      { avgCost: { $lte: 0 } },
+    ],
+    ...(productIds.length ? { id: { $in: productIds } } : {}),
+  };
+
+  const products = await Product.find(filter, {
+    id: 1,
+    code: 1,
+    name: 1,
+    avgCost: 1,
+    sellPriceDefault: 1,
+  }).lean();
+
+  if (!products.length) {
+    return {
+      updatedCount: 0,
+      matchedCount: 0,
+      skippedCount: productIds.length,
+      updatedIds: [],
+    };
+  }
+
+  const operations = products.map((product) => ({
+    updateOne: {
+      filter: { id: product.id },
+      update: {
+        $set: { avgCost: Number(product.sellPriceDefault || 0) },
+      },
+    },
+  }));
+
+  const result = await Product.bulkWrite(operations, { ordered: false });
+  const updatedProductIds = products.map((product) => product.id);
+
+  return {
+    updatedCount: Number(result.modifiedCount ?? products.length),
+    matchedCount: Number(result.matchedCount ?? products.length),
+    skippedCount: productIds.length
+      ? Math.max(productIds.length - products.length, 0)
+      : 0,
+    updatedIds: updatedProductIds,
   };
 };

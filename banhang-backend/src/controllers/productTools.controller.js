@@ -11,3 +11,8 @@ export const updatePriceByName = async (req, res) => {
     throw err;
   }
 };
+
+export const fillMissingAvgCostFromRetail = async (req, res) => {
+  const data = await ProductToolsService.fillMissingAvgCostFromRetail(req.body);
+  res.json(data);
+};

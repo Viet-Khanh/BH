@@ -63,6 +63,12 @@ const CatalogTabContent = ({
   importMode,
   openingImporting,
   openingImportTarget,
+  showSensitiveInfo = false,
+  productCostFilterActive = false,
+  priceCostMatchedCount = 0,
+  missingAvgCostCount = 0,
+  onToggleProductCostFilter,
+  onOpenAvgCostPreview,
   exportConfig,
   dataSource,
   columns,
@@ -86,6 +92,26 @@ const CatalogTabContent = ({
         <div className="export-actions" style={{ marginLeft: 'auto' }}>
           {tabKey === 'products' && (
             <>
+              {showSensitiveInfo && (
+                <>
+                  <Button
+                    size="large"
+                    type={productCostFilterActive ? 'primary' : 'default'}
+                    onClick={onToggleProductCostFilter}
+                  >
+                    {productCostFilterActive
+                      ? 'Bỏ lọc giá lẻ = giá vốn'
+                      : `Lọc giá lẻ = giá vốn (${priceCostMatchedCount})`}
+                  </Button>
+                  <Button
+                    size="large"
+                    onClick={onOpenAvgCostPreview}
+                    disabled={!missingAvgCostCount}
+                  >
+                    Điền Giá vốn từ giá lẻ ({missingAvgCostCount})
+                  </Button>
+                </>
+              )}
               <Button
                 size="large"
                 onClick={() => onDownloadPriceUpdateTemplate?.(tabKey)}

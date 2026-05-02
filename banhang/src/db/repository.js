@@ -69,6 +69,12 @@ export const bulkUpdateProductPricesByName = async (items) =>
     body: Array.isArray(items) ? items.map(stripMeta) : [],
   });
 
+export const bulkFillMissingAvgCostFromRetail = async (ids) =>
+  apiRequest('/products-tools/fill-missing-avg-cost-from-retail', {
+    method: 'POST',
+    body: { ids: Array.isArray(ids) ? ids : [] },
+  });
+
 export const clearAll = async () => apiRequest('/reset', { method: 'POST' });
 
 export const getSettings = async () => getById('settings', 'main');

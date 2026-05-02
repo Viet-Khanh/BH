@@ -1,4 +1,4 @@
-import { Button, Form, Modal, Tabs, message } from 'antd';
+import { Button, Form, Modal, Table, Tabs, message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
@@ -14,6 +14,13 @@ import { buildCodeFromName, hasSearchMatch } from './catalogUtils.js';
 import { getColumns, getExportConfig } from './catalogViewConfigs.jsx';
 import useCatalogImport from './useCatalogImport.js';
 import useOpeningImport from './useOpeningImport.js';
+import { formatMoney } from '../../utils/moneyFormat.js';
+
+const asNumber = (value) => Number(value || 0);
+const hasRetailPriceEqualCost = (product) =>
+  asNumber(product.sellPriceDefault) === asNumber(product.avgCost);
+const needsAvgCostFromRetailPrice = (product) =>
+  asNumber(product.avgCost) <= 0 && asNumber(product.sellPriceDefault) > 0;
 
 const Catalog = () => {
   const navigate = useNavigate();
@@ -24,6 +31,7 @@ const Catalog = () => {
     remove: removeProduct,
     bulkAdd: bulkAddProducts,
     bulkUpdatePricesByName,
+    bulkFillMissingAvgCostFromRetail,
     load: loadProducts,
   } = useProductStore();
   const {
@@ -58,6 +66,10 @@ const Catalog = () => {
   const [codeEdited, setCodeEdited] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [productCostFilterActive, setProductCostFilterActive] =
+    useState(false);
+  const [avgCostPreviewOpen, setAvgCostPreviewOpen] = useState(false);
+  const [avgCostUpdating, setAvgCostUpdating] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -78,6 +90,14 @@ const Catalog = () => {
   const activeProducts = useMemo(
     () => products.filter((item) => !item.isDeleted),
     [products]
+  );
+  const productsMissingAvgCost = useMemo(
+    () => activeProducts.filter(needsAvgCostFromRetailPrice),
+    [activeProducts]
+  );
+  const priceCostMatchedCount = useMemo(
+    () => activeProducts.filter(hasRetailPriceEqualCost).length,
+    [activeProducts]
   );
   const activeCustomers = useMemo(
     () => customers.filter((item) => !item.isDeleted),
@@ -135,6 +155,13 @@ const Catalog = () => {
     if (activeKey === 'suppliers') source = activeSuppliers;
     if (activeKey === 'units') source = activeUnits;
     if (activeKey === 'units') return source;
+    if (
+      activeKey === 'products' &&
+      showSensitiveInfo &&
+      productCostFilterActive
+    ) {
+      source = source.filter(hasRetailPriceEqualCost);
+    }
     return source.filter((item) => hasSearchMatch(item, searchText));
   }, [
     activeKey,
@@ -142,7 +169,9 @@ const Catalog = () => {
     activeCustomers,
     activeSuppliers,
     activeUnits,
+    productCostFilterActive,
     searchText,
+    showSensitiveInfo,
   ]);
 
   const handleTabChange = (key) => {
@@ -151,6 +180,7 @@ const Catalog = () => {
     setModalOpen(false);
     setEditing(null);
     setCodeEdited(false);
+    setProductCostFilterActive(false);
     resetImportState();
     resetOpeningImportState();
   };
@@ -256,6 +286,60 @@ const Catalog = () => {
     }
   };
 
+  const handleOpenAvgCostPreview = () => {
+    if (!productsMissingAvgCost.length) {
+      message.info('Không có sản phẩm cần cập nhật Giá vốn.');
+      return;
+    }
+    setAvgCostPreviewOpen(true);
+  };
+
+  const handleConfirmAvgCostUpdate = async () => {
+    setAvgCostUpdating(true);
+    try {
+      const result = await bulkFillMissingAvgCostFromRetail(
+        productsMissingAvgCost.map((product) => product.id)
+      );
+      message.success(
+        `Đã cập nhật Giá vốn cho ${Number(result?.updatedCount || 0)} sản phẩm.`
+      );
+      setAvgCostPreviewOpen(false);
+    } catch (error) {
+      message.error(error.message || 'Không thể cập nhật Giá vốn.');
+    } finally {
+      setAvgCostUpdating(false);
+    }
+  };
+
+  const avgCostPreviewColumns = useMemo(
+    () => [
+      { title: 'Mã hàng', dataIndex: 'code', width: 140 },
+      { title: 'Tên hàng', dataIndex: 'name' },
+      {
+        title: 'Giá vốn hiện tại',
+        dataIndex: 'avgCost',
+        width: 160,
+        align: 'right',
+        render: (value) => formatMoney(value),
+      },
+      {
+        title: 'Đơn giá lẻ',
+        dataIndex: 'sellPriceDefault',
+        width: 160,
+        align: 'right',
+        render: (value) => formatMoney(value),
+      },
+      {
+        title: 'Giá vốn mới',
+        dataIndex: 'sellPriceDefault',
+        width: 160,
+        align: 'right',
+        render: (value) => formatMoney(value),
+      },
+    ],
+    []
+  );
+
   const columns = useMemo(
     () =>
       getColumns({
@@ -320,6 +404,14 @@ const Catalog = () => {
                 importMode={importMode}
                 openingImporting={openingImporting}
                 openingImportTarget={openingImportTarget}
+                showSensitiveInfo={showSensitiveInfo}
+                productCostFilterActive={productCostFilterActive}
+                priceCostMatchedCount={priceCostMatchedCount}
+                missingAvgCostCount={productsMissingAvgCost.length}
+                onToggleProductCostFilter={() =>
+                  setProductCostFilterActive((value) => !value)
+                }
+                onOpenAvgCostPreview={handleOpenAvgCostPreview}
                 exportConfig={exportConfig}
                 dataSource={dataSource}
                 columns={columns}
@@ -420,6 +512,27 @@ const Catalog = () => {
         onCodeChange={handleCodeChange}
         confirmLoading={saving}
       />
+
+      <Modal
+        title="Xác nhận cập nhật Giá vốn"
+        open={avgCostPreviewOpen}
+        onCancel={() => setAvgCostPreviewOpen(false)}
+        onOk={handleConfirmAvgCostUpdate}
+        okText="Cập nhật"
+        cancelText="Hủy"
+        confirmLoading={avgCostUpdating}
+        width={900}
+      >
+        <Table
+          size="small"
+          bordered
+          rowKey="id"
+          dataSource={productsMissingAvgCost}
+          columns={avgCostPreviewColumns}
+          pagination={{ pageSize: 8 }}
+          scroll={{ x: 760, y: 360 }}
+        />
+      </Modal>
     </div>
   );
 };
