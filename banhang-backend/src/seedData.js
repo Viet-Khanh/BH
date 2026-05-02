@@ -335,6 +335,7 @@ export const buildSeedData = () => {
     shopPhone: '0900 000 000',
     shopAddress: '123 Duong ABC, Quan 1',
     allowNegativeStock: true,
+    autoUpdateAvgCostOnPurchase: true,
     showSensitiveInfo: false,
     lowStockThreshold: 5,
     printCopies: 1,

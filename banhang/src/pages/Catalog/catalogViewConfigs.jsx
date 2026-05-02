@@ -1,7 +1,12 @@
 import { Button } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
-export const getColumns = ({ activeKey, onEdit, onDelete }) => {
+export const getColumns = ({
+  activeKey,
+  onEdit,
+  onDelete,
+  showSensitiveInfo = false,
+}) => {
   const actionColumn = {
     title: 'Hành động',
     render: (_, record) => (
@@ -15,7 +20,7 @@ export const getColumns = ({ activeKey, onEdit, onDelete }) => {
   };
 
   if (activeKey === 'products') {
-    return [
+    const productColumns = [
       { title: 'STT', render: (_, __, index) => index + 1, width: 60 },
       { title: 'Mã hàng', dataIndex: 'code' },
       { title: 'Tên hàng', dataIndex: 'name' },
@@ -30,11 +35,18 @@ export const getColumns = ({ activeKey, onEdit, onDelete }) => {
         dataIndex: 'sellPriceWholesale',
         render: (val) => formatMoney(val),
       },
-      {
+    ];
+
+    if (showSensitiveInfo) {
+      productColumns.push({
         title: 'Giá vốn',
         dataIndex: 'avgCost',
         render: (val) => formatMoney(val),
-      },
+      });
+    }
+
+    return [
+      ...productColumns,
       { title: 'Tồn đầu', dataIndex: 'openingStock' },
       actionColumn,
     ];
@@ -56,19 +68,26 @@ export const getColumns = ({ activeKey, onEdit, onDelete }) => {
   ];
 };
 
-export const getExportConfig = ({ activeKey, dataSource }) => {
+export const getExportConfig = ({
+  activeKey,
+  dataSource,
+  showSensitiveInfo = false,
+}) => {
   if (activeKey === 'products') {
     return {
-      rows: dataSource.map((item, index) => ({
-        STT: index + 1,
-        Ma_hang: item.code,
-        Ten_hang: item.name,
-        DVT: item.unit,
-        Don_gia_le: item.sellPriceDefault,
-        Don_gia_si: item.sellPriceWholesale,
-        Gia_von: item.avgCost,
-        Ton_dau: item.openingStock,
-      })),
+      rows: dataSource.map((item, index) => {
+        const row = {
+          STT: index + 1,
+          Ma_hang: item.code,
+          Ten_hang: item.name,
+          DVT: item.unit,
+          Don_gia_le: item.sellPriceDefault,
+          Don_gia_si: item.sellPriceWholesale,
+        };
+        if (showSensitiveInfo) row.Gia_von = item.avgCost;
+        row.Ton_dau = item.openingStock;
+        return row;
+      }),
       fileName: 'danh-muc-san-pham',
       sheetName: 'SanPham',
       title: 'Danh mục sản phẩm',

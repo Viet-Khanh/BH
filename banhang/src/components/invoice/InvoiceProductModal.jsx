@@ -55,6 +55,13 @@ const InvoiceProductModal = ({
     });
   }, []);
 
+  const focusQtyInput = useCallback(() => {
+    requestAnimationFrame(() => {
+      qtyInputRef.current?.focus({ cursor: 'all' });
+      qtyInputRef.current?.select?.();
+    });
+  }, []);
+
   const handleAdd = useCallback(() => {
     const added = onConfirmAdd({ closeAfter: false });
     if (!added) return;
@@ -77,13 +84,11 @@ const InvoiceProductModal = ({
       nextId !== lastProductIdRef.current &&
       !isFirstOpenCycleRef.current
     ) {
-      requestAnimationFrame(() => {
-        qtyInputRef.current?.focus();
-      });
+      focusQtyInput();
     }
     isFirstOpenCycleRef.current = false;
     lastProductIdRef.current = nextId;
-  }, [open, pendingProduct]);
+  }, [open, pendingProduct, focusQtyInput]);
 
   useEffect(() => {
     if (!open || createProductOpen) return;

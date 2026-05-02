@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { useCustomerStore } from '../../store/customerStore.js';
 import { useProductStore } from '../../store/productStore.js';
+import { useSettingsStore } from '../../store/settingsStore.js';
 import { useSupplierStore } from '../../store/supplierStore.js';
 import { useUnitStore } from '../../store/unitStore.js';
 import CatalogFormModal from './CatalogFormModal.jsx';
@@ -49,6 +50,7 @@ const Catalog = () => {
     bulkAdd: bulkAddUnits,
     load: loadUnits,
   } = useUnitStore();
+  const { settings, load: loadSettings } = useSettingsStore();
 
   const [activeKey, setActiveKey] = useState('products');
   const [modalOpen, setModalOpen] = useState(false);
@@ -65,10 +67,13 @@ const Catalog = () => {
         loadCustomers(),
         loadSuppliers(),
         loadUnits(),
+        loadSettings(),
       ]);
     };
     bootstrap();
-  }, [loadProducts, loadCustomers, loadSuppliers, loadUnits]);
+  }, [loadProducts, loadCustomers, loadSuppliers, loadUnits, loadSettings]);
+
+  const showSensitiveInfo = Boolean(settings?.showSensitiveInfo);
 
   const activeProducts = useMemo(
     () => products.filter((item) => !item.isDeleted),
@@ -252,12 +257,18 @@ const Catalog = () => {
   };
 
   const columns = useMemo(
-    () => getColumns({ activeKey, onEdit: openEdit, onDelete: handleDelete }),
-    [activeKey]
+    () =>
+      getColumns({
+        activeKey,
+        onEdit: openEdit,
+        onDelete: handleDelete,
+        showSensitiveInfo,
+      }),
+    [activeKey, showSensitiveInfo]
   );
   const exportConfig = useMemo(
-    () => getExportConfig({ activeKey, dataSource }),
-    [activeKey, dataSource]
+    () => getExportConfig({ activeKey, dataSource, showSensitiveInfo }),
+    [activeKey, dataSource, showSensitiveInfo]
   );
 
   return (

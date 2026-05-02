@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS = {
   shopPhone: '0900 000 000',
   shopAddress: '123 Đường ABC, Quận 1',
   allowNegativeStock: false,
+  autoUpdateAvgCostOnPurchase: true,
   showSensitiveInfo: false,
   lowStockThreshold: 5,
   printCopies: 1,

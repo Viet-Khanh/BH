@@ -131,6 +131,13 @@ const System = () => {
             <Switch />
           </Form.Item>
           <Form.Item
+            label="Tự động cập nhật Giá vốn khi nhập hàng"
+            name="autoUpdateAvgCostOnPurchase"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
             label="Cho phép hiển thị thông tin nhạy cảm"
             name="showSensitiveInfo"
             valuePropName="checked"

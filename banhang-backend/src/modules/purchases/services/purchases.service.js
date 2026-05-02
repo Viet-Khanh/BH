@@ -74,6 +74,49 @@ const updateProductsSequentially = async (updates = []) => {
   return updatedProducts;
 };
 
+const buildCostMapFromItems = (items = []) =>
+  items.reduce((acc, item) => {
+    if (!item?.productId) return acc;
+    const qty = Number(item.qty || 0);
+    const value = qty * Number(item.unitCost || 0);
+    const current = acc[item.productId] || { qty: 0, value: 0 };
+    acc[item.productId] = {
+      qty: current.qty + qty,
+      value: current.value + value,
+    };
+    return acc;
+  }, {});
+
+const hasAvgCostImpact = (oldCost = {}, nextCost = {}) =>
+  Number(oldCost.qty || 0) !== Number(nextCost.qty || 0) ||
+  Number(oldCost.value || 0) !== Number(nextCost.value || 0);
+
+const computeReplacementAvgCost = ({
+  currentQty,
+  currentAvgCost,
+  oldCost = {},
+  nextCost = {},
+}) => {
+  const normalizedCurrentQty = Math.max(Number(currentQty || 0), 0);
+  const normalizedCurrentAvgCost = Number(currentAvgCost || 0);
+  const oldQty = Math.max(Number(oldCost.qty || 0), 0);
+  const oldValue = Number(oldCost.value || 0);
+  const nextQty = Math.max(Number(nextCost.qty || 0), 0);
+  const nextValue = Number(nextCost.value || 0);
+  const oldUnitCost = oldQty > 0 ? oldValue / oldQty : 0;
+  const remainingOldQty = Math.min(oldQty, normalizedCurrentQty);
+  const baseQty = Math.max(normalizedCurrentQty - remainingOldQty, 0);
+  const baseValue = Math.max(
+    normalizedCurrentQty * normalizedCurrentAvgCost -
+      remainingOldQty * oldUnitCost,
+    0
+  );
+  const totalQty = baseQty + nextQty;
+
+  if (totalQty <= 0) return Math.round(normalizedCurrentAvgCost);
+  return Math.round((baseValue + nextValue) / totalQty);
+};
+
 export const getRecentPurchases = async (query) => {
   const { from, to } = parseRange(query);
   const supplierId = String(query.supplierId || '').trim();
@@ -366,6 +409,7 @@ export const updatePurchase = async (id, payload) => {
   if (!existingPurchase) throw new Error('Purchase not found');
   const settings = await getMainSettings();
   const snapshotReady = isSnapshotReady(settings);
+  const shouldUpdateAvgCost = settings?.autoUpdateAvgCostOnPurchase !== false;
 
   const supplierId = String(
     payload.supplierId || existingPurchase.supplierId || ''
@@ -382,15 +426,41 @@ export const updatePurchase = async (id, payload) => {
 
   const oldQtyMap = buildQtyMapFromItems(existingPurchase.items || []);
   const nextQtyMap = buildQtyMapFromItems(sanitizedItems);
+  const oldCostMap = shouldUpdateAvgCost
+    ? buildCostMapFromItems(existingPurchase.items || [])
+    : {};
+  const nextCostMap = shouldUpdateAvgCost
+    ? buildCostMapFromItems(sanitizedItems)
+    : {};
   const productIds = new Set([
     ...Object.keys(oldQtyMap),
     ...Object.keys(nextQtyMap),
   ]);
+  const shouldRecomputeAvgCost =
+    shouldUpdateAvgCost &&
+    [...productIds].some((productId) =>
+      hasAvgCostImpact(oldCostMap[productId], nextCostMap[productId])
+    );
   const products = productIds.size
     ? await findProductsByIds([...productIds], { activeOnly: true })
     : [];
   if (products.length !== productIds.size) throw new Error('Product not found');
 
+  const [pendingPurchases, invoices] = shouldRecomputeAvgCost
+    ? await Promise.all([
+        findPurchases({
+          isDeleted: { $ne: true },
+          appliedToStock: { $ne: true },
+          'items.productId': { $in: [...productIds] },
+        }),
+        findInvoices({
+          isDeleted: { $ne: true },
+          'items.productId': { $in: [...productIds] },
+        }),
+      ])
+    : [[], []];
+  const inQtyMap = buildQtyMapFromPurchases(pendingPurchases, productIds);
+  const outQtyMap = buildQtyMapFromInvoices(invoices, productIds);
   let updatedProducts = [];
   const total = sanitizedItems.reduce(
     (sum, item) => sum + Number(item.lineTotal || 0),
@@ -398,29 +468,44 @@ export const updatePurchase = async (id, payload) => {
   );
 
   try {
-    if (existingPurchase.appliedToStock || snapshotReady) {
-      const productUpdates = products
-        .map((product) => {
-          const oldQty = Number(oldQtyMap[product.id] || 0);
-          const newQty = Number(nextQtyMap[product.id] || 0);
-          const deltaQty = newQty - oldQty;
-          if (deltaQty === 0) return null;
-          const baseUpdate = {};
-          if (existingPurchase.appliedToStock) {
-            baseUpdate.openingStock =
-              Number(product.openingStock || 0) + deltaQty;
-          }
-          const update = withStockSnapshotUpdate(
-            product,
-            baseUpdate,
-            deltaQty,
-            snapshotReady
-          );
-          return { productId: product.id, fields: update };
-        })
-        .filter(Boolean);
-      updatedProducts = await updateProductsSequentially(productUpdates);
-    }
+    const productUpdates = products
+      .map((product) => {
+        const oldQty = Number(oldQtyMap[product.id] || 0);
+        const newQty = Number(nextQtyMap[product.id] || 0);
+        const deltaQty = newQty - oldQty;
+        const baseUpdate = {};
+
+        if (existingPurchase.appliedToStock && deltaQty) {
+          baseUpdate.openingStock =
+            Number(product.openingStock || 0) + deltaQty;
+        }
+
+        const update = withStockSnapshotUpdate(
+          product,
+          baseUpdate,
+          deltaQty,
+          snapshotReady
+        );
+        const oldCost = oldCostMap[product.id] || {};
+        const nextCost = nextCostMap[product.id] || {};
+        if (shouldRecomputeAvgCost && hasAvgCostImpact(oldCost, nextCost)) {
+          const currentQty =
+            Number(product.openingStock || 0) +
+            Number(inQtyMap[product.id] || 0) -
+            Number(outQtyMap[product.id] || 0);
+          update.avgCost = computeReplacementAvgCost({
+            currentQty,
+            currentAvgCost: product.avgCost,
+            oldCost,
+            nextCost,
+          });
+        }
+
+        if (!Object.keys(update).length) return null;
+        return { productId: product.id, fields: update };
+      })
+      .filter(Boolean);
+    updatedProducts = await updateProductsSequentially(productUpdates);
 
     const purchase = await updatePurchaseDoc(id, {
       code: payload.code ?? existingPurchase.code ?? '',
@@ -455,18 +540,21 @@ export const createPurchase = async (payload) => {
     throw new Error('Product not found');
   const settings = await getMainSettings();
   const snapshotReady = isSnapshotReady(settings);
+  const shouldUpdateAvgCost = settings?.autoUpdateAvgCostOnPurchase !== false;
 
-  const [pendingPurchases, invoices] = await Promise.all([
-    findPurchases({
-      isDeleted: { $ne: true },
-      appliedToStock: { $ne: true },
-      'items.productId': { $in: productIds },
-    }),
-    findInvoices({
-      isDeleted: { $ne: true },
-      'items.productId': { $in: productIds },
-    }),
-  ]);
+  const [pendingPurchases, invoices] = shouldUpdateAvgCost
+    ? await Promise.all([
+        findPurchases({
+          isDeleted: { $ne: true },
+          appliedToStock: { $ne: true },
+          'items.productId': { $in: productIds },
+        }),
+        findInvoices({
+          isDeleted: { $ne: true },
+          'items.productId': { $in: productIds },
+        }),
+      ])
+    : [[], []];
 
   const inQtyMap = buildQtyMapFromPurchases(
     pendingPurchases,
@@ -487,18 +575,15 @@ export const createPurchase = async (payload) => {
       Number(current.openingStock || 0) +
       Number(inQtyMap[item.productId] || 0) -
       Number(outQtyMap[item.productId] || 0);
-    const nextAvgCost = computeAvgCost(
-      oldQty,
-      current.avgCost,
-      item.qty,
-      item.unitCost
-    );
+    const nextAvgCost = shouldUpdateAvgCost
+      ? computeAvgCost(oldQty, current.avgCost, item.qty, item.unitCost)
+      : null;
     updates[item.productId] = {
       openingStock: Number(current.openingStock || 0) + Number(item.qty || 0),
       ...(snapshotReady
         ? { stock: Number(current.stock || 0) + Number(item.qty || 0) }
         : {}),
-      avgCost: nextAvgCost,
+      ...(shouldUpdateAvgCost ? { avgCost: nextAvgCost } : {}),
       ...(snapshotReady ? { stockUpdatedAt: new Date().toISOString() } : {}),
     };
   });

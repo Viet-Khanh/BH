@@ -7,6 +7,7 @@ const SettingsSchema = new mongoose.Schema(
     shopPhone: String,
     shopAddress: String,
     allowNegativeStock: Boolean,
+    autoUpdateAvgCostOnPurchase: { type: Boolean, default: true },
     showSensitiveInfo: { type: Boolean, default: false },
     lowStockThreshold: Number,
     printCopies: { type: Number, default: 1 },
