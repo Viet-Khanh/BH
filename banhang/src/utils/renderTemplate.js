@@ -22,6 +22,36 @@ const formatMeasure = (value, { blankOnZero = false } = {}) => {
 const formatTemplateText = (value) =>
   escapeHtml(value).replaceAll('\n', '<br />');
 
+const invoiceFontSizeOverride = `
+<style>
+  .invoice { font-size: 16px; }
+  .logo-box, .qr-box { font-size: 14px; }
+  .shop-name { font-size: 24px; }
+  .shop-line, .meta, .summary { font-size: 16px; }
+  .title { font-size: 20px; }
+  table.items { font-size: 15px; }
+  table.items .item-note { font-size: 13px; }
+  .summary-row.total { font-size: 17px; }
+  .invoice-note { font-size: 15px; }
+  .policy { font-size: 14px; }
+  .sign-title { font-size: 17px; }
+  .sign-sub { font-size: 15px; }
+  .footer { font-size: 13px; }
+</style>
+`;
+
+const applyInvoiceFontSizeOverride = (html) => {
+  if (html.includes('data-invoice-font-size-override')) return html;
+  const override = invoiceFontSizeOverride.replace(
+    '<style>',
+    '<style data-invoice-font-size-override>'
+  );
+  if (html.includes('</style>')) {
+    return html.replace('</style>', `</style>${override}`);
+  }
+  return `${override}${html}`;
+};
+
 const itemColumnStyles = {
   index: 'width:30px;text-align:center;',
   name: 'width:38%;text-align:left;overflow-wrap:anywhere;',
@@ -62,7 +92,7 @@ export const buildItemsHtml = (items = [], products = []) => {
         <tr>
           <td style="${itemColumnStyles.index}">${index + 1}</td>
           <td style="${itemColumnStyles.name}">
-            <div><strong>${escapeHtml(name)}</strong></div>
+            <div class="item-name" style="font-weight:500;color:#444;">${escapeHtml(name)}</div>
             ${noteCell}
           </td>
           <td style="${itemColumnStyles.unit}">${escapeHtml(unit)}</td>
@@ -156,5 +186,5 @@ export const renderInvoiceTemplate = ({
     html = html.replaceAll(key, value);
   });
 
-  return html;
+  return applyInvoiceFontSizeOverride(html);
 };

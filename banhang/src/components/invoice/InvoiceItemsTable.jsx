@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Input, InputNumber } from 'antd';
+import { Button, Input, InputNumber, Modal } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
 import {
   formatNumberInput,
@@ -19,6 +19,17 @@ const formatDisplayNumber = (value, { blankOnEmpty = false } = {}) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 3,
   }).format(number);
+};
+
+const confirmRemoveItem = ({ productName, onConfirm }) => {
+  Modal.confirm({
+    title: 'Xóa sản phẩm khỏi hóa đơn?',
+    content: productName ? `Sản phẩm: ${productName}` : undefined,
+    okText: 'Xóa',
+    cancelText: 'Hủy',
+    okButtonProps: { danger: true },
+    onOk: onConfirm,
+  });
 };
 
 const EditableNumberCell = ({
@@ -263,7 +274,12 @@ const InvoiceItemsTable = ({
                     <Button
                       danger
                       size="small"
-                      onClick={() => onRemoveItem(index)}
+                      onClick={() =>
+                        confirmRemoveItem({
+                          productName: product?.name,
+                          onConfirm: () => onRemoveItem(index),
+                        })
+                      }
                     >
                       Xóa
                     </Button>

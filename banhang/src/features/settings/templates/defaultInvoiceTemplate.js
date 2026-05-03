@@ -2,7 +2,7 @@ export const DEFAULT_TEMPLATE = `
 <style>
   @page { size: A4; margin: 8mm 10mm; }
   body { margin: 0; font-family: Arial, sans-serif; color: #111; background: #fff; }
-  .invoice { max-width: 780px; margin: 0 auto; padding: 4px 2px; font-size: 14px; line-height: 1.25; }
+  .invoice { max-width: 780px; margin: 0 auto; padding: 4px 2px; font-size: 16px; line-height: 1.25; }
   .top { display: grid; grid-template-columns: 1fr 140px; gap: 10px; align-items: start; }
   .shop-wrap { display: flex; gap: 8px; }
   .logo-box {
@@ -13,19 +13,19 @@ export const DEFAULT_TEMPLATE = `
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
   }
   .shop-main { flex: 1; text-align: center; }
   .shop-name {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .4px;
     line-height: 1.15;
   }
-  .shop-line { font-size: 14px; margin-top: 1px; }
-  .meta { text-align: right; font-size: 14px; }
+  .shop-line { font-size: 16px; margin-top: 1px; }
+  .meta { text-align: right; font-size: 16px; }
   .meta-line { margin-bottom: 2px; }
   .qr-box {
     width: 82px;
@@ -35,14 +35,14 @@ export const DEFAULT_TEMPLATE = `
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 14px;
     margin-top: 4px;
   }
   .divider { border-top: 1px solid #111; margin: 4px 0 6px; }
-  .title { text-align: center; font-size: 18px; font-weight: 700; letter-spacing: .6px; margin-bottom: 6px; }
+  .title { text-align: center; font-size: 20px; font-weight: 700; letter-spacing: .6px; margin-bottom: 6px; }
   .customer-row { display: flex; justify-content: space-between; gap: 12px; margin: 2px 0; }
   .customer-row > div { flex: 1; min-width: 0; }
-  table.items { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px; }
+  table.items { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 15px; }
   table.items th, table.items td { border: 1px solid #111; padding: 3px 4px; vertical-align: middle; }
   table.items th { text-align: center; font-weight: 700; }
   table.items th:nth-child(1), table.items td:nth-child(1) { width: 30px; text-align: center; }
@@ -54,12 +54,12 @@ export const DEFAULT_TEMPLATE = `
   table.items th:nth-child(7), table.items td:nth-child(7) { width: 66px; text-align: right; }
   table.items th:nth-child(8), table.items td:nth-child(8) { width: 92px; text-align: right; }
   table.items th:nth-child(9), table.items td:nth-child(9) { width: 100px; text-align: right; }
-  table.items .item-note { font-size: 11px; font-style: italic; color: #222; margin-top: 2px; }
+  table.items .item-note { font-size: 13px; font-style: italic; color: #222; margin-top: 2px; }
   .summary {
     margin-left: auto;
     margin-top: 10px;
     width: 320px;
-    font-size: 14px;
+    font-size: 16px;
   }
   .summary-row {
     display: grid;
@@ -71,16 +71,16 @@ export const DEFAULT_TEMPLATE = `
   }
   .summary-row > span:first-child { text-align: right; }
   .summary-row > span:last-child { min-width: 120px; text-align: right; font-weight: 700; }
-  .summary-row.total { font-size: 15px; font-weight: 700; }
+  .summary-row.total { font-size: 17px; font-weight: 700; }
   .summary-row:last-child { border-bottom: 0; }
-  .invoice-note { margin-top: 4px; font-size: 13px; }
-  .policy { text-align: center; font-size: 12px; margin-top: 8px; }
+  .invoice-note { margin-top: 4px; font-size: 15px; }
+  .policy { text-align: center; font-size: 14px; margin-top: 8px; }
   .signatures { display: flex; justify-content: space-between; margin-top: 2px; }
   .sign-col { width: 42%; text-align: center; }
-  .sign-title { font-size: 15px; font-weight: 700; margin-top: 3px; }
-  .sign-sub { font-size: 13px; font-style: italic; margin-top: 3px; }
+  .sign-title { font-size: 17px; font-weight: 700; margin-top: 3px; }
+  .sign-sub { font-size: 15px; font-style: italic; margin-top: 3px; }
   .sign-space { height: 90px; }
-  .footer { text-align: right; font-size: 11px; margin-top: 8px; }
+  .footer { text-align: right; font-size: 13px; margin-top: 8px; }
 </style>
 <div class="invoice">
   <div class="top">
