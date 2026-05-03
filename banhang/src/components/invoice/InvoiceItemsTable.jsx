@@ -148,7 +148,7 @@ const InvoiceItemsTable = ({
   const [editingCell, setEditingCell] = useState(null);
 
   return (
-    <div className="pos-table">
+    <div className="pos-table invoice-edit-table">
       <table>
         <thead>
           <tr>

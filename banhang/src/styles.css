@@ -289,7 +289,8 @@ body {
 }
 
 .invoice-items-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 15px;
 }
@@ -297,8 +298,10 @@ body {
 .invoice-items-table th,
 .invoice-items-table td {
   border-bottom: 1px solid #e1eeec;
-  padding: 8px;
+  padding: 10px 12px;
+  line-height: 1.35;
   text-align: left;
+  white-space: nowrap;
 }
 
 .invoice-items-table th {
@@ -439,22 +442,39 @@ body {
 }
 
 .pos-table table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
 }
 
 .pos-table th {
   background: #1297c7;
   color: #fff;
-  padding: 8px;
+  padding: 10px 12px;
+  line-height: 1.35;
   text-align: left;
   border: 1px solid #cfe7e5;
+  white-space: nowrap;
 }
 
 .pos-table td {
   border: 1px solid #e1eeec;
+  padding: 10px 12px;
+  line-height: 1.35;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.invoice-edit-table table {
+  width: 100%;
+  min-width: 980px;
+  table-layout: fixed;
+}
+
+.invoice-edit-table th,
+.invoice-edit-table td {
   padding: 6px;
+  white-space: normal;
 }
 
 .pos-table .pos-cell-center {
@@ -466,44 +486,44 @@ body {
   text-align: right;
 }
 
-.pos-table th:nth-child(1),
-.pos-table td:nth-child(1) {
+.invoice-edit-table th:nth-child(1),
+.invoice-edit-table td:nth-child(1) {
   width: 52px;
 }
 
-.pos-table th:nth-child(2),
-.pos-table td:nth-child(2) {
+.invoice-edit-table th:nth-child(2),
+.invoice-edit-table td:nth-child(2) {
   width: 28%;
 }
 
-.pos-table th:nth-child(3),
-.pos-table td:nth-child(3) {
+.invoice-edit-table th:nth-child(3),
+.invoice-edit-table td:nth-child(3) {
   width: 64px;
 }
 
-.pos-table th:nth-child(4),
-.pos-table td:nth-child(4),
-.pos-table th:nth-child(5),
-.pos-table td:nth-child(5),
-.pos-table th:nth-child(6),
-.pos-table td:nth-child(6) {
+.invoice-edit-table th:nth-child(4),
+.invoice-edit-table td:nth-child(4),
+.invoice-edit-table th:nth-child(5),
+.invoice-edit-table td:nth-child(5),
+.invoice-edit-table th:nth-child(6),
+.invoice-edit-table td:nth-child(6) {
   width: 86px;
 }
 
-.pos-table th:nth-child(7),
-.pos-table td:nth-child(7),
-.pos-table th:nth-child(8),
-.pos-table td:nth-child(8) {
+.invoice-edit-table th:nth-child(7),
+.invoice-edit-table td:nth-child(7),
+.invoice-edit-table th:nth-child(8),
+.invoice-edit-table td:nth-child(8) {
   width: 130px;
 }
 
-.pos-table th:nth-child(9),
-.pos-table td:nth-child(9) {
+.invoice-edit-table th:nth-child(9),
+.invoice-edit-table td:nth-child(9) {
   width: 180px;
 }
 
-.pos-table th:nth-child(10),
-.pos-table td:nth-child(10) {
+.invoice-edit-table th:nth-child(10),
+.invoice-edit-table td:nth-child(10) {
   width: 68px;
 }
 

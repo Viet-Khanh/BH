@@ -13,7 +13,6 @@ const ReportSalesInvoicesTable = ({
         <tr>
           <th>Số HĐ</th>
           <th>Ngày</th>
-          <th>Nhân viên</th>
           <th>MH</th>
           <th>SL</th>
           <th>Tiền hàng</th>
@@ -42,7 +41,6 @@ const ReportSalesInvoicesTable = ({
             >
               <td>{isInvoiceRow ? row.code : ''}</td>
               <td>{dayjs(row.date).format('DD/MM/YY HH:mm')}</td>
-              <td>{isInvoiceRow ? row.staff : ''}</td>
               <td>{isInvoiceRow ? row.itemsCount : ''}</td>
               <td>{isInvoiceRow ? row.qtySum : ''}</td>
               <td>{isInvoiceRow ? formatMoney(row.amount) : ''}</td>
@@ -77,7 +75,7 @@ const ReportSalesInvoicesTable = ({
         {!rows.length ? (
           <tr>
             <td
-              colSpan={showSensitiveInfo ? 15 : 14}
+              colSpan={showSensitiveInfo ? 14 : 13}
               style={{ textAlign: 'center' }}
             >
               {debtTimelineLoading ? 'Đang tải dữ liệu...' : 'Chưa có hóa đơn.'}
