@@ -213,6 +213,7 @@ const InvoiceProductModal = ({
             onKeywordChange={setSearchKeyword}
             inputRef={searchInputRef}
             showStock
+            showDetails={false}
           />
         </div>
         <div style={{ flex: 2 }}>

@@ -55,8 +55,8 @@ const Home = () => {
 
   return (
     <div className="page-card home-page">
-      <div className="page-title">Màn hình chính</div>
-      <TodayDashboard showShortcuts={false} />
+      {/* <div className="page-title">Màn hình chính</div> */}
+      {/* <TodayDashboard showShortcuts={false} /> */}
 
       <section className="home-actions-section">
         <div className="home-actions-title">Thao tác nhanh</div>

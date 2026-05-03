@@ -15,7 +15,7 @@ export const createOpenAddModal =
         ? getProductPrice(product)
         : Number(product.sellPriceDefault || 0);
     setPendingProduct(product);
-    setPendingQty(1);
+    setPendingQty(0);
     setPendingPrice(nextPrice);
     setPendingLength(null);
     setPendingWidth(null);
@@ -47,7 +47,7 @@ export const createPendingProductChangeHandler =
         ? getProductPrice(product)
         : Number(product.sellPriceDefault || 0);
     setPendingProduct(product);
-    setPendingQty(1);
+    setPendingQty(0);
     setPendingPrice(nextPrice);
     setPendingLength(null);
     setPendingWidth(null);

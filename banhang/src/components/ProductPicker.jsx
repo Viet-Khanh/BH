@@ -10,6 +10,7 @@ const ProductPicker = ({
   onKeywordChange,
   inputRef,
   showStock = false,
+  showDetails = true,
 }) => {
   const [keyword, setKeyword] = useState('');
   const searchValue = keywordProp !== undefined ? keywordProp : keyword;
@@ -40,7 +41,9 @@ const ProductPicker = ({
   };
 
   return (
-    <div className="product-picker">
+    <div
+      className={`product-picker${showDetails ? '' : ' product-picker-compact'}`}
+    >
       <Input
         ref={inputRef}
         size="large"
@@ -54,6 +57,7 @@ const ProductPicker = ({
             key={item.id}
             type="button"
             className={`product-option ${value === item.id ? 'active' : ''}`}
+            title={item.name}
             onClick={() => onChange(item.id)}
             style={{
               display: 'flex',
@@ -65,9 +69,11 @@ const ProductPicker = ({
               <div>
                 <strong>{item.name}</strong>
               </div>
-              <div>
-                {item.code || '---'} · {item.group} · {item.unit}
-              </div>
+              {showDetails ? (
+                <div>
+                  {item.code || '---'} · {item.group} · {item.unit}
+                </div>
+              ) : null}
             </div>
             <div>{showStock ? `Tồn: ${formatStock(item)}` : ''}</div>
           </button>

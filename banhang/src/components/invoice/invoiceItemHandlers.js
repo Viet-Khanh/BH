@@ -52,7 +52,7 @@ export const createConfirmAddHandler =
     if (closeAfter) {
       setSearchOpen(false);
     } else {
-      setPendingQty(1);
+      setPendingQty(0);
       setPendingLength(null);
       setPendingWidth(null);
     }

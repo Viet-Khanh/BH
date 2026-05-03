@@ -45,16 +45,15 @@ export const DEFAULT_TEMPLATE = `
   table.items { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px; }
   table.items th, table.items td { border: 1px solid #111; padding: 3px 4px; vertical-align: middle; }
   table.items th { text-align: center; font-weight: 700; }
-  table.items th:nth-child(1), table.items td:nth-child(1) { width: 36px; text-align: center; }
-  table.items th:nth-child(2), table.items td:nth-child(2) { width: auto; text-align: left; }
-  table.items th:nth-child(3), table.items td:nth-child(3) { width: 52px; text-align: center; }
-  table.items th:nth-child(4), table.items td:nth-child(4) { width: 64px; text-align: center; }
+  table.items th:nth-child(1), table.items td:nth-child(1) { width: 30px; text-align: center; }
+  table.items th:nth-child(2), table.items td:nth-child(2) { width: 38%; text-align: left; overflow-wrap: anywhere; }
+  table.items th:nth-child(3), table.items td:nth-child(3) { width: 44px; text-align: center; }
+  table.items th:nth-child(4), table.items td:nth-child(4) { width: 56px; text-align: center; }
   table.items th:nth-child(5), table.items td:nth-child(5),
-  table.items th:nth-child(6), table.items td:nth-child(6) { width: 52px; text-align: center; }
-  table.items th:nth-child(7), table.items td:nth-child(7) { width: 72px; text-align: right; }
-  table.items th:nth-child(8), table.items td:nth-child(8),
-  table.items th:nth-child(9), table.items td:nth-child(9) { width: 110px; text-align: right; }
-  table.items .item-code { font-size: 11px; color: #333; }
+  table.items th:nth-child(6), table.items td:nth-child(6) { width: 44px; text-align: center; }
+  table.items th:nth-child(7), table.items td:nth-child(7) { width: 66px; text-align: right; }
+  table.items th:nth-child(8), table.items td:nth-child(8) { width: 92px; text-align: right; }
+  table.items th:nth-child(9), table.items td:nth-child(9) { width: 100px; text-align: right; }
   table.items .item-note { font-size: 11px; font-style: italic; color: #222; margin-top: 2px; }
   .summary {
     margin-left: auto;

@@ -22,47 +22,56 @@ const formatMeasure = (value, { blankOnZero = false } = {}) => {
 const formatTemplateText = (value) =>
   escapeHtml(value).replaceAll('\n', '<br />');
 
+const itemColumnStyles = {
+  index: 'width:30px;text-align:center;',
+  name: 'width:38%;text-align:left;overflow-wrap:anywhere;',
+  unit: 'width:44px;text-align:center;',
+  qty: 'width:56px;text-align:center;',
+  dimension: 'width:44px;text-align:center;',
+  areaQty: 'width:66px;text-align:right;',
+  money: 'width:92px;text-align:right;',
+  total: 'width:100px;text-align:right;',
+};
+
 export const buildItemsHtml = (items = [], products = []) => {
   const rows = items
     .map((item, index) => {
       const product = products.find((p) => p.id === item.productId);
       const name = product ? product.name : 'Sản phẩm';
-      const code = product?.code || '';
       const unit = product?.unit || '';
       const qty = Number(item.qty || 0);
       const length = Number(item.length || 0);
       const width = Number(item.width || 0);
       const hasDimensions = length > 0 && width > 0;
-      const qtyDisplay = hasDimensions
-        ? formatMeasure(qty, { blankOnZero: true })
-        : '';
+      const qtyDisplay = formatMeasure(qty, { blankOnZero: true });
       const lengthDisplay = hasDimensions
         ? formatMeasure(length, { blankOnZero: true })
         : '';
       const widthDisplay = hasDimensions
         ? formatMeasure(width, { blankOnZero: true })
         : '';
-      const areaQty = hasDimensions ? qty * length * width : qty;
-      const areaQtyDisplay = formatMeasure(areaQty, { blankOnZero: true });
+      const areaQty = hasDimensions ? qty * length * width : 0;
+      const areaQtyDisplay = hasDimensions
+        ? formatMeasure(areaQty, { blankOnZero: true })
+        : '';
       const note = item.lineNote || '';
       const noteCell = note
         ? `<div class="item-note">${escapeHtml(note)}</div>`
         : '';
       return `
         <tr>
-          <td>${index + 1}</td>
-          <td>
+          <td style="${itemColumnStyles.index}">${index + 1}</td>
+          <td style="${itemColumnStyles.name}">
             <div><strong>${escapeHtml(name)}</strong></div>
-            ${code ? `<div class="item-code">${escapeHtml(code)}</div>` : ''}
             ${noteCell}
           </td>
-          <td>${escapeHtml(unit)}</td>
-          <td>${qtyDisplay}</td>
-          <td>${lengthDisplay}</td>
-          <td>${widthDisplay}</td>
-          <td>${areaQtyDisplay}</td>
-          <td>${formatMoney(item.unitPrice)}</td>
-          <td>${formatMoney(item.lineTotal)}</td>
+          <td style="${itemColumnStyles.unit}">${escapeHtml(unit)}</td>
+          <td style="${itemColumnStyles.qty}">${qtyDisplay}</td>
+          <td style="${itemColumnStyles.dimension}">${lengthDisplay}</td>
+          <td style="${itemColumnStyles.dimension}">${widthDisplay}</td>
+          <td style="${itemColumnStyles.areaQty}">${areaQtyDisplay}</td>
+          <td style="${itemColumnStyles.money}">${formatMoney(item.unitPrice)}</td>
+          <td style="${itemColumnStyles.total}">${formatMoney(item.lineTotal)}</td>
         </tr>
       `;
     })
@@ -72,15 +81,15 @@ export const buildItemsHtml = (items = [], products = []) => {
     <table class="items">
       <thead>
         <tr>
-          <th>TT</th>
-          <th>Tên hàng</th>
-          <th>ĐVT</th>
-          <th>Số lượng</th>
-          <th>D</th>
-          <th>R</th>
-          <th>SL / M2</th>
-          <th>Đơn giá</th>
-          <th>Thành tiền</th>
+          <th style="${itemColumnStyles.index}">TT</th>
+          <th style="${itemColumnStyles.name}">Tên hàng</th>
+          <th style="${itemColumnStyles.unit}">ĐVT</th>
+          <th style="${itemColumnStyles.qty}">SL</th>
+          <th style="${itemColumnStyles.dimension}">D</th>
+          <th style="${itemColumnStyles.dimension}">R</th>
+          <th style="${itemColumnStyles.areaQty}">M2</th>
+          <th style="${itemColumnStyles.money}">Đơn giá</th>
+          <th style="${itemColumnStyles.total}">Thành tiền</th>
         </tr>
       </thead>
       <tbody>

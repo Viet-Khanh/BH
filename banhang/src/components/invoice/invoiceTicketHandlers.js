@@ -63,7 +63,7 @@ export const createNewTicketHandler =
     setCustomerId(defaultCustomerId);
     setSearchKeyword('');
     setPendingProduct(null);
-    setPendingQty(1);
+    setPendingQty(0);
     setPendingPrice(0);
     setPendingLength(null);
     setPendingWidth(null);

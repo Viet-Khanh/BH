@@ -10,6 +10,7 @@
   --radius-lg: 24px;
   --radius-md: 16px;
   --font-main: 'Be Vietnam Pro', system-ui, sans-serif;
+  --app-ui-scale: 1.25;
 }
 
 * {
@@ -20,6 +21,7 @@ body {
   margin: 0;
   font-family: var(--font-main);
   color: var(--text);
+  zoom: var(--app-ui-scale);
   background: radial-gradient(
     circle at top,
     #f2fbfa 0%,
@@ -239,6 +241,11 @@ body {
   overflow-y: auto;
 }
 
+.product-picker-compact .product-picker-list {
+  gap: 6px;
+  max-height: 420px;
+}
+
 .product-option {
   border: 1px solid #d7e5e3;
   border-radius: 12px;
@@ -249,6 +256,26 @@ body {
   transition:
     background 0.2s ease,
     border 0.2s ease;
+}
+
+.product-picker-compact .product-option {
+  padding: 8px 10px;
+}
+
+.product-picker-compact .product-option > div:first-child {
+  min-width: 0;
+}
+
+.product-picker-compact .product-option strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-picker-compact .product-option > div:last-child {
+  margin-left: 12px;
+  white-space: nowrap;
 }
 
 .product-option:hover {
