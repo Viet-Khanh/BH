@@ -59,7 +59,7 @@ const Home = () => {
       {/* <TodayDashboard showShortcuts={false} /> */}
 
       <section className="home-actions-section">
-        <div className="home-actions-title">Thao tác nhanh</div>
+        {/* <div className="home-actions-title">Thao tác nhanh</div> */}
         <div className="home-grid home-grid-large">
           <div className="home-button-column">
             <BigTileButton

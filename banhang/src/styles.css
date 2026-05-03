@@ -441,6 +441,7 @@ body {
 .pos-table table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .pos-table th {
@@ -454,6 +455,109 @@ body {
 .pos-table td {
   border: 1px solid #e1eeec;
   padding: 6px;
+}
+
+.pos-table .pos-cell-center {
+  text-align: center;
+}
+
+.pos-table .pos-cell-number,
+.pos-table .pos-cell-money {
+  text-align: right;
+}
+
+.pos-table th:nth-child(1),
+.pos-table td:nth-child(1) {
+  width: 52px;
+}
+
+.pos-table th:nth-child(2),
+.pos-table td:nth-child(2) {
+  width: 28%;
+}
+
+.pos-table th:nth-child(3),
+.pos-table td:nth-child(3) {
+  width: 64px;
+}
+
+.pos-table th:nth-child(4),
+.pos-table td:nth-child(4),
+.pos-table th:nth-child(5),
+.pos-table td:nth-child(5),
+.pos-table th:nth-child(6),
+.pos-table td:nth-child(6) {
+  width: 86px;
+}
+
+.pos-table th:nth-child(7),
+.pos-table td:nth-child(7),
+.pos-table th:nth-child(8),
+.pos-table td:nth-child(8) {
+  width: 130px;
+}
+
+.pos-table th:nth-child(9),
+.pos-table td:nth-child(9) {
+  width: 180px;
+}
+
+.pos-table th:nth-child(10),
+.pos-table td:nth-child(10) {
+  width: 68px;
+}
+
+.pos-table .pos-cell-actions {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pos-table .pos-product-code {
+  color: #6b8784;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.pos-table .editable-cell {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 5px 8px;
+  text-align: left;
+}
+
+.pos-table .editable-cell.numeric {
+  text-align: right;
+}
+
+.pos-table .editable-cell:hover,
+.pos-table .editable-cell:focus {
+  background: #eef9f7;
+  border-color: #b6e2de;
+  outline: none;
+}
+
+.pos-table .editable-cell.is-empty {
+  color: #7b9693;
+}
+
+.pos-table .editable-cell-note {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-table .editable-input,
+.pos-table .editable-input.ant-input-number,
+.pos-table .editable-input.ant-input {
+  min-width: 0;
+  width: 100%;
 }
 
 .btn-accent {
