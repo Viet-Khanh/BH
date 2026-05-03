@@ -150,6 +150,7 @@ export const useReportPurchaseInvoiceModal = ({
       printReportInvoicePreview({
         previewHtml,
         settings,
+        copies: 1,
       }),
     openPurchase: setSelectedPurchaseId,
     closePurchase: () => setSelectedPurchaseId(null),

@@ -16,11 +16,11 @@ const ReportSalesInvoicesTable = ({
           <th>MH</th>
           <th>SL</th>
           <th>Tiền hàng</th>
-          <th>Đã thu</th>
+          {showSensitiveInfo ? <th>Lợi nhuận</th> : null}
           <th>Nợ cũ</th>
           <th>Tổng cộng</th>
           <th>Còn nợ</th>
-          {showSensitiveInfo ? <th>Lợi nhuận</th> : null}
+          <th>Đã thu</th>
           <th>Khách hàng</th>
           <th>Điện thoại</th>
           <th>Địa chỉ</th>
@@ -44,14 +44,6 @@ const ReportSalesInvoicesTable = ({
               <td>{isInvoiceRow ? row.itemsCount : ''}</td>
               <td>{isInvoiceRow ? row.qtySum : ''}</td>
               <td>{isInvoiceRow ? formatMoney(row.amount) : ''}</td>
-              <td className={row.paid > 0 ? 'text-success' : ''}>
-                {formatMoney(row.paid)}
-              </td>
-              <td className="text-danger">{formatMoney(row.oldDebt)}</td>
-              <td>{isInvoiceRow ? formatMoney(row.totalPay) : ''}</td>
-              <td className={row.remain > 0 ? 'text-danger' : 'text-success'}>
-                {formatMoney(row.remain)}
-              </td>
               {showSensitiveInfo ? (
                 <td
                   className={
@@ -65,6 +57,14 @@ const ReportSalesInvoicesTable = ({
                   {isInvoiceRow ? formatMoney(row.profit) : ''}
                 </td>
               ) : null}
+              <td className="text-danger">{formatMoney(row.oldDebt)}</td>
+              <td>{isInvoiceRow ? formatMoney(row.totalPay) : ''}</td>
+              <td className={row.remain > 0 ? 'text-danger' : 'text-success'}>
+                {formatMoney(row.remain)}
+              </td>
+              <td className={row.paid > 0 ? 'text-success' : ''}>
+                {formatMoney(row.paid)}
+              </td>
               <td>{isInvoiceRow ? row.customerName : ''}</td>
               <td>{isInvoiceRow ? row.phone : ''}</td>
               <td>{isInvoiceRow ? row.address : ''}</td>

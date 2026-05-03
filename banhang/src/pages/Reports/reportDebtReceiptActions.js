@@ -9,6 +9,7 @@ export const printDebtReceiptDocument = async ({
   customer,
   settings,
   timelineRow,
+  copies,
 }) => {
   if (!payment || !customer) return;
   const html = renderDebtReceiptTemplate({
@@ -19,7 +20,7 @@ export const printDebtReceiptDocument = async ({
   });
   const printCopies = Math.max(
     1,
-    Math.round(Number(settings?.printCopies || 1))
+    Math.round(Number(copies ?? settings?.printCopies ?? 1))
   );
   await printHtml(html, { copies: printCopies, autoPageSize: true });
 };

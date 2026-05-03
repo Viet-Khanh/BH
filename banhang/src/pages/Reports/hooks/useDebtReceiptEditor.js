@@ -68,6 +68,7 @@ export const useDebtReceiptEditor = ({
           customer: debtDetail?.customer || null,
           settings,
           timelineRow: findDebtReceiptTimelineRow(timelineRows, payment.id),
+          copies: 1,
         });
       } catch (error) {
         message.error(
@@ -127,6 +128,7 @@ export const useDebtReceiptEditor = ({
               customer: nextDetail?.customer || debtDetail.customer,
               settings,
               timelineRow: nextTimelineRow,
+              copies: 1,
             });
           } catch (error) {
             message.warning(
