@@ -49,6 +49,7 @@ const ReportPurchasePage = () => {
       <Tabs
         activeKey={activeTab}
         onChange={handleTabChange}
+        destroyInactiveTabPane
         type="card"
         className="page-tabs"
         tabPosition="top"
