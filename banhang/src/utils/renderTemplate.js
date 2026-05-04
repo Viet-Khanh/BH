@@ -24,19 +24,19 @@ const formatTemplateText = (value) =>
 
 const invoiceFontSizeOverride = `
 <style>
-  .invoice { font-size: 16px; }
-  .logo-box, .qr-box { font-size: 14px; }
-  .shop-name { font-size: 24px; }
-  .shop-line, .meta, .summary { font-size: 16px; }
-  .title { font-size: 20px; }
-  table.items { font-size: 15px; }
-  table.items .item-note { font-size: 13px; }
-  .summary-row.total { font-size: 17px; }
-  .invoice-note { font-size: 15px; }
-  .policy { font-size: 14px; }
-  .sign-title { font-size: 17px; }
-  .sign-sub { font-size: 15px; }
-  .footer { font-size: 13px; }
+  .invoice { font-size: 14px; }
+  .logo-box, .qr-box { font-size: 12px; }
+  .shop-name { font-size: 22px; }
+  .shop-line, .meta, .summary { font-size: 14px; }
+  .title { font-size: 18px; }
+  table.items { font-size: 13px; }
+  table.items .item-note { font-size: 11px; }
+  .summary-row.total { font-size: 15px; }
+  .invoice-note { font-size: 13px; }
+  .policy { font-size: 12px; }
+  .sign-title { font-size: 15px; }
+  .sign-sub { font-size: 13px; }
+  .footer { font-size: 11px; }
 </style>
 `;
 
