@@ -1,6 +1,15 @@
 import dayjs from 'dayjs';
 import { formatMoney } from '../../../utils/moneyFormat.js';
 
+const formatQuantity = (value) => {
+  const number = Number(value || 0);
+  if (!Number.isFinite(number)) return '';
+  return new Intl.NumberFormat('vi-VN', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  }).format(number);
+};
+
 const ReportSalesInvoicesTable = ({
   rows,
   showSensitiveInfo = false,
@@ -42,7 +51,7 @@ const ReportSalesInvoicesTable = ({
               <td>{isInvoiceRow ? row.code : ''}</td>
               <td>{dayjs(row.date).format('DD/MM/YY HH:mm')}</td>
               <td>{isInvoiceRow ? row.itemsCount : ''}</td>
-              <td>{isInvoiceRow ? row.qtySum : ''}</td>
+              <td>{isInvoiceRow ? formatQuantity(row.qtySum) : ''}</td>
               <td>{isInvoiceRow ? formatMoney(row.amount) : ''}</td>
               {showSensitiveInfo ? (
                 <td

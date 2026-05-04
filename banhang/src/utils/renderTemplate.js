@@ -67,7 +67,25 @@ export const buildItemsHtml = (items = [], products = []) => {
   const rows = items
     .map((item, index) => {
       const product = products.find((p) => p.id === item.productId);
-      const name = product ? product.name : 'Sản phẩm';
+      const name = product ? product.name : item.name || 'Sản phẩm';
+      const previousItem = items[index - 1];
+      const previousProduct = previousItem
+        ? products.find((p) => p.id === previousItem.productId)
+        : null;
+      const previousName = previousProduct
+        ? previousProduct.name
+        : previousItem?.name || 'Sản phẩm';
+      const currentProductKey =
+        item.productId || (product || item.name ? name : '');
+      const previousProductKey =
+        previousItem?.productId ||
+        (previousProduct || previousItem?.name ? previousName : '');
+      const isSameAsPrevious = Boolean(
+        previousItem &&
+          currentProductKey &&
+          previousProductKey &&
+          currentProductKey === previousProductKey
+      );
       const unit = product?.unit || '';
       const qty = Number(item.qty || 0);
       const length = Number(item.length || 0);
@@ -88,11 +106,14 @@ export const buildItemsHtml = (items = [], products = []) => {
       const noteCell = note
         ? `<div class="item-note">${escapeHtml(note)}</div>`
         : '';
+      const nameCell = isSameAsPrevious
+        ? ''
+        : `<div class="item-name" style="font-weight:500;color:#444;">${escapeHtml(name)}</div>`;
       return `
         <tr>
           <td style="${itemColumnStyles.index}">${index + 1}</td>
           <td style="${itemColumnStyles.name}">
-            <div class="item-name" style="font-weight:500;color:#444;">${escapeHtml(name)}</div>
+            ${nameCell}
             ${noteCell}
           </td>
           <td style="${itemColumnStyles.unit}">${escapeHtml(unit)}</td>
