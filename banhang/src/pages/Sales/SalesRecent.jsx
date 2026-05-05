@@ -118,11 +118,7 @@ const SalesRecent = () => {
 
   const handlePrint = async () => {
     if (!previewHtml) return;
-    const printCopies = Math.max(
-      1,
-      Math.round(Number(settings?.printCopies || 1))
-    );
-    await printHtml(previewHtml, { copies: printCopies, autoPageSize: true });
+    await printHtml(previewHtml, { copies: 1, autoPageSize: true });
   };
 
   const handleExport = async () => {

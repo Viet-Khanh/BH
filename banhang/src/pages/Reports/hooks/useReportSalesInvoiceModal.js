@@ -131,6 +131,7 @@ export const useReportSalesInvoiceModal = ({
       printReportInvoicePreview({
         previewHtml,
         settings,
+        copies: 1,
       }),
     openInvoice: setSelectedInvoiceId,
     closeInvoice: () => setSelectedInvoiceId(null),

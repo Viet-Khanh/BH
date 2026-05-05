@@ -29,11 +29,15 @@ export const exportReportInvoiceItems = async ({
   return true;
 };
 
-export const printReportInvoicePreview = async ({ previewHtml, settings }) => {
+export const printReportInvoicePreview = async ({
+  previewHtml,
+  settings,
+  copies,
+}) => {
   if (!previewHtml) return;
   const printCopies = Math.max(
     1,
-    Math.round(Number(settings?.printCopies || 1))
+    Math.round(Number(copies ?? settings?.printCopies ?? 1))
   );
   await printHtml(previewHtml, { copies: printCopies, autoPageSize: true });
 };
