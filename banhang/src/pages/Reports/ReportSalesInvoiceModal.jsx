@@ -1,5 +1,10 @@
 import { Button, Modal } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import {
+  formatReportDimension,
+  formatReportMeasure,
+  getReportTotalMeasure,
+} from './reportItemMeasure.js';
 
 const ReportSalesInvoiceModal = ({
   open,
@@ -17,7 +22,7 @@ const ReportSalesInvoiceModal = ({
     open={open}
     onCancel={onClose}
     footer={null}
-    width={900}
+    width={1100}
   >
     {invoice && (
       <div>
@@ -35,12 +40,15 @@ const ReportSalesInvoiceModal = ({
           </div>
         </div>
         <div className="pos-table" style={{ marginTop: 12 }}>
-          <table>
+          <table className="report-invoice-items-table">
             <thead>
               <tr>
                 <th>Tên hàng</th>
                 <th>ĐVT</th>
-                <th>T.SL</th>
+                <th>Dài</th>
+                <th>Rộng</th>
+                <th>Số lượng</th>
+                <th>SL/m2</th>
                 <th>Đơn giá</th>
                 <th>Thành tiền</th>
                 <th>Ghi chú</th>
@@ -51,7 +59,10 @@ const ReportSalesInvoiceModal = ({
                 <tr key={item.key}>
                   <td>{item.name}</td>
                   <td>{item.unit}</td>
-                  <td>{item.qty}</td>
+                  <td>{formatReportDimension(item.length)}</td>
+                  <td>{formatReportDimension(item.width)}</td>
+                  <td>{formatReportMeasure(item.qty)}</td>
+                  <td>{formatReportMeasure(getReportTotalMeasure(item))}</td>
                   <td>{formatMoney(item.unitPrice)}</td>
                   <td>{formatMoney(item.lineTotal)}</td>
                   <td>{item.note}</td>
@@ -59,7 +70,7 @@ const ReportSalesInvoiceModal = ({
               ))}
               {!items.length && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center' }}>
+                  <td colSpan={9} style={{ textAlign: 'center' }}>
                     Chưa có hàng hóa.
                   </td>
                 </tr>

@@ -55,6 +55,8 @@ export const buildPurchaseInvoiceItems = (purchase, products = []) => {
       unit: product.unit || '',
       spec: product.spec || '',
       qty: item.qty,
+      length: item.length ?? null,
+      width: item.width ?? null,
       unitCost: item.unitCost,
       lineTotal: item.lineTotal,
       note: item.lineNote || '',

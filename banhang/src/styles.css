@@ -467,7 +467,7 @@ body {
 
 .invoice-edit-table table {
   width: 100%;
-  min-width: 980px;
+  min-width: 1100px;
   table-layout: fixed;
 }
 
@@ -493,7 +493,7 @@ body {
 
 .invoice-edit-table th:nth-child(2),
 .invoice-edit-table td:nth-child(2) {
-  width: 28%;
+  width: 24%;
 }
 
 .invoice-edit-table th:nth-child(3),
@@ -504,27 +504,98 @@ body {
 .invoice-edit-table th:nth-child(4),
 .invoice-edit-table td:nth-child(4),
 .invoice-edit-table th:nth-child(5),
-.invoice-edit-table td:nth-child(5),
+.invoice-edit-table td:nth-child(5) {
+  width: 78px;
+}
+
 .invoice-edit-table th:nth-child(6),
 .invoice-edit-table td:nth-child(6) {
-  width: 86px;
+  width: 64px;
 }
 
 .invoice-edit-table th:nth-child(7),
-.invoice-edit-table td:nth-child(7),
-.invoice-edit-table th:nth-child(8),
-.invoice-edit-table td:nth-child(8) {
-  width: 130px;
+.invoice-edit-table td:nth-child(7) {
+  width: 112px;
 }
 
+.invoice-edit-table th:nth-child(8),
+.invoice-edit-table td:nth-child(8),
 .invoice-edit-table th:nth-child(9),
 .invoice-edit-table td:nth-child(9) {
-  width: 180px;
+  width: 130px;
 }
 
 .invoice-edit-table th:nth-child(10),
 .invoice-edit-table td:nth-child(10) {
+  width: 180px;
+}
+
+.invoice-edit-table th:nth-child(11),
+.invoice-edit-table td:nth-child(11) {
   width: 68px;
+}
+
+.report-invoice-items-table {
+  min-width: 1040px;
+  table-layout: fixed;
+}
+
+.report-invoice-items-table th,
+.report-invoice-items-table td {
+  white-space: normal;
+}
+
+.report-invoice-items-table th:nth-child(1),
+.report-invoice-items-table td:nth-child(1) {
+  width: 240px;
+}
+
+.report-invoice-items-table th:nth-child(2),
+.report-invoice-items-table td:nth-child(2) {
+  width: 64px;
+}
+
+.report-invoice-items-table th:nth-child(3),
+.report-invoice-items-table td:nth-child(3),
+.report-invoice-items-table th:nth-child(4),
+.report-invoice-items-table td:nth-child(4) {
+  width: 76px;
+}
+
+.report-invoice-items-table th:nth-child(5),
+.report-invoice-items-table td:nth-child(5),
+.report-invoice-items-table th:nth-child(6),
+.report-invoice-items-table td:nth-child(6) {
+  width: 96px;
+}
+
+.report-invoice-items-table th:nth-child(7),
+.report-invoice-items-table td:nth-child(7),
+.report-invoice-items-table th:nth-child(8),
+.report-invoice-items-table td:nth-child(8) {
+  width: 130px;
+}
+
+.report-invoice-items-table th:nth-child(9),
+.report-invoice-items-table td:nth-child(9) {
+  width: 160px;
+}
+
+.pos-table tr.report-clickable-row {
+  cursor: pointer;
+}
+
+.pos-table tr.report-clickable-row td {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pos-table tr.report-clickable-row:hover td {
+  background: #eff6ff;
+}
+
+.pos-table tr.report-clickable-row.is-selected td {
+  background: #dbeafe;
 }
 
 .pos-table .pos-cell-actions {

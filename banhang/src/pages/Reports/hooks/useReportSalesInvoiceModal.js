@@ -38,9 +38,19 @@ export const useReportSalesInvoiceModal = ({
       try {
         const data = await getSalesInvoiceDetail(selectedInvoiceId);
         if (!active) return;
+        const invoiceItems = Array.isArray(data?.invoice?.items)
+          ? data.invoice.items
+          : [];
+        const detailItems = Array.isArray(data?.items) ? data.items : [];
         setSelectedInvoice(data?.invoice || null);
         setSelectedCustomer(data?.customer || null);
-        setSelectedItems(Array.isArray(data?.items) ? data.items : []);
+        setSelectedItems(
+          detailItems.map((item, index) => ({
+            ...item,
+            length: item.length ?? invoiceItems[index]?.length ?? null,
+            width: item.width ?? invoiceItems[index]?.width ?? null,
+          }))
+        );
         setSelectedPayments(Array.isArray(data?.payments) ? data.payments : []);
         setSelectedProducts(Array.isArray(data?.products) ? data.products : []);
       } catch (error) {

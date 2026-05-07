@@ -1,5 +1,10 @@
 import { Button, Modal } from 'antd';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import {
+  formatReportDimension,
+  formatReportMeasure,
+  getReportTotalMeasure,
+} from './reportItemMeasure.js';
 
 const ReportPurchaseInvoiceModal = ({
   open,
@@ -17,7 +22,7 @@ const ReportPurchaseInvoiceModal = ({
     open={open}
     onCancel={onClose}
     footer={null}
-    width={900}
+    width={1100}
   >
     {purchase && (
       <div>
@@ -35,12 +40,15 @@ const ReportPurchaseInvoiceModal = ({
           </div>
         </div>
         <div className="pos-table" style={{ marginTop: 12 }}>
-          <table>
+          <table className="report-invoice-items-table">
             <thead>
               <tr>
                 <th>Tên hàng</th>
                 <th>ĐVT</th>
-                <th>SL</th>
+                <th>Dài</th>
+                <th>Rộng</th>
+                <th>Số lượng</th>
+                <th>SL/m2</th>
                 <th>Đơn giá</th>
                 <th>Thành tiền</th>
                 <th>Ghi chú</th>
@@ -51,7 +59,10 @@ const ReportPurchaseInvoiceModal = ({
                 <tr key={item.key}>
                   <td>{item.name}</td>
                   <td>{item.unit}</td>
-                  <td>{item.qty}</td>
+                  <td>{formatReportDimension(item.length)}</td>
+                  <td>{formatReportDimension(item.width)}</td>
+                  <td>{formatReportMeasure(item.qty)}</td>
+                  <td>{formatReportMeasure(getReportTotalMeasure(item))}</td>
                   <td>{formatMoney(item.unitCost)}</td>
                   <td>{formatMoney(item.lineTotal)}</td>
                   <td>{item.note}</td>
@@ -59,7 +70,7 @@ const ReportPurchaseInvoiceModal = ({
               ))}
               {!items.length && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center' }}>
+                  <td colSpan={9} style={{ textAlign: 'center' }}>
                     Chưa có hàng hóa.
                   </td>
                 </tr>

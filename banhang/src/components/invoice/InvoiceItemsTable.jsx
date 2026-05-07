@@ -21,6 +21,13 @@ const formatDisplayNumber = (value, { blankOnEmpty = false } = {}) => {
   }).format(number);
 };
 
+const getTotalQuantity = (item) => {
+  const qty = Number(item.qty || 0);
+  const length = Number(item.length || 0);
+  const width = Number(item.width || 0);
+  return length > 0 && width > 0 ? qty * length * width : qty;
+};
+
 const confirmRemoveItem = ({ productName, onConfirm }) => {
   Modal.confirm({
     title: 'Xóa sản phẩm khỏi hóa đơn?',
@@ -152,11 +159,16 @@ const InvoiceItemsTable = ({
   showDimensions = true,
   priceField = 'unitPrice',
   priceLabel = 'Đơn giá',
-  qtyLabel = 'SL/m2',
+  qtyLabel = 'SL',
+  totalQtyLabel = 'Tổng Sl/m2',
+  showTotalQty = true,
   priceMin = 0,
   readOnly = false,
 }) => {
   const [editingCell, setEditingCell] = useState(null);
+  const shouldShowTotalQty = showDimensions && showTotalQty;
+  const emptyColSpan =
+    8 + (showDimensions ? 2 : 0) + (shouldShowTotalQty ? 1 : 0);
 
   return (
     <div className="pos-table invoice-edit-table">
@@ -169,6 +181,7 @@ const InvoiceItemsTable = ({
             {showDimensions && <th>Dài</th>}
             {showDimensions && <th>Rộng</th>}
             <th>{qtyLabel}</th>
+            {shouldShowTotalQty && <th>{totalQtyLabel}</th>}
             <th>{priceLabel}</th>
             <th>Thành tiền</th>
             <th>Ghi chú</th>
@@ -239,6 +252,11 @@ const InvoiceItemsTable = ({
                     onUpdate={onUpdateItem}
                   />
                 </td>
+                {shouldShowTotalQty && (
+                  <td className="pos-cell-number">
+                    {formatDisplayNumber(getTotalQuantity(item))}
+                  </td>
+                )}
                 <td className="pos-cell-money">
                   <EditableNumberCell
                     rowIndex={index}
@@ -290,10 +308,7 @@ const InvoiceItemsTable = ({
           })}
           {!items.length && (
             <tr>
-              <td
-                colSpan={showDimensions ? 10 : 8}
-                style={{ textAlign: 'center' }}
-              >
+              <td colSpan={emptyColSpan} style={{ textAlign: 'center' }}>
                 Chưa có hàng hóa. Dùng ô tìm kiếm để thêm nhanh.
               </td>
             </tr>
