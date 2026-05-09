@@ -9,6 +9,7 @@ import {
 export const useReportFilters = ({
   entityKey,
   defaultRange,
+  defaultPageSize = 20,
   syncPagination = true,
 } = {}) => {
   const navigate = useNavigate();
@@ -18,8 +19,9 @@ export const useReportFilters = ({
       readReportFiltersFromSearch(location.search, {
         entityKey,
         defaultRange,
+        defaultPageSize,
       }),
-    [defaultRange, entityKey, location.search]
+    [defaultPageSize, defaultRange, entityKey, location.search]
   );
 
   const [range, setRange] = useState(() => initialFilters.range);
@@ -31,6 +33,7 @@ export const useReportFilters = ({
     const nextFilters = readReportFiltersFromSearch(location.search, {
       entityKey,
       defaultRange,
+      defaultPageSize,
     });
 
     setRange((prev) =>
@@ -43,7 +46,7 @@ export const useReportFilters = ({
     setPageSize((prev) =>
       prev === nextFilters.pageSize ? prev : nextFilters.pageSize
     );
-  }, [defaultRange, entityKey, location.search]);
+  }, [defaultPageSize, defaultRange, entityKey, location.search]);
 
   useEffect(() => {
     const nextSearch = buildSyncedSearch(location.search, {
@@ -53,6 +56,7 @@ export const useReportFilters = ({
       page,
       pageSize,
       syncPagination,
+      defaultPageSize,
     });
     const currentSearch = location.search.startsWith('?')
       ? location.search.slice(1)
@@ -70,6 +74,7 @@ export const useReportFilters = ({
   }, [
     entityId,
     entityKey,
+    defaultPageSize,
     defaultRange,
     location.pathname,
     location.search,

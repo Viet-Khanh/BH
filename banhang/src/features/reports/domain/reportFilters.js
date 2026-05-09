@@ -35,7 +35,7 @@ export const isSameRange = (left = [], right = []) =>
 
 export const readReportFiltersFromSearch = (
   search,
-  { entityKey, defaultRange } = {}
+  { entityKey, defaultRange, defaultPageSize = 20 } = {}
 ) => {
   const params = new URLSearchParams(search);
   const [defaultFrom, defaultTo] = defaultRange || buildDefaultRange();
@@ -46,13 +46,21 @@ export const readReportFiltersFromSearch = (
     range: [from, to],
     entityId: entityKey ? params.get(entityKey) || '' : '',
     page: parsePositiveInt(params.get('page'), 1),
-    pageSize: parsePositiveInt(params.get('pageSize'), 20),
+    pageSize: parsePositiveInt(params.get('pageSize'), defaultPageSize),
   };
 };
 
 export const buildSyncedSearch = (
   currentSearch,
-  { range, entityKey, entityId, page, pageSize, syncPagination = true }
+  {
+    range,
+    entityKey,
+    entityId,
+    page,
+    pageSize,
+    syncPagination = true,
+    defaultPageSize = 20,
+  }
 ) => {
   const params = new URLSearchParams(currentSearch);
 
@@ -74,7 +82,7 @@ export const buildSyncedSearch = (
   setOptionalParam(entityKey, entityId || '');
   if (syncPagination) {
     params.set('page', String(page || 1));
-    params.set('pageSize', String(pageSize || 20));
+    params.set('pageSize', String(pageSize || defaultPageSize));
   }
 
   return params.toString();

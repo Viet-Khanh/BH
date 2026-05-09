@@ -10,7 +10,10 @@ import {
 export const useReportSalesDetailsState = ({
   showSensitiveInfo = false,
 } = {}) => {
-  const filters = useReportFilters({ entityKey: 'customerId' });
+  const filters = useReportFilters({
+    entityKey: 'customerId',
+    defaultPageSize: 100,
+  });
   const { range, entityId: customerId, page, pageSize, setPage } = filters;
   const [rows, setRows] = useState([]);
   const [customers, setCustomers] = useState([]);

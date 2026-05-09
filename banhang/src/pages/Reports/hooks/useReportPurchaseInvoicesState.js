@@ -8,7 +8,10 @@ import { useReportFilters } from '../../../features/reports/hooks/useReportFilte
 import { buildPurchaseInvoiceExportRow } from '../reportPurchaseUtils.js';
 
 export const useReportPurchaseInvoicesState = () => {
-  const filters = useReportFilters({ entityKey: 'supplierId' });
+  const filters = useReportFilters({
+    entityKey: 'supplierId',
+    defaultPageSize: 100,
+  });
   const { range, entityId: supplierId, page, pageSize, setPage } = filters;
   const [rows, setRows] = useState([]);
   const [suppliers, setSuppliers] = useState([]);

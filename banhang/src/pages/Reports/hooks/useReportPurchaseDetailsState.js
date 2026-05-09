@@ -12,7 +12,10 @@ import {
 } from '../reportPurchaseDetailsUtils.js';
 
 export const useReportPurchaseDetailsState = () => {
-  const filters = useReportFilters({ entityKey: 'supplierId' });
+  const filters = useReportFilters({
+    entityKey: 'supplierId',
+    defaultPageSize: 100,
+  });
   const { range, entityId: supplierId, page, pageSize, setPage } = filters;
   const [rows, setRows] = useState([]);
   const [detailRows, setDetailRows] = useState([]);

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildSyncedSearch } from '../reportFilters.js';
+import {
+  buildSyncedSearch,
+  readReportFiltersFromSearch,
+} from '../reportFilters.js';
 
 describe('reportFilters', () => {
   it('keeps existing pagination params when pagination sync is disabled', () => {
@@ -30,5 +33,25 @@ describe('reportFilters', () => {
     expect(params.get('tab')).toBe('sales');
     expect(params.get('page')).toBe('1');
     expect(params.get('pageSize')).toBe('20');
+  });
+
+  it('uses the provided default page size when query omits pageSize', () => {
+    const filters = readReportFiltersFromSearch('tab=sales', {
+      defaultPageSize: 100,
+    });
+
+    expect(filters.pageSize).toBe(100);
+  });
+
+  it('syncs the provided default page size when pageSize is missing', () => {
+    const nextSearch = buildSyncedSearch('tab=sales', {
+      range: ['2026-04-14T00:00:00.000Z', '2026-04-14T23:59:59.999Z'],
+      page: 1,
+      defaultPageSize: 100,
+    });
+
+    const params = new URLSearchParams(nextSearch);
+
+    expect(params.get('pageSize')).toBe('100');
   });
 });
