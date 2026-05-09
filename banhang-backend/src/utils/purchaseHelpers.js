@@ -1,18 +1,64 @@
 export const buildOldDebtByPurchase = (
   purchases = [],
-  paymentsByPurchase = {}
+  paymentsByPurchase = {},
+  supplierDebtPayments = []
 ) => {
-  const sorted = [...purchases].sort(
-    (a, b) => new Date(a.date) - new Date(b.date)
-  );
+  const events = [
+    ...purchases
+      .filter((purchase) => purchase?.id && purchase.supplierId && purchase.date)
+      .map((purchase) => ({
+        id: `purchase:${purchase.id}`,
+        type: 'purchase',
+        date: purchase.date,
+        purchase,
+        supplierId: purchase.supplierId,
+        sortKey: String(purchase._id || purchase.id || ''),
+      })),
+    ...supplierDebtPayments
+      .filter(
+        (payment) =>
+          payment?.paymentType === 'supplier_debt_payment' &&
+          payment.supplierId &&
+          payment.date
+      )
+      .map((payment) => ({
+        id: `supplier-debt-payment:${payment.id}`,
+        type: 'supplier_debt_payment',
+        date: payment.date,
+        supplierId: payment.supplierId,
+        amount: Number(payment.amount || 0),
+        sortKey: String(payment._id || payment.id || ''),
+      })),
+  ].sort((left, right) => {
+    const dateDiff = new Date(left.date) - new Date(right.date);
+    if (dateDiff !== 0) return dateDiff;
+
+    const order = {
+      supplier_debt_payment: 0,
+      purchase: 1,
+    };
+    const orderDiff = (order[left.type] ?? 99) - (order[right.type] ?? 99);
+    if (orderDiff !== 0) return orderDiff;
+
+    return String(left.sortKey || left.id || '').localeCompare(
+      String(right.sortKey || right.id || '')
+    );
+  });
+
   const supplierDebt = {};
   const map = {};
-  sorted.forEach((purchase) => {
+  events.forEach((event) => {
+    const currentDebt = Number(supplierDebt[event.supplierId] || 0);
+    if (event.type === 'supplier_debt_payment') {
+      supplierDebt[event.supplierId] = currentDebt - Number(event.amount || 0);
+      return;
+    }
+
+    const purchase = event.purchase;
     const paid = paymentsByPurchase[purchase.id] || 0;
     const total = Number(purchase.total || 0);
-    map[purchase.id] = supplierDebt[purchase.supplierId] || 0;
-    supplierDebt[purchase.supplierId] =
-      (supplierDebt[purchase.supplierId] || 0) + total - paid;
+    map[purchase.id] = currentDebt;
+    supplierDebt[purchase.supplierId] = currentDebt + total - paid;
   });
   return map;
 };

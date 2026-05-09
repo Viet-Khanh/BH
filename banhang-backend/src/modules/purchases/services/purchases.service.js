@@ -145,16 +145,31 @@ export const getRecentPurchases = async (query) => {
     findPurchases(baseFilter),
   ]);
   const purchaseIdsForDebt = purchasesForDebt.map((purchase) => purchase.id);
-  const debtPayments = purchaseIdsForDebt.length
-    ? await findPayments({
-        purchaseId: { $in: purchaseIdsForDebt },
-        isDeleted: { $ne: true },
-      })
-    : [];
+  const supplierIdsForDebt = [
+    ...new Set(
+      purchasesForDebt.map((purchase) => purchase.supplierId).filter(Boolean)
+    ),
+  ];
+  const [debtPayments, supplierDebtPayments] = await Promise.all([
+    purchaseIdsForDebt.length
+      ? findPayments({
+          purchaseId: { $in: purchaseIdsForDebt },
+          isDeleted: { $ne: true },
+        })
+      : Promise.resolve([]),
+    supplierIdsForDebt.length
+      ? findPayments({
+          supplierId: { $in: supplierIdsForDebt },
+          paymentType: 'supplier_debt_payment',
+          isDeleted: { $ne: true },
+        })
+      : Promise.resolve([]),
+  ]);
   const paymentsByPurchase = buildPaymentsByPurchase(debtPayments);
   const oldDebtByPurchase = buildOldDebtByPurchase(
     purchasesForDebt,
-    paymentsByPurchase
+    paymentsByPurchase,
+    supplierDebtPayments
   );
 
   const summary = allFilteredPurchases.reduce(
@@ -294,16 +309,24 @@ export const getPurchaseDetail = async (id) => {
     (item) => item.supplierId === purchase.supplierId
   );
   const supplierPurchaseIds = supplierPurchases.map((item) => item.id);
-  const supplierPayments = supplierPurchaseIds.length
-    ? await findPayments({
-        purchaseId: { $in: supplierPurchaseIds },
-        isDeleted: { $ne: true },
-      })
-    : [];
+  const [supplierPayments, supplierDebtPayments] = await Promise.all([
+    supplierPurchaseIds.length
+      ? findPayments({
+          purchaseId: { $in: supplierPurchaseIds },
+          isDeleted: { $ne: true },
+        })
+      : Promise.resolve([]),
+    findPayments({
+      supplierId: purchase.supplierId,
+      paymentType: 'supplier_debt_payment',
+      isDeleted: { $ne: true },
+    }),
+  ]);
   const paymentsByPurchase = buildPaymentsByPurchase(supplierPayments);
   const oldDebtByPurchase = buildOldDebtByPurchase(
     supplierPurchases,
-    paymentsByPurchase
+    paymentsByPurchase,
+    supplierDebtPayments
   );
   const financials = buildPurchaseFinancials(
     purchase,
@@ -339,16 +362,24 @@ export const getSupplierDebt = async (query) => {
         isDeleted: { $ne: true },
       });
       const purchaseIds = purchases.map((purchase) => purchase.id);
-      const payments = purchaseIds.length
-        ? await findPayments({
-            purchaseId: { $in: purchaseIds },
-            isDeleted: { $ne: true },
-          })
-        : [];
+      const [payments, supplierDebtPayments] = await Promise.all([
+        purchaseIds.length
+          ? findPayments({
+              purchaseId: { $in: purchaseIds },
+              isDeleted: { $ne: true },
+            })
+          : Promise.resolve([]),
+        findPayments({
+          supplierId,
+          paymentType: 'supplier_debt_payment',
+          isDeleted: { $ne: true },
+        }),
+      ]);
       const paymentsByPurchase = buildPaymentsByPurchase(payments);
       const oldDebtByPurchase = buildOldDebtByPurchase(
         purchases,
-        paymentsByPurchase
+        paymentsByPurchase,
+        supplierDebtPayments
       );
       const debt = Number(oldDebtByPurchase[excludePurchaseId] || 0);
       return {
