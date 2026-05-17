@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { formatMoney } from './moneyFormat.js';
+import { formatMoney, formatRoundedMoney } from './moneyFormat.js';
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -182,16 +182,16 @@ export const renderInvoiceTemplate = ({
     '{{customer.name}}': customer?.name || 'Khách lẻ',
     '{{customer.phone}}': customer?.phone || '',
     '{{customer.address}}': customer?.address || '',
-    '{{customer.debt}}': formatMoney(customerDebt),
+    '{{customer.debt}}': formatRoundedMoney(customerDebt),
     '{{items}}': itemsHtml,
     '{{items.count}}': String(itemsCount),
     '{{items.qty}}': totalQtyLabel,
-    '{{total}}': formatMoney(invoiceTotal),
+    '{{total}}': formatRoundedMoney(invoiceTotal),
     '{{paid}}': formatMoney(paid),
     '{{paid.text}}': paid > 0 ? formatMoney(paid) : '-',
     '{{debt}}': formatMoney(debt),
-    '{{grand.total}}': formatMoney(grandTotal),
-    '{{remaining}}': formatMoney(remaining),
+    '{{grand.total}}': formatRoundedMoney(grandTotal),
+    '{{remaining}}': formatRoundedMoney(remaining),
     '{{date}}': dayjs(invoice.date).format('DD/MM/YYYY'),
     '{{note}}': formatTemplateText(resolvedNote),
     '{{invoice.note}}': formatTemplateText(persistedNote),

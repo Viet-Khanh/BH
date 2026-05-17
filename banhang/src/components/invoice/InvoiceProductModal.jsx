@@ -9,6 +9,8 @@ import { formatMoney } from '../../utils/moneyFormat.js';
 import CatalogFormModal from '../../pages/Catalog/CatalogFormModal.jsx';
 import { buildCodeFromName } from '../../pages/Catalog/catalogUtils.js';
 
+const infoInputStyle = { width: '50%' };
+
 const InvoiceProductModal = ({
   open,
   onClose,
@@ -232,7 +234,7 @@ const InvoiceProductModal = ({
             <div>
               <div>Số lượng</div>
               <InputNumber
-                style={{ width: '100%' }}
+                style={infoInputStyle}
                 value={pendingQty}
                 onChange={onChangeQty}
                 ref={qtyInputRef}
@@ -240,16 +242,16 @@ const InvoiceProductModal = ({
             </div>
             <div>
               <div>Đơn giá</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <InputNumber
-                  min={priceMin}
-                  style={{ width: '100%' }}
-                  value={pendingPrice}
-                  formatter={formatNumberInput}
-                  parser={parseNumberInput}
-                  onChange={onChangePrice}
-                />
-                {hasPreviousPrice && (
+              <InputNumber
+                min={priceMin}
+                style={infoInputStyle}
+                value={pendingPrice}
+                formatter={formatNumberInput}
+                parser={parseNumberInput}
+                onChange={onChangePrice}
+              />
+              {hasPreviousPrice && (
+                <div style={{ marginTop: 4 }}>
                   <Button
                     type="link"
                     size="small"
@@ -259,8 +261,8 @@ const InvoiceProductModal = ({
                   >
                     Giá trước: {formatMoney(previousPrice)}
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
             {showDimensions && (
               <>
@@ -268,7 +270,7 @@ const InvoiceProductModal = ({
                   <div>Chiều dài</div>
                   <InputNumber
                     min={0}
-                    style={{ width: '100%' }}
+                    style={infoInputStyle}
                     value={pendingLength ?? undefined}
                     onChange={onChangeLength}
                   />
@@ -277,7 +279,7 @@ const InvoiceProductModal = ({
                   <div>Chiều rộng</div>
                   <InputNumber
                     min={0}
-                    style={{ width: '100%' }}
+                    style={infoInputStyle}
                     value={pendingWidth ?? undefined}
                     onChange={onChangeWidth}
                   />
