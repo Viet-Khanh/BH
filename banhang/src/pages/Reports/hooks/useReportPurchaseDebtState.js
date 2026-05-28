@@ -9,6 +9,7 @@ import { buildSupplierDebtExportRows } from '../reportDebtUtils.js';
 export const useReportPurchaseDebtState = () => {
   const [rows, setRows] = useState([]);
   const [debtDetail, setDebtDetail] = useState(null);
+  const [debtDetailTab, setDebtDetailTab] = useState('active');
 
   const loadSupplierDebtRows = useCallback(async () => {
     const data = await getSupplierDebtReport();
@@ -40,23 +41,38 @@ export const useReportPurchaseDebtState = () => {
 
   const debtExport = useMemo(() => buildSupplierDebtExportRows(rows), [rows]);
 
+  const loadSupplierDebtDetail = useCallback(async (supplierId) => {
+    if (!supplierId) return null;
+    const data = await getSupplierDebtDetail(supplierId);
+    setDebtDetail(data);
+    return data;
+  }, []);
+
   const handleView = useCallback(async (row) => {
     if (!row?.supplier?.id) return;
     try {
-      const data = await getSupplierDebtDetail(row.supplier.id);
-      setDebtDetail(data);
+      await loadSupplierDebtDetail(row.supplier.id);
     } catch (error) {
       message.error(
         `Không thể tải chi tiết công nợ: ${error.message || 'Lỗi không xác định'}`
       );
     }
+  }, [loadSupplierDebtDetail]);
+
+  const closeDebtDetail = useCallback(() => {
+    setDebtDetail(null);
+    setDebtDetailTab('active');
   }, []);
 
   return {
-    closeDebtDetail: () => setDebtDetail(null),
+    closeDebtDetail,
     debtDetail,
+    debtDetailTab,
     debtExport,
     handleView,
+    loadSupplierDebtDetail,
+    loadSupplierDebtRows,
     rows,
+    setDebtDetailTab,
   };
 };

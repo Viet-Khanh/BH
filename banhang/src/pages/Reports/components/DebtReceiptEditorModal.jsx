@@ -9,6 +9,7 @@ import {
 const DebtReceiptEditorModal = ({
   editingDebtReceipt,
   customerName,
+  partnerName,
   editingDebtReceiptDate,
   setEditingDebtReceiptDate,
   editingDebtReceiptAmount,
@@ -22,9 +23,16 @@ const DebtReceiptEditorModal = ({
   onSave,
   savingDebtReceipt,
   debtReceiptSubmitMode,
+  title = 'Sửa phiếu thu nợ',
+  partnerLabel = 'Khách hàng:',
+  dateLabel = 'Ngày thu:',
+  amountLabel = 'Số tiền thu:',
+  notePlaceholder = 'Nội dung thu nợ',
+  oldDebtLabel = 'Nợ cũ theo phiếu hiện tại:',
+  remainLabel = 'Còn lại theo phiếu hiện tại:',
 }) => (
   <Modal
-    title="Sửa phiếu thu nợ"
+    title={title}
     open={!!editingDebtReceipt}
     onCancel={onClose}
     footer={null}
@@ -40,11 +48,11 @@ const DebtReceiptEditorModal = ({
           />
         </div>
         <div className="pos-payment-row">
-          <span>Khách hàng:</span>
-          <Input value={customerName || ''} readOnly />
+          <span>{partnerLabel}</span>
+          <Input value={partnerName ?? customerName ?? ''} readOnly />
         </div>
         <div className="pos-payment-row">
-          <span>Ngày thu:</span>
+          <span>{dateLabel}</span>
           <DatePicker
             style={{ width: '100%' }}
             value={
@@ -61,7 +69,7 @@ const DebtReceiptEditorModal = ({
           />
         </div>
         <div className="pos-payment-row">
-          <span>Số tiền thu:</span>
+          <span>{amountLabel}</span>
           <InputNumber
             style={{ width: '100%' }}
             min={0}
@@ -90,17 +98,17 @@ const DebtReceiptEditorModal = ({
           <Input
             value={editingDebtReceiptNote}
             onChange={(event) => setEditingDebtReceiptNote(event.target.value)}
-            placeholder="Nội dung thu nợ"
+            placeholder={notePlaceholder}
           />
         </div>
         <div className="pos-payment-row total">
-          <span>Nợ cũ theo phiếu hiện tại:</span>
+          <span>{oldDebtLabel}</span>
           <strong>
             {formatMoney(editingDebtReceiptTimelineRow?.oldDebt || 0)}
           </strong>
         </div>
         <div className="pos-payment-row total">
-          <span>Còn lại theo phiếu hiện tại:</span>
+          <span>{remainLabel}</span>
           <strong>
             {formatMoney(editingDebtReceiptTimelineRow?.remain || 0)}
           </strong>

@@ -61,7 +61,10 @@ export const updatePaymentItem = async (id, payload) => {
   const cleanPayload = sanitizePayload(payload);
   const existing = await findPaymentById(id);
 
-  if (existing?.paymentType === 'debt_receipt') {
+  if (
+    existing?.paymentType === 'debt_receipt' ||
+    existing?.paymentType === 'supplier_debt_payment'
+  ) {
     const immutableFields = [
       'customerId',
       'paymentType',
@@ -77,7 +80,9 @@ export const updatePaymentItem = async (id, payload) => {
     );
     if (changedField) {
       throw new Error(
-        'Không thể đổi khách hàng hoặc loại của phiếu thu nợ đã tạo.'
+        existing.paymentType === 'supplier_debt_payment'
+          ? 'Không thể đổi nhà cung cấp hoặc loại của phiếu trả nợ đã tạo.'
+          : 'Không thể đổi khách hàng hoặc loại của phiếu thu nợ đã tạo.'
       );
     }
   }

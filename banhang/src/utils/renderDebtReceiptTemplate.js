@@ -20,7 +20,22 @@ export const renderDebtReceiptTemplate = ({
   customer,
   settings,
   debtBefore = 0,
+  labels = {},
 }) => {
+  const text = {
+    title: 'PHIẾU THU NỢ',
+    subtitle: 'Biên nhận thu công nợ khách hàng',
+    dateLabel: 'Ngày thu:',
+    partnerSectionTitle: 'Thông tin khách hàng',
+    partnerNameLabel: 'Khách hàng:',
+    fallbackPartnerName: 'Khách hàng',
+    debtBeforeLabel: 'Nợ trước thu',
+    amountLabel: 'Số tiền thu',
+    debtAfterLabel: 'Còn lại sau thu',
+    payerSignatureTitle: 'Người nộp tiền',
+    printMeta: 'Chứng từ được in từ hệ thống bán hàng',
+    ...labels,
+  };
   const amount = Number(receipt?.amount || 0);
   const remainingDebt = Number(debtBefore || 0) - amount;
   const methodLabel = METHOD_LABELS[receipt?.method] || receipt?.method || '';
@@ -178,8 +193,8 @@ export const renderDebtReceiptTemplate = ({
       </div>
       <div class="divider"></div>
       <div class="title-wrap">
-        <div class="title">PHIẾU THU NỢ</div>
-        <div class="subtitle">Biên nhận thu công nợ khách hàng</div>
+        <div class="title">${escapeHtml(text.title)}</div>
+        <div class="subtitle">${escapeHtml(text.subtitle)}</div>
       </div>
 
       <div class="meta">
@@ -188,16 +203,16 @@ export const renderDebtReceiptTemplate = ({
           <div>${escapeHtml(receipt?.code || receipt?.id || '')}</div>
         </div>
         <div class="meta-item">
-          <div class="meta-label">Ngày thu:</div>
+          <div class="meta-label">${escapeHtml(text.dateLabel)}</div>
           <div>${escapeHtml(receiptDate)}</div>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Thông tin khách hàng</div>
+        <div class="section-title">${escapeHtml(text.partnerSectionTitle)}</div>
         <div class="row">
-          <div class="label">Khách hàng:</div>
-          <div>${escapeHtml(customer?.name || 'Khách hàng')}</div>
+          <div class="label">${escapeHtml(text.partnerNameLabel)}</div>
+          <div>${escapeHtml(customer?.name || text.fallbackPartnerName)}</div>
         </div>
         <div class="row">
           <div class="label">Điện thoại:</div>
@@ -215,15 +230,15 @@ export const renderDebtReceiptTemplate = ({
 
       <table class="summary">
         <tr>
-          <td>Nợ trước thu</td>
+          <td>${escapeHtml(text.debtBeforeLabel)}</td>
           <td>${formatMoney(debtBefore)}</td>
         </tr>
         <tr class="total">
-          <td>Số tiền thu</td>
+          <td>${escapeHtml(text.amountLabel)}</td>
           <td>${formatMoney(amount)}</td>
         </tr>
         <tr>
-          <td>Còn lại sau thu</td>
+          <td>${escapeHtml(text.debtAfterLabel)}</td>
           <td>${formatMoney(remainingDebt)}</td>
         </tr>
       </table>
@@ -237,7 +252,7 @@ export const renderDebtReceiptTemplate = ({
 
       <div class="signatures">
         <div class="sign-col">
-          <div class="sign-title">Người nộp tiền</div>
+          <div class="sign-title">${escapeHtml(text.payerSignatureTitle)}</div>
           <div class="sign-sub">(Ký, ghi rõ họ tên)</div>
           <div class="sign-space"></div>
         </div>
@@ -248,7 +263,7 @@ export const renderDebtReceiptTemplate = ({
         </div>
       </div>
 
-      <div class="print-meta">Chứng từ được in từ hệ thống bán hàng</div>
+      <div class="print-meta">${escapeHtml(text.printMeta)}</div>
     </div>
   `;
 };

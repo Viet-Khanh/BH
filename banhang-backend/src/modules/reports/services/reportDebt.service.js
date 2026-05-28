@@ -3,6 +3,7 @@ import {
   buildDebtReceiptsByCustomer,
   buildPaymentsByPurchase,
   buildSupplierDebtPaymentsBySupplier,
+  buildSupplierDebtTimeline,
 } from '../../../utils/reportHelpers.js';
 import {
   findCustomers,
@@ -124,19 +125,25 @@ export const getSupplierDebtDetails = async (supplierId) => {
   });
   const purchaseIds = purchases.map((purchase) => purchase.id);
 
-  const [payments, supplierDebtPayments] = await Promise.all([
-    purchaseIds.length
-      ? findPayments({
-          purchaseId: { $in: purchaseIds },
-          isDeleted: { $ne: true },
-        })
-      : Promise.resolve([]),
-    findPayments({
-      supplierId: supplier.id,
-      paymentType: 'supplier_debt_payment',
-      isDeleted: { $ne: true },
-    }),
-  ]);
+  const [payments, supplierDebtPayments, deletedSupplierDebtPayments] =
+    await Promise.all([
+      purchaseIds.length
+        ? findPayments({
+            purchaseId: { $in: purchaseIds },
+            isDeleted: { $ne: true },
+          })
+        : Promise.resolve([]),
+      findPayments({
+        supplierId: supplier.id,
+        paymentType: 'supplier_debt_payment',
+        isDeleted: { $ne: true },
+      }),
+      findPayments({
+        supplierId: supplier.id,
+        paymentType: 'supplier_debt_payment',
+        isDeleted: true,
+      }),
+    ]);
 
   const paymentsByPurchase = buildPaymentsByPurchase(payments);
   const openPurchases = purchases
@@ -153,6 +160,18 @@ export const getSupplierDebtDetails = async (supplierId) => {
     })
     .filter((purchase) => purchase.remain > 0);
 
+  const debtTimeline = buildSupplierDebtTimeline({
+    purchases,
+    purchasePayments: payments,
+    debtPayments: supplierDebtPayments,
+  });
+  const debtPaymentTimelineById = debtTimeline.rows.reduce((acc, row) => {
+    if (row.type === 'supplier_debt_payment') {
+      acc[String(row.id).replace('supplier-debt-payment:', '')] = row;
+    }
+    return acc;
+  }, {});
+
   const debtPaymentRows = supplierDebtPayments
     .map((payment) => ({
       id: payment.id,
@@ -161,8 +180,27 @@ export const getSupplierDebtDetails = async (supplierId) => {
       amount: Number(payment.amount || 0),
       method: payment.method || '',
       note: payment.note || '',
+      oldDebt: Number(debtPaymentTimelineById[payment.id]?.oldDebt || 0),
+      totalPay: Number(debtPaymentTimelineById[payment.id]?.totalPay || 0),
+      remain: Number(debtPaymentTimelineById[payment.id]?.remain || 0),
     }))
     .sort((left, right) => new Date(left.date) - new Date(right.date));
+
+  const deletedDebtPaymentRows = deletedSupplierDebtPayments
+    .map((payment) => ({
+      id: payment.id,
+      code: payment.code || '',
+      date: payment.date,
+      amount: Number(payment.amount || 0),
+      method: payment.method || '',
+      note: payment.note || '',
+      deletedAt: payment.deletedAt || '',
+    }))
+    .sort(
+      (left, right) =>
+        new Date(right.deletedAt || right.date || 0) -
+        new Date(left.deletedAt || left.date || 0)
+    );
 
   const purchaseTotal = purchases.reduce(
     (sum, purchase) => sum + Number(purchase.total || 0),
@@ -187,6 +225,7 @@ export const getSupplierDebtDetails = async (supplierId) => {
     },
     purchases: openPurchases,
     debtPayments: debtPaymentRows,
+    deletedDebtPayments: deletedDebtPaymentRows,
     summary: {
       purchaseTotal,
       purchasePaid,
