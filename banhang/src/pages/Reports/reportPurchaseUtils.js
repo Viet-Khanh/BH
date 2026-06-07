@@ -17,6 +17,23 @@ export const getPurchaseAmounts = (row) => {
   };
 };
 
+export const buildPurchaseInvoiceSummary = (rows = []) =>
+  rows.reduce(
+    (acc, row) => {
+      const { amount, paid, remain } = getPurchaseAmounts(row);
+      return {
+        amount: acc.amount + amount,
+        paid: acc.paid + paid,
+        remain: acc.remain + remain,
+      };
+    },
+    {
+      amount: 0,
+      paid: 0,
+      remain: 0,
+    }
+  );
+
 export const buildPurchaseInvoiceExportRow = (
   row,
   { formatted = false } = {}

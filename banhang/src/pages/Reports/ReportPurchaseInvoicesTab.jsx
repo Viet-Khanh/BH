@@ -3,6 +3,7 @@ import ReportPurchaseInvoiceModal from './ReportPurchaseInvoiceModal.jsx';
 import { useSettingsStore } from '../../store/settingsStore.js';
 import ReportInvoiceFilters from './components/ReportInvoiceFilters.jsx';
 import ReportInvoicePagination from './components/ReportInvoicePagination.jsx';
+import ReportPurchaseInvoicesSummary from './components/ReportPurchaseInvoicesSummary.jsx';
 import ReportPurchaseInvoicesTable from './components/ReportPurchaseInvoicesTable.jsx';
 import { useReportPurchaseInvoiceModal } from './hooks/useReportPurchaseInvoiceModal.js';
 import { useReportPurchaseInvoicesState } from './hooks/useReportPurchaseInvoicesState.js';
@@ -42,7 +43,9 @@ const ReportPurchaseInvoicesTab = () => {
         exportFileName="hoa-don-nhap-hang"
         exportSheetName="HoaDonNhap"
         exportTitle={state.exportTitle}
-      />
+      >
+        <ReportPurchaseInvoicesSummary summary={state.summary} />
+      </ReportInvoiceFilters>
 
       <ReportPurchaseInvoicesTable
         rows={state.rows}
