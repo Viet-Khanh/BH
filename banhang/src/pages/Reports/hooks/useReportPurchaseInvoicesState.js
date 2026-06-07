@@ -16,11 +16,6 @@ export const useReportPurchaseInvoicesState = () => {
   const [rows, setRows] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [total, setTotal] = useState(0);
-  const [summary, setSummary] = useState({
-    amount: 0,
-    paid: 0,
-    remain: 0,
-  });
 
   useEffect(() => {
     let active = true;
@@ -50,19 +45,9 @@ export const useReportPurchaseInvoicesState = () => {
       pageSize,
     });
     const nextRows = Array.isArray(data?.rows) ? data.rows : [];
-    const backendSummary = data?.summary;
     const pagination = data?.pagination || {};
 
     setRows(nextRows);
-    setSummary(
-      backendSummary
-        ? {
-            amount: Number(backendSummary.amount || 0),
-            paid: Number(backendSummary.paid || 0),
-            remain: Number(backendSummary.remain || 0),
-          }
-        : buildPurchaseInvoiceSummary(nextRows)
-    );
     setTotal(Number(pagination.total || nextRows.length || 0));
     if (pagination.page && Number(pagination.page) !== page) {
       setPage(Number(pagination.page));
@@ -108,6 +93,7 @@ export const useReportPurchaseInvoicesState = () => {
     () => rows.map((row) => buildPurchaseInvoiceExportRow(row)),
     [rows]
   );
+  const summary = useMemo(() => buildPurchaseInvoiceSummary(rows), [rows]);
 
   return {
     ...filters,
