@@ -158,22 +158,14 @@ export const getProfitReport = async (query) => {
   const invoices = await findInvoices(invoiceFilter);
   const rows = buildProfitRows(invoices);
 
-  const revenue = invoices.reduce(
-    (sum, invoice) => sum + Number(invoice.total || 0),
-    0
+  const { revenue, cost, profit } = rows.reduce(
+    (acc, row) => ({
+      revenue: acc.revenue + Number(row.revenue || 0),
+      cost: acc.cost + Number(row.cost || 0),
+      profit: acc.profit + Number(row.profit || 0),
+    }),
+    { revenue: 0, cost: 0, profit: 0 }
   );
-  const cost = invoices.reduce((sum, invoice) => {
-    const invoiceCost = (invoice.items || []).reduce((acc, item) => {
-      const qty = Number(item.qty || 0);
-      const unitCost = Number(item.costPriceSnapshot || 0);
-      const length = Number(item.length || 0);
-      const width = Number(item.width || 0);
-      const area = length > 0 && width > 0 ? length * width : 1;
-      return acc + qty * unitCost * area;
-    }, 0);
-    return sum + invoiceCost;
-  }, 0);
-  const profit = revenue - cost;
 
   const cashFilter = { isDeleted: { $ne: true } };
   if (from || to) {

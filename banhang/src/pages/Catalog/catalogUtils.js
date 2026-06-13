@@ -62,6 +62,11 @@ export const parseImportNumberOptional = (value) => {
   return Number.isNaN(numeric) ? undefined : numeric;
 };
 
+export const parseImportBoolean = (value) => {
+  const normalized = normalizeSearchText(value);
+  return ['1', 'true', 'yes', 'y', 'co', 'x'].includes(normalized);
+};
+
 export const buildTemplateRow = (headers) =>
   headers.reduce((acc, header) => {
     acc[header] = '';
@@ -85,6 +90,7 @@ export const TEMPLATE_CONFIGS = {
       'Don_gia_si',
       'Gia_von',
       'Ton_dau',
+      'Khong_tinh_loi_nhuan',
     ],
     fileName: 'mau-danh-muc-san-pham',
     sheetName: 'SanPham',
@@ -124,6 +130,9 @@ export const IMPORT_CONFIGS = {
       dongiasi: 'sellPriceWholesale',
       giavon: 'avgCost',
       tondau: 'openingStock',
+      khongtinhloinhuan: 'excludeFromProfit',
+      khongtinhloi: 'excludeFromProfit',
+      khongtinhlaigop: 'excludeFromProfit',
     },
     requiredFields: ['name', 'unit'],
     requiredLabels: { name: 'Ten_hang', unit: 'DVT' },
@@ -141,6 +150,7 @@ export const IMPORT_CONFIGS = {
         sellPriceWholesale: parseImportNumber(raw.sellPriceWholesale),
         avgCost: parseImportNumber(raw.avgCost),
         openingStock: parseImportNumber(raw.openingStock),
+        excludeFromProfit: parseImportBoolean(raw.excludeFromProfit),
         createdAt: new Date().toISOString(),
       };
     },

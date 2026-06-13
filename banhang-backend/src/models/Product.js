@@ -11,6 +11,7 @@ const ProductSchema = new mongoose.Schema(
     avgCost: Number,
     sellPriceDefault: Number,
     sellPriceWholesale: Number,
+    excludeFromProfit: { type: Boolean, default: false },
     openingStock: Number,
     stock: {
       type: Number,

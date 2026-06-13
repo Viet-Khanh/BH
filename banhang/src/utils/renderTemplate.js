@@ -121,8 +121,8 @@ export const buildItemsHtml = (items = [], products = []) => {
           <td style="${itemColumnStyles.dimension}">${lengthDisplay}</td>
           <td style="${itemColumnStyles.dimension}">${widthDisplay}</td>
           <td style="${itemColumnStyles.areaQty}">${areaQtyDisplay}</td>
-          <td style="${itemColumnStyles.money}">${formatMoney(item.unitPrice)}</td>
-          <td style="${itemColumnStyles.total}">${formatMoney(item.lineTotal)}</td>
+          <td style="${itemColumnStyles.money}">${formatRoundedMoney(item.unitPrice)}</td>
+          <td style="${itemColumnStyles.total}">${formatRoundedMoney(item.lineTotal)}</td>
         </tr>
       `;
     })

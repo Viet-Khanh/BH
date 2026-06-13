@@ -106,16 +106,50 @@ export const getAreaMultiplier = (item) => {
   return length > 0 && width > 0 ? length * width : 1;
 };
 
+export const isProfitExcludedItem = (item, productMap = {}) => {
+  if (
+    item?.excludeFromProfitSnapshot !== undefined &&
+    item?.excludeFromProfitSnapshot !== null
+  ) {
+    return Boolean(item.excludeFromProfitSnapshot);
+  }
+  return Boolean(productMap[item?.productId]?.excludeFromProfit);
+};
+
+export const getInvoiceItemLineTotal = (item) => {
+  const qty = Number(item.qty || 0);
+  const unitPrice = Number(item.unitPrice || 0);
+  const lineTotalValue = item.lineTotal ?? qty * unitPrice;
+  return Number(lineTotalValue || 0);
+};
+
+export const getInvoiceItemCostTotal = (item, productMap = {}) => {
+  const qty = Number(item.qty || 0);
+  const product = productMap[item.productId] || {};
+  const costUnit = Number(item.costPriceSnapshot ?? product.avgCost ?? 0);
+  return qty * costUnit * getAreaMultiplier(item);
+};
+
+export const buildInvoiceProfitFinancials = (invoice, productMap = {}) =>
+  (invoice.items || []).reduce(
+    (acc, item) => {
+      if (isProfitExcludedItem(item, productMap)) return acc;
+      const lineTotal = getInvoiceItemLineTotal(item);
+      const costTotal = getInvoiceItemCostTotal(item, productMap);
+      acc.revenue += lineTotal;
+      acc.cost += costTotal;
+      acc.profit += lineTotal - costTotal;
+      return acc;
+    },
+    { revenue: 0, cost: 0, profit: 0 }
+  );
+
 export const getInvoiceAmount = (invoice) => {
   if (invoice.total !== undefined && invoice.total !== null) {
     return Number(invoice.total || 0);
   }
   return (invoice.items || []).reduce((sum, item) => {
-    const qty = Number(item.qty || 0);
-    const unitPrice = Number(item.unitPrice || 0);
-    const lineTotalValue = item.lineTotal ?? qty * unitPrice;
-    const lineTotal = Number(lineTotalValue || 0);
-    return sum + lineTotal;
+    return sum + getInvoiceItemLineTotal(item);
   }, 0);
 };
 
@@ -324,14 +358,7 @@ export const buildCustomerDebtTimelineByInvoiceOrder = ({
 };
 
 export const computeInvoiceCost = (invoice, productMap = {}) =>
-  (invoice.items || []).reduce((sum, item) => {
-    const qty = Number(item.qty || 0);
-    const snapshotCost = item.costPriceSnapshot;
-    const fallbackCost = productMap[item.productId]?.avgCost;
-    const costUnit = Number(snapshotCost ?? fallbackCost ?? 0);
-    const area = getAreaMultiplier(item);
-    return sum + qty * costUnit * area;
-  }, 0);
+  buildInvoiceProfitFinancials(invoice, productMap).cost;
 
 export const buildInvoiceSummary = (
   invoice,
@@ -346,8 +373,7 @@ export const buildInvoiceSummary = (
   );
   const itemsCount = items.length;
   const qtySum = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-  const cost = computeInvoiceCost(invoice, productMap);
-  const profit = amount - cost;
+  const { profit } = buildInvoiceProfitFinancials(invoice, productMap);
 
   return {
     id: invoice.id,
@@ -374,12 +400,13 @@ export const buildInvoiceItems = (invoice, productMap = {}) =>
     const product = productMap[item.productId] || {};
     const qty = Number(item.qty || 0);
     const unitPrice = Number(item.unitPrice || 0);
-    const lineTotalValue = item.lineTotal ?? qty * unitPrice;
-    const lineTotal = Number(lineTotalValue || 0);
+    const lineTotal = getInvoiceItemLineTotal(item);
     const costUnit = Number(item.costPriceSnapshot ?? product.avgCost ?? 0);
-    const area = getAreaMultiplier(item);
-    const costTotal = qty * costUnit * area;
-    const profit = lineTotal - costTotal;
+    const excludedFromProfit = isProfitExcludedItem(item, productMap);
+    const costTotal = excludedFromProfit
+      ? 0
+      : getInvoiceItemCostTotal(item, productMap);
+    const profit = excludedFromProfit ? 0 : lineTotal - costTotal;
     return {
       key: `${invoice.id}-${index}`,
       productId: item.productId,
@@ -392,6 +419,7 @@ export const buildInvoiceItems = (invoice, productMap = {}) =>
       costUnit,
       costTotal,
       profit,
+      excludedFromProfit,
       note: item.lineNote || '',
     };
   });
@@ -403,18 +431,10 @@ export const buildProfitRows = (invoices = []) => {
     if (!map[key]) {
       map[key] = { date: key, revenue: 0, cost: 0, profit: 0 };
     }
-    const revenue = Number(invoice.total || 0);
-    const cost = (invoice.items || []).reduce((sum, item) => {
-      const qty = Number(item.qty || 0);
-      const unitCost = Number(item.costPriceSnapshot || 0);
-      const length = Number(item.length || 0);
-      const width = Number(item.width || 0);
-      const area = length > 0 && width > 0 ? length * width : 1;
-      return sum + qty * unitCost * area;
-    }, 0);
+    const { revenue, cost, profit } = buildInvoiceProfitFinancials(invoice);
     map[key].revenue += revenue;
     map[key].cost += cost;
-    map[key].profit += revenue - cost;
+    map[key].profit += profit;
   });
 
   return Object.values(map).sort((a, b) => (a.date > b.date ? 1 : -1));

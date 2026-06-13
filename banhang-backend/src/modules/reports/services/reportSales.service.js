@@ -7,6 +7,7 @@ import {
   buildCustomerDebtTimeline,
   buildCustomerDebtTimelineByInvoiceOrder,
   buildCustomerMap,
+  buildInvoiceItems,
   buildInvoiceSummary,
   compareDatedRecords,
   inRange,
@@ -167,35 +168,7 @@ export const getSalesDetailsReport = async (query) => {
       return {
         ...row,
         items: originalInvoice
-          ? (originalInvoice.items || []).map((item, index) => {
-              const product = productMap[item.productId] || {};
-              const qty = Number(item.qty || 0);
-              const unitPrice = Number(item.unitPrice || 0);
-              const lineTotalValue = item.lineTotal ?? qty * unitPrice;
-              const costUnit = Number(
-                item.costPriceSnapshot ?? product.avgCost ?? 0
-              );
-              const length = Number(item.length || 0);
-              const width = Number(item.width || 0);
-              const area = length > 0 && width > 0 ? length * width : 1;
-              const costTotal = qty * costUnit * area;
-              const profit = lineTotalValue - costTotal;
-
-              return {
-                key: `${originalInvoice.id}-${index}`,
-                productId: item.productId,
-                name: product.name || 'Sản phẩm',
-                unit: product.unit || '',
-                spec: product.spec || '',
-                qty,
-                unitPrice,
-                lineTotal: lineTotalValue,
-                costUnit,
-                costTotal,
-                profit,
-                note: item.lineNote || '',
-              };
-            })
+          ? buildInvoiceItems(originalInvoice, productMap)
           : [],
       };
     });

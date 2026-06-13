@@ -23,9 +23,14 @@ export const buildInvoicePayload = ({
   }
 
   const nextItems = items.map((item) => {
-    if (item.costPriceSnapshot) return item;
     const product = products.find((p) => p.id === item.productId);
-    return { ...item, costPriceSnapshot: Number(product?.avgCost || 0) };
+    return {
+      ...item,
+      costPriceSnapshot:
+        item.costPriceSnapshot ?? Number(product?.avgCost || 0),
+      excludeFromProfitSnapshot:
+        item.excludeFromProfitSnapshot ?? Boolean(product?.excludeFromProfit),
+    };
   });
 
   return {

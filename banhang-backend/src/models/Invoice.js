@@ -7,6 +7,7 @@ const InvoiceItemSchema = new mongoose.Schema(
     unitPrice: Number,
     lineTotal: Number,
     costPriceSnapshot: Number,
+    excludeFromProfitSnapshot: Boolean,
     lineNote: String,
     length: Number,
     width: Number,

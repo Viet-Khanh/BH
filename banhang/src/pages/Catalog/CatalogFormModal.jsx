@@ -1,4 +1,4 @@
-import { Col, Form, Input, InputNumber, Modal, Row } from 'antd';
+import { Checkbox, Col, Form, Input, InputNumber, Modal, Row } from 'antd';
 import { formatNumberInput, parseNumberInput } from './catalogUtils.js';
 
 const CatalogFormModal = ({
@@ -87,6 +87,13 @@ const CatalogFormModal = ({
                 formatter={formatNumberInput}
                 parser={parseNumberInput}
               />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col xs={24}>
+            <Form.Item name="excludeFromProfit" valuePropName="checked">
+              <Checkbox>Không tính vào lợi nhuận</Checkbox>
             </Form.Item>
           </Col>
         </Row>

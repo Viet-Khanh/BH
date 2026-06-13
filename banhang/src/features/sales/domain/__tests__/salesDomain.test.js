@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildProductPayload,
   buildCreatedInvoicePayload,
   computePaymentStatus,
   mergeProducts,
@@ -40,5 +41,19 @@ describe('salesDomain', () => {
     expect(payload.customerId).toBe('customer-1');
     expect(payload.paymentStatus).toBe('CHUA THU');
     expect(payload.changeLog).toHaveLength(1);
+  });
+
+  it('keeps the product profit exclusion flag when building product payloads', () => {
+    const payload = buildProductPayload({
+      id: 'product-1',
+      buildCodeFromName: () => 'DV',
+      values: {
+        name: 'Dịch vụ thu hộ',
+        unit: 'Lần',
+        excludeFromProfit: true,
+      },
+    });
+
+    expect(payload.excludeFromProfit).toBe(true);
   });
 });

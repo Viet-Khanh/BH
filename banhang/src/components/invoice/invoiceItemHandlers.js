@@ -44,6 +44,7 @@ export const createConfirmAddHandler =
       unitPrice,
       lineTotal,
       costPriceSnapshot: Number(pendingProduct.avgCost || 0),
+      excludeFromProfitSnapshot: Boolean(pendingProduct.excludeFromProfit),
       lineNote: '',
       length: lengthValue,
       width: widthValue,

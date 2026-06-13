@@ -31,6 +31,7 @@ export const buildProductPayload = ({ values, id, buildCodeFromName }) => ({
   sellPriceDefault: Number(values.sellPriceDefault || 0),
   sellPriceWholesale: Number(values.sellPriceWholesale || 0),
   openingStock: Number(values.openingStock || 0),
+  excludeFromProfit: Boolean(values.excludeFromProfit),
   createdAt: new Date().toISOString(),
 });
 

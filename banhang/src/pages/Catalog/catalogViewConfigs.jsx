@@ -35,6 +35,11 @@ export const getColumns = ({
         dataIndex: 'sellPriceWholesale',
         render: (val) => formatMoney(val),
       },
+      // {
+      //   title: 'Lợi nhuận',
+      //   dataIndex: 'excludeFromProfit',
+      //   render: (val) => (val ? 'Không tính' : 'Có tính'),
+      // },
     ];
 
     if (showSensitiveInfo) {
@@ -83,6 +88,7 @@ export const getExportConfig = ({
           DVT: item.unit,
           Don_gia_le: item.sellPriceDefault,
           Don_gia_si: item.sellPriceWholesale,
+          Khong_tinh_loi_nhuan: item.excludeFromProfit ? 'Có' : '',
         };
         if (showSensitiveInfo) row.Gia_von = item.avgCost;
         row.Ton_dau = item.openingStock;
