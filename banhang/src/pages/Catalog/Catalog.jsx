@@ -13,6 +13,16 @@ import useCatalogImport from './useCatalogImport.js';
 import useOpeningImport from './useOpeningImport.js';
 import useProductAvgCostTools from './useProductAvgCostTools.js';
 
+const getCreatedTime = (item) => {
+  const time = new Date(item?.createdAt || 0).getTime();
+  return Number.isFinite(time) ? time : 0;
+};
+
+const sortNewestCreatedFirst = (items = []) =>
+  [...items].sort(
+    (left, right) => getCreatedTime(right) - getCreatedTime(left)
+  );
+
 const Catalog = () => {
   const navigate = useNavigate();
   const {
@@ -140,7 +150,13 @@ const Catalog = () => {
     if (activeKey === 'products') {
       source = applyProductCostFilter(source);
     }
-    return source.filter((item) => hasSearchMatch(item, searchText));
+    const filteredSource = source.filter((item) =>
+      hasSearchMatch(item, searchText)
+    );
+    if (activeKey === 'products') {
+      return sortNewestCreatedFirst(filteredSource);
+    }
+    return filteredSource;
   }, [
     activeKey,
     activeProducts,
