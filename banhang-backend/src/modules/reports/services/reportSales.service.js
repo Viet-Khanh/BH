@@ -9,7 +9,7 @@ import {
   buildCustomerMap,
   buildInvoiceItems,
   buildInvoiceSummary,
-  compareDatedRecords,
+  compareDatedRecordsNewestFirst,
   inRange,
   paginateRows,
   parsePagination,
@@ -53,14 +53,16 @@ export const getSalesInvoicesReport = async (query) => {
     productMap,
   } = await aggregateSalesInvoices({ from, to, customerId });
 
-  const allRows = filteredInvoices.sort(compareDatedRecords).map((invoice) =>
-    buildInvoiceSummary(invoice, {
-      customerMap,
-      productMap,
-      paymentsByInvoice,
-      oldDebtByInvoice,
-    })
-  );
+  const allRows = filteredInvoices
+    .sort(compareDatedRecordsNewestFirst)
+    .map((invoice) =>
+      buildInvoiceSummary(invoice, {
+        customerMap,
+        productMap,
+        paymentsByInvoice,
+        oldDebtByInvoice,
+      })
+    );
 
   const pagination = paginateRows(allRows, { page, pageSize });
 
@@ -151,7 +153,7 @@ export const getSalesDetailsReport = async (query) => {
   } = await aggregateSalesInvoices({ from, to, customerId });
 
   const allRows = filteredInvoices
-    .sort(compareDatedRecords)
+    .sort(compareDatedRecordsNewestFirst)
     .map((invoice) => ({
       ...buildInvoiceSummary(invoice, {
         customerMap,

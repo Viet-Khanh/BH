@@ -4,6 +4,7 @@ import {
   buildInvoiceProfitFinancials,
   buildInvoiceSummary,
   buildProfitRows,
+  compareDatedRecordsNewestFirst,
   computeInvoiceCost,
 } from '../reportHelpers.js';
 
@@ -80,5 +81,19 @@ describe('reportHelpers profit exclusion', () => {
         profit: 40,
       },
     ]);
+  });
+});
+
+describe('reportHelpers date sorting', () => {
+  it('sorts dated report records newest first', () => {
+    const rows = [
+      { id: 'old', date: '2026-06-10T00:00:00.000Z' },
+      { id: 'new', date: '2026-06-12T00:00:00.000Z' },
+      { id: 'middle', date: '2026-06-11T00:00:00.000Z' },
+    ];
+
+    expect(
+      rows.sort(compareDatedRecordsNewestFirst).map((row) => row.id)
+    ).toEqual(['new', 'middle', 'old']);
   });
 });

@@ -55,6 +55,9 @@ export const compareDatedRecords = (left, right) => {
   );
 };
 
+export const compareDatedRecordsNewestFirst = (left, right) =>
+  compareDatedRecords(right, left);
+
 export const buildPaymentsByPurchase = (payments = []) => {
   const map = {};
   payments.forEach((payment) => {

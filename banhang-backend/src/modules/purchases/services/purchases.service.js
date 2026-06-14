@@ -139,7 +139,7 @@ export const getRecentPurchases = async (query) => {
 
   const [allFilteredPurchases, purchasesForDebt] = await Promise.all([
     findPurchases(recentFilter, {
-      sort: { date: -1 },
+      sort: { date: -1, _id: -1 },
       ...(hasPagination ? {} : { limit }),
     }),
     findPurchases(baseFilter),
