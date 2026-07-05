@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildCopiedInvoiceDraft,
   buildProductPayload,
   buildCreatedInvoicePayload,
   computePaymentStatus,
@@ -41,6 +42,31 @@ describe('salesDomain', () => {
     expect(payload.customerId).toBe('customer-1');
     expect(payload.paymentStatus).toBe('CHUA THU');
     expect(payload.changeLog).toHaveLength(1);
+  });
+
+  it('builds a copied invoice draft without persisted invoice identity', () => {
+    const draft = buildCopiedInvoiceDraft(
+      {
+        id: 'invoice-1',
+        code: 'INV-OLD',
+        customerId: 'customer-1',
+        date: '2026-01-01T00:00:00.000Z',
+        note: 'ghi chu',
+        paymentStatus: 'DA THU',
+        changeLog: [{ note: 'old' }],
+        items: [{ productId: 'product-1', qty: 2 }],
+      },
+      '2026-07-05T00:00:00.000Z'
+    );
+
+    expect(draft.id).toBeUndefined();
+    expect(draft.code).toBeUndefined();
+    expect(draft.customerId).toBe('');
+    expect(draft.paymentStatus).toBeUndefined();
+    expect(draft.changeLog).toBeUndefined();
+    expect(draft.date).toBe('2026-07-05T00:00:00.000Z');
+    expect(draft.note).toBe('ghi chu');
+    expect(draft.items).toEqual([{ productId: 'product-1', qty: 2 }]);
   });
 
   it('keeps the product profit exclusion flag when building product payloads', () => {

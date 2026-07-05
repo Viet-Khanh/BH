@@ -5,6 +5,7 @@ export const useSalesNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const editId = location.state?.editInvoiceId;
+  const copyId = location.state?.copyInvoiceId;
   const returnTo = location.state?.returnTo;
   const returnPath = location.state?.returnPath;
 
@@ -24,6 +25,7 @@ export const useSalesNavigation = () => {
     navigate,
     location,
     editId,
+    copyId,
     returnTo,
     returnPath,
     cancel,

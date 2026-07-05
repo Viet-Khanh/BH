@@ -122,6 +122,20 @@ export const useReportSalesInvoiceModal = ({
     });
   };
 
+  const handleCopy = () => {
+    if (!selectedInvoice) return;
+    setSelectedInvoiceId(null);
+    const params = new URLSearchParams(location.search);
+    params.set('tab', 'sales');
+    const returnTo = `${location.pathname}?${params.toString()}`;
+    navigate('/sales', {
+      state: {
+        copyInvoiceId: selectedInvoice.id,
+        returnTo,
+      },
+    });
+  };
+
   const handleExport = async () => {
     const exported = await exportReportInvoiceItems({
       code: selectedInvoice?.code,
@@ -134,6 +148,7 @@ export const useReportSalesInvoiceModal = ({
   };
 
   return {
+    handleCopy,
     handleDelete,
     handleEdit,
     handleExport,
