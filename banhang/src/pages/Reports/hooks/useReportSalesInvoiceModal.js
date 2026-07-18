@@ -1,8 +1,9 @@
 import { Modal, message } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   deleteSalesInvoice,
   getSalesInvoiceDetail,
+  updateSalesInvoice,
 } from '../../../features/reports/api/reportsApi.js';
 import { renderInvoiceTemplate } from '../../../utils/renderTemplate.js';
 import {
@@ -23,6 +24,24 @@ export const useReportSalesInvoiceModal = ({
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
 
+  const applyInvoiceDetail = useCallback((data) => {
+    const invoiceItems = Array.isArray(data?.invoice?.items)
+      ? data.invoice.items
+      : [];
+    const detailItems = Array.isArray(data?.items) ? data.items : [];
+    setSelectedInvoice(data?.invoice || null);
+    setSelectedCustomer(data?.customer || null);
+    setSelectedItems(
+      detailItems.map((item, index) => ({
+        ...item,
+        length: item.length ?? invoiceItems[index]?.length ?? null,
+        width: item.width ?? invoiceItems[index]?.width ?? null,
+      }))
+    );
+    setSelectedPayments(Array.isArray(data?.payments) ? data.payments : []);
+    setSelectedProducts(Array.isArray(data?.products) ? data.products : []);
+  }, []);
+
   useEffect(() => {
     if (!selectedInvoiceId) {
       setSelectedInvoice(null);
@@ -38,21 +57,7 @@ export const useReportSalesInvoiceModal = ({
       try {
         const data = await getSalesInvoiceDetail(selectedInvoiceId);
         if (!active) return;
-        const invoiceItems = Array.isArray(data?.invoice?.items)
-          ? data.invoice.items
-          : [];
-        const detailItems = Array.isArray(data?.items) ? data.items : [];
-        setSelectedInvoice(data?.invoice || null);
-        setSelectedCustomer(data?.customer || null);
-        setSelectedItems(
-          detailItems.map((item, index) => ({
-            ...item,
-            length: item.length ?? invoiceItems[index]?.length ?? null,
-            width: item.width ?? invoiceItems[index]?.width ?? null,
-          }))
-        );
-        setSelectedPayments(Array.isArray(data?.payments) ? data.payments : []);
-        setSelectedProducts(Array.isArray(data?.products) ? data.products : []);
+        applyInvoiceDetail(data);
       } catch (error) {
         if (active) {
           message.error(
@@ -66,7 +71,7 @@ export const useReportSalesInvoiceModal = ({
     return () => {
       active = false;
     };
-  }, [selectedInvoiceId]);
+  }, [applyInvoiceDetail, selectedInvoiceId]);
 
   const previewHtml = useMemo(() => {
     if (!selectedInvoice || !settings) return '';
@@ -136,6 +141,68 @@ export const useReportSalesInvoiceModal = ({
     });
   };
 
+  const handleRefreshProfit = () => {
+    if (!selectedInvoice) return;
+    Modal.confirm({
+      title: 'Tính lại lợi nhuận?',
+      content:
+        'Hóa đơn này sẽ lấy lại giá vốn hiện tại của sản phẩm để cập nhật lợi nhuận. Tổng tiền, công nợ và thanh toán không thay đổi.',
+      okText: 'Cập nhật',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          const currentDetail = await getSalesInvoiceDetail(selectedInvoice.id);
+          const currentInvoice = currentDetail?.invoice || selectedInvoice;
+          const currentProducts = Array.isArray(currentDetail?.products)
+            ? currentDetail.products
+            : selectedProducts;
+          const productMap = new Map(
+            currentProducts
+              .filter((product) => product?.id)
+              .map((product) => [product.id, product])
+          );
+          let updatedItemsCount = 0;
+          const nextItems = (currentInvoice.items || []).map((item) => {
+            const product = productMap.get(item.productId);
+            if (!product) return item;
+
+            updatedItemsCount += 1;
+            return {
+              ...item,
+              costPriceSnapshot: Number(product.avgCost || 0),
+              excludeFromProfitSnapshot: Boolean(product.excludeFromProfit),
+            };
+          });
+
+          if (!updatedItemsCount) {
+            message.warning('Không tìm thấy sản phẩm để cập nhật giá vốn.');
+            return;
+          }
+
+          await updateSalesInvoice(currentInvoice.id, {
+            items: nextItems,
+            changeLog: [
+              ...(currentInvoice.changeLog || []),
+              {
+                date: new Date().toISOString(),
+                note: 'Cập nhật lợi nhuận theo giá vốn hiện tại',
+              },
+            ],
+          });
+
+          const data = await getSalesInvoiceDetail(currentInvoice.id);
+          applyInvoiceDetail(data);
+          await refreshReport();
+          message.success('Đã cập nhật lợi nhuận theo giá vốn hiện tại.');
+        } catch (error) {
+          message.error(
+            `Không thể cập nhật lợi nhuận: ${error.message || 'Lỗi không xác định'}`
+          );
+        }
+      },
+    });
+  };
+
   const handleExport = async () => {
     const exported = await exportReportInvoiceItems({
       code: selectedInvoice?.code,
@@ -158,6 +225,7 @@ export const useReportSalesInvoiceModal = ({
         settings,
         copies: 1,
       }),
+    handleRefreshProfit,
     openInvoice: setSelectedInvoiceId,
     closeInvoice: () => setSelectedInvoiceId(null),
     selectedCustomer,

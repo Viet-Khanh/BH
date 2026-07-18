@@ -80,6 +80,7 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
         onEdit={modal.handleEdit}
         onPrint={modal.handlePrint}
         onExport={modal.handleExport}
+        onRefreshProfit={modal.handleRefreshProfit}
       />
     </div>
   );

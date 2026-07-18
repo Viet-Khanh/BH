@@ -41,6 +41,12 @@ export const getSalesInvoiceDetail = (invoiceId) =>
 export const deleteSalesInvoice = (invoiceId) =>
   apiRequest(`/reports/invoices/${invoiceId}`, { method: 'DELETE' });
 
+export const updateSalesInvoice = (invoiceId, payload) =>
+  apiRequest(`/invoices/${invoiceId}`, {
+    method: 'PUT',
+    body: payload,
+  });
+
 export const getSalesDetailsReport = ({ range, customerId, page, pageSize }) =>
   apiRequest(
     withQuery(

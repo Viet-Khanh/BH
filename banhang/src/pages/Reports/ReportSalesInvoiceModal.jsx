@@ -18,6 +18,7 @@ const ReportSalesInvoiceModal = ({
   onEdit,
   onPrint,
   onExport,
+  onRefreshProfit,
 }) => (
   <Modal
     title="PHIẾU BÁN HÀNG"
@@ -112,6 +113,11 @@ const ReportSalesInvoiceModal = ({
           <Button size="large" onClick={onCopy}>
             SAO CHÉP
           </Button>
+          {showSensitiveInfo && onRefreshProfit ? (
+            <Button size="large" onClick={onRefreshProfit}>
+              TÍNH LẠI LỢI NHUẬN
+            </Button>
+          ) : null}
           <Button
             size="large"
             type="primary"
