@@ -61,7 +61,12 @@ export const buildCopiedInvoiceDraft = (
     customerId: '',
     date: now,
     items: Array.isArray(invoice.items)
-      ? invoice.items.map((item) => ({ ...item }))
+      ? invoice.items.map((item) => {
+          const draftItem = { ...item };
+          delete draftItem.costPriceSnapshot;
+          delete draftItem.excludeFromProfitSnapshot;
+          return draftItem;
+        })
       : [],
   };
 };

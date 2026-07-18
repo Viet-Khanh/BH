@@ -11,6 +11,7 @@ const ReportSalesInvoiceModal = ({
   invoice,
   customer,
   items,
+  showSensitiveInfo = false,
   onClose,
   onCopy,
   onDelete,
@@ -23,7 +24,7 @@ const ReportSalesInvoiceModal = ({
     open={open}
     onCancel={onClose}
     footer={null}
-    width={1100}
+    width={showSensitiveInfo ? 1200 : 1100}
   >
     {invoice && (
       <div>
@@ -52,6 +53,7 @@ const ReportSalesInvoiceModal = ({
                 <th>SL/m2</th>
                 <th>Đơn giá</th>
                 <th>Thành tiền</th>
+                {showSensitiveInfo ? <th>Lợi nhuận</th> : null}
                 <th>Ghi chú</th>
               </tr>
             </thead>
@@ -66,12 +68,26 @@ const ReportSalesInvoiceModal = ({
                   <td>{formatReportMeasure(getReportTotalMeasure(item))}</td>
                   <td>{formatMoney(item.unitPrice)}</td>
                   <td>{formatMoney(item.lineTotal)}</td>
+                  {showSensitiveInfo ? (
+                    <td
+                      className={
+                        Number(item.profit || 0) >= 0
+                          ? 'text-success'
+                          : 'text-danger'
+                      }
+                    >
+                      {formatMoney(item.profit || 0)}
+                    </td>
+                  ) : null}
                   <td>{item.note}</td>
                 </tr>
               ))}
               {!items.length && (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center' }}>
+                  <td
+                    colSpan={showSensitiveInfo ? 10 : 9}
+                    style={{ textAlign: 'center' }}
+                  >
                     Chưa có hàng hóa.
                   </td>
                 </tr>

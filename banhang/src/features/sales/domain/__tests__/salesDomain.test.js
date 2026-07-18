@@ -54,7 +54,15 @@ describe('salesDomain', () => {
         note: 'ghi chu',
         paymentStatus: 'DA THU',
         changeLog: [{ note: 'old' }],
-        items: [{ productId: 'product-1', qty: 2 }],
+        items: [
+          {
+            productId: 'product-1',
+            qty: 2,
+            unitPrice: 100,
+            costPriceSnapshot: 20,
+            excludeFromProfitSnapshot: false,
+          },
+        ],
       },
       '2026-07-05T00:00:00.000Z'
     );
@@ -66,7 +74,13 @@ describe('salesDomain', () => {
     expect(draft.changeLog).toBeUndefined();
     expect(draft.date).toBe('2026-07-05T00:00:00.000Z');
     expect(draft.note).toBe('ghi chu');
-    expect(draft.items).toEqual([{ productId: 'product-1', qty: 2 }]);
+    expect(draft.items).toEqual([
+      {
+        productId: 'product-1',
+        qty: 2,
+        unitPrice: 100,
+      },
+    ]);
   });
 
   it('keeps the product profit exclusion flag when building product payloads', () => {
