@@ -3,7 +3,12 @@ import { message } from 'antd';
 import { getInvoiceEditContext } from '../api/salesApi.js';
 import { buildCopiedInvoiceDraft } from '../domain/salesDomain.js';
 
-export const useSalesEditor = ({ editId, copyId, mergeCatalogProducts }) => {
+export const useSalesEditor = ({
+  editId,
+  copyId,
+  mergeCatalogProducts,
+  onInvoiceDebtLoaded,
+}) => {
   const [editing, setEditing] = useState(null);
   const [draftInvoice, setDraftInvoice] = useState(null);
   const [invoicePayments, setInvoicePayments] = useState([]);
@@ -41,15 +46,21 @@ export const useSalesEditor = ({ editId, copyId, mergeCatalogProducts }) => {
           invoicePaymentsRef.current = [];
           message.success('Đã sao chép hóa đơn sang phiếu mới.');
         } else {
+          const nextInvoice = data.invoice || null;
           setDraftInvoice(null);
-          setEditing(data.invoice || null);
-          editingRef.current = data.invoice || null;
+          setEditing(nextInvoice);
+          editingRef.current = nextInvoice;
           setInvoicePayments(
             Array.isArray(data.payments) ? data.payments : []
           );
           invoicePaymentsRef.current = Array.isArray(data.payments)
             ? data.payments
             : [];
+          if (nextInvoice) {
+            onInvoiceDebtLoaded?.(
+              nextInvoice.customerDebt ?? nextInvoice.oldDebt ?? 0
+            );
+          }
         }
         mergeCatalogProducts(Array.isArray(data.products) ? data.products : []);
       } catch (error) {
@@ -64,7 +75,7 @@ export const useSalesEditor = ({ editId, copyId, mergeCatalogProducts }) => {
     return () => {
       cancelled = true;
     };
-  }, [copyId, editId, mergeCatalogProducts]);
+  }, [copyId, editId, mergeCatalogProducts, onInvoiceDebtLoaded]);
 
   const resetEditing = useCallback(() => {
     editingRef.current = null;

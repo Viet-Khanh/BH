@@ -27,6 +27,9 @@ export const useInvoiceDraftState = ({
   const [draftCode, setDraftCode] = useState(
     invoice?.code || generateCode('INV')
   );
+  const [hydratedInvoiceId, setHydratedInvoiceId] = useState(
+    invoice?.id || null
+  );
 
   useEffect(() => {
     if (invoice) {
@@ -36,6 +39,7 @@ export const useInvoiceDraftState = ({
       setPrintNote('');
       setDraftCode(invoice.code || generateCode('INV'));
       setItems(buildInvoiceItems(invoice));
+      setHydratedInvoiceId(invoice.id || null);
       return;
     }
 
@@ -45,12 +49,14 @@ export const useInvoiceDraftState = ({
     setPrintNote('');
     setDraftCode(generateCode('INV'));
     setItems([]);
+    setHydratedInvoiceId(null);
   }, [defaultCustomerId, invoice]);
 
   useEffect(() => {
     if (!onCustomerChange || !customerId) return;
+    if (invoice?.id && hydratedInvoiceId !== invoice.id) return;
     onCustomerChange(customerId, invoice?.id || null, date);
-  }, [customerId, date, invoice?.id, onCustomerChange]);
+  }, [customerId, date, hydratedInvoiceId, invoice?.id, onCustomerChange]);
 
   return {
     defaultCustomerId,
