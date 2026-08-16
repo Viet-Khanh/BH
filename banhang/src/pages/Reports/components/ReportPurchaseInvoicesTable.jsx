@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { getPurchaseAmounts } from '../reportPurchaseUtils.js';
-import { formatMoney } from '../../../utils/moneyFormat.js';
+import { formatRoundedReportNumber } from '../reportDisplayFormat.js';
 
 const ReportPurchaseInvoicesTable = ({
   rows,
@@ -43,15 +43,21 @@ const ReportPurchaseInvoicesTable = ({
               </td>
               <td>{row.staff || ''}</td>
               <td>{row.itemsCount ?? ''}</td>
-              <td>{row.qtySum ?? ''}</td>
-              <td>{formatMoney(amount)}</td>
-              <td className={paid > 0 ? 'text-success' : ''}>
-                {formatMoney(paid)}
+              <td>
+                {row.qtySum === undefined || row.qtySum === null
+                  ? ''
+                  : formatRoundedReportNumber(row.qtySum)}
               </td>
-              <td className="text-danger">{formatMoney(oldDebt)}</td>
-              <td>{formatMoney(totalPay)}</td>
+              <td>{formatRoundedReportNumber(amount)}</td>
+              <td className={paid > 0 ? 'text-success' : ''}>
+                {formatRoundedReportNumber(paid)}
+              </td>
+              <td className="text-danger">
+                {formatRoundedReportNumber(oldDebt)}
+              </td>
+              <td>{formatRoundedReportNumber(totalPay)}</td>
               <td className={remain > 0 ? 'text-danger' : 'text-success'}>
-                {formatMoney(remain)}
+                {formatRoundedReportNumber(remain)}
               </td>
               <td>
                 {row.supplierName || supplierMap[row.supplierId]?.name || ''}

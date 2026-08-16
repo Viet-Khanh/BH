@@ -1,4 +1,4 @@
-import { formatMoney } from '../../../utils/moneyFormat.js';
+import { formatRoundedReportNumber } from '../reportDisplayFormat.js';
 
 const ReportSalesInvoicesSummary = ({ summary, showSensitiveInfo = false }) => (
   <>
@@ -6,13 +6,13 @@ const ReportSalesInvoicesSummary = ({ summary, showSensitiveInfo = false }) => (
       <span className="text-gray-600">
         Tiền hàng:{' '}
         <strong style={{ color: 'blue' }} className="text-lg font-bold">
-          {formatMoney(summary.amount)}
+          {formatRoundedReportNumber(summary.amount)}
         </strong>
       </span>
       <span className="text-gray-600">
         Đã thu:{' '}
         <strong style={{ color: 'green' }} className="text-lg font-bold">
-          {formatMoney(summary.paid)}
+          {formatRoundedReportNumber(summary.paid)}
         </strong>
       </span>
     </div>
@@ -21,14 +21,14 @@ const ReportSalesInvoicesSummary = ({ summary, showSensitiveInfo = false }) => (
       <span className="text-gray-600">
         Còn nợ:{' '}
         <strong style={{ color: 'red' }} className="text-lg font-bold">
-          {formatMoney(summary.remain)}
+          {formatRoundedReportNumber(summary.remain)}
         </strong>
       </span>
       {showSensitiveInfo ? (
         <span className="text-gray-600">
           Lợi nhuận:{' '}
           <strong style={{ color: 'purple' }} className="text-lg font-bold">
-            {formatMoney(summary.profit)}
+            {formatRoundedReportNumber(summary.profit)}
           </strong>
         </span>
       ) : null}

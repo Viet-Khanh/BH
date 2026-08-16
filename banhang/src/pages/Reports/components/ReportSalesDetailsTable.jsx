@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import dayjs from 'dayjs';
-import { formatMoney } from '../../../utils/moneyFormat.js';
+import { formatRoundedReportNumber } from '../reportDisplayFormat.js';
 
 const ReportSalesDetailsTable = ({ rows, showSensitiveInfo = false }) => (
   <div className="pos-table">
@@ -66,19 +66,23 @@ const ReportSalesDetailsTable = ({ rows, showSensitiveInfo = false }) => (
                         <td {...invoiceCellProps}>{row.phone}</td>
                         <td {...invoiceCellProps}>{row.address}</td>
                         <td {...invoiceCellProps}>{row.itemsCount}</td>
-                        <td {...invoiceCellProps}>{row.qtySum}</td>
-                        <td {...invoiceCellProps}>{formatMoney(row.amount)}</td>
+                        <td {...invoiceCellProps}>
+                          {formatRoundedReportNumber(row.qtySum)}
+                        </td>
+                        <td {...invoiceCellProps}>
+                          {formatRoundedReportNumber(row.amount)}
+                        </td>
                         <td
                           {...invoiceCellProps}
                           className={row.paid > 0 ? 'text-success' : ''}
                         >
-                          {formatMoney(row.paid)}
+                          {formatRoundedReportNumber(row.paid)}
                         </td>
                         <td {...invoiceCellProps} className="text-danger">
-                          {formatMoney(row.oldDebt)}
+                          {formatRoundedReportNumber(row.oldDebt)}
                         </td>
                         <td {...invoiceCellProps}>
-                          {formatMoney(row.totalPay)}
+                          {formatRoundedReportNumber(row.totalPay)}
                         </td>
                         <td
                           {...invoiceCellProps}
@@ -86,7 +90,7 @@ const ReportSalesDetailsTable = ({ rows, showSensitiveInfo = false }) => (
                             row.remain > 0 ? 'text-danger' : 'text-success'
                           }
                         >
-                          {formatMoney(row.remain)}
+                          {formatRoundedReportNumber(row.remain)}
                         </td>
                         {showSensitiveInfo ? (
                           <td
@@ -95,7 +99,7 @@ const ReportSalesDetailsTable = ({ rows, showSensitiveInfo = false }) => (
                               row.profit >= 0 ? 'text-success' : 'text-danger'
                             }
                           >
-                            {formatMoney(row.profit)}
+                            {formatRoundedReportNumber(row.profit)}
                           </td>
                         ) : null}
                         <td {...invoiceCellProps}>{row.note}</td>
@@ -105,9 +109,9 @@ const ReportSalesDetailsTable = ({ rows, showSensitiveInfo = false }) => (
                       <>
                         <td>{item.name}</td>
                         <td>{item.unit}</td>
-                        <td>{item.qty}</td>
-                        <td>{formatMoney(item.unitPrice)}</td>
-                        <td>{formatMoney(item.lineTotal)}</td>
+                        <td>{formatRoundedReportNumber(item.qty)}</td>
+                        <td>{formatRoundedReportNumber(item.unitPrice)}</td>
+                        <td>{formatRoundedReportNumber(item.lineTotal)}</td>
                         <td>{item.note}</td>
                       </>
                     ) : (

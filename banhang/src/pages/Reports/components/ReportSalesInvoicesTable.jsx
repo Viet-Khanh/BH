@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { formatMoney } from '../../../utils/moneyFormat.js';
+import { formatRoundedReportNumber } from '../reportDisplayFormat.js';
 
 const ReportSalesInvoicesTable = ({
   rows,
@@ -42,15 +42,23 @@ const ReportSalesInvoicesTable = ({
               <td>{isInvoiceRow ? row.code : ''}</td>
               <td>{dayjs(row.date).format('DD/MM/YY HH:mm')}</td>
               <td>{isInvoiceRow ? row.itemsCount : ''}</td>
-              <td>{isInvoiceRow ? row.qtySum : ''}</td>
-              <td>{isInvoiceRow ? formatMoney(row.amount) : ''}</td>
-              <td className={row.paid > 0 ? 'text-success' : ''}>
-                {formatMoney(row.paid)}
+              <td>
+                {isInvoiceRow ? formatRoundedReportNumber(row.qtySum) : ''}
               </td>
-              <td className="text-danger">{formatMoney(row.oldDebt)}</td>
-              <td>{isInvoiceRow ? formatMoney(row.totalPay) : ''}</td>
+              <td>
+                {isInvoiceRow ? formatRoundedReportNumber(row.amount) : ''}
+              </td>
+              <td className={row.paid > 0 ? 'text-success' : ''}>
+                {formatRoundedReportNumber(row.paid)}
+              </td>
+              <td className="text-danger">
+                {formatRoundedReportNumber(row.oldDebt)}
+              </td>
+              <td>
+                {isInvoiceRow ? formatRoundedReportNumber(row.totalPay) : ''}
+              </td>
               <td className={row.remain > 0 ? 'text-danger' : 'text-success'}>
-                {formatMoney(row.remain)}
+                {formatRoundedReportNumber(row.remain)}
               </td>
               {showSensitiveInfo ? (
                 <td
@@ -62,7 +70,7 @@ const ReportSalesInvoicesTable = ({
                         : 'text-danger'
                   }
                 >
-                  {isInvoiceRow ? formatMoney(row.profit) : ''}
+                  {isInvoiceRow ? formatRoundedReportNumber(row.profit) : ''}
                 </td>
               ) : null}
               <td>{isInvoiceRow ? row.customerName : ''}</td>

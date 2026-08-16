@@ -1,4 +1,4 @@
-import { formatMoney } from '../../../utils/moneyFormat.js';
+import { formatRoundedReportNumber } from '../reportDisplayFormat.js';
 
 const ReportPurchaseInvoicesSummary = ({ summary = {} }) => (
   <>
@@ -6,13 +6,13 @@ const ReportPurchaseInvoicesSummary = ({ summary = {} }) => (
       <span className="text-gray-600">
         Tổng bán:{' '}
         <strong style={{ color: 'blue' }} className="text-lg font-bold">
-          {formatMoney(summary.amount || 0)}
+          {formatRoundedReportNumber(summary.amount || 0)}
         </strong>
       </span>
       <span className="text-gray-600">
         Đã thu:{' '}
         <strong style={{ color: 'green' }} className="text-lg font-bold">
-          {formatMoney(summary.paid || 0)}
+          {formatRoundedReportNumber(summary.paid || 0)}
         </strong>
       </span>
     </div>
@@ -21,7 +21,7 @@ const ReportPurchaseInvoicesSummary = ({ summary = {} }) => (
       <span className="text-gray-600">
         Còn nợ:{' '}
         <strong style={{ color: 'red' }} className="text-lg font-bold">
-          {formatMoney(summary.remain || 0)}
+          {formatRoundedReportNumber(summary.remain || 0)}
         </strong>
       </span>
     </div>
