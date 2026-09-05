@@ -22,11 +22,12 @@ export const useSalesScreen = () => {
   const { items: invoices, load: loadInvoices } = useInvoiceStore();
   const { settings, load: loadSettings } = useSettingsStore();
   const catalog = useSalesCatalog();
+  const debt = useSalesCustomerDebt();
   const editor = useSalesEditor({
     editId: navigation.editId,
     mergeCatalogProducts: catalog.mergeCatalogProducts,
+    onInvoiceDebtLoaded: debt.setCustomerDebt,
   });
-  const debt = useSalesCustomerDebt();
 
   const activeCustomers = useMemo(
     () => customers.filter((customer) => !customer.isDeleted),

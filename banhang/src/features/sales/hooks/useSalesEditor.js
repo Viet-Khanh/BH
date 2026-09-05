@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { message } from 'antd';
 import { getInvoiceEditContext } from '../api/salesApi.js';
 
-export const useSalesEditor = ({ editId, mergeCatalogProducts }) => {
+export const useSalesEditor = ({
+  editId,
+  mergeCatalogProducts,
+  onInvoiceDebtLoaded,
+}) => {
   const [editing, setEditing] = useState(null);
   const [invoicePayments, setInvoicePayments] = useState([]);
   const editingRef = useRef(null);
@@ -26,12 +30,18 @@ export const useSalesEditor = ({ editId, mergeCatalogProducts }) => {
         const data = await getInvoiceEditContext(editId);
         if (!data || cancelled) return;
 
-        setEditing(data.invoice || null);
-        editingRef.current = data.invoice || null;
+        const nextInvoice = data.invoice || null;
+        setEditing(nextInvoice);
+        editingRef.current = nextInvoice;
         setInvoicePayments(Array.isArray(data.payments) ? data.payments : []);
         invoicePaymentsRef.current = Array.isArray(data.payments)
           ? data.payments
           : [];
+        if (nextInvoice) {
+          onInvoiceDebtLoaded?.(
+            nextInvoice.customerDebt ?? nextInvoice.oldDebt ?? 0
+          );
+        }
         mergeCatalogProducts(Array.isArray(data.products) ? data.products : []);
       } catch (error) {
         if (!cancelled) {
@@ -45,7 +55,7 @@ export const useSalesEditor = ({ editId, mergeCatalogProducts }) => {
     return () => {
       cancelled = true;
     };
-  }, [editId, mergeCatalogProducts]);
+  }, [editId, mergeCatalogProducts, onInvoiceDebtLoaded]);
 
   const resetEditing = useCallback(() => {
     editingRef.current = null;
