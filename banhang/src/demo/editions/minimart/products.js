@@ -1,4 +1,5 @@
 // [group, name, unit, spec, avgCost, sellPriceDefault, sellPriceWholesale, openingStock]
+// prettier-ignore
 export default [
   ['Đồ uống', 'Nước suối Aquafina 500ml', 'chai', '500ml', 3500, 5000, 4500, 120],
   ['Đồ uống', 'Coca-Cola lon 320ml', 'lon', '320ml', 7000, 10000, 9000, 96],

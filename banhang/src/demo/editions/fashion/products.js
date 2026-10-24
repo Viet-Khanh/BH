@@ -1,4 +1,5 @@
 // [group, name, unit, spec, avgCost, sellPriceDefault, sellPriceWholesale, openingStock]
+// prettier-ignore
 export default [
   ['Áo', 'Áo thun cotton basic trắng', 'cái', 'Size M', 65000, 129000, 110000, 40],
   ['Áo', 'Áo thun cotton basic đen', 'cái', 'Size L', 65000, 129000, 110000, 40],

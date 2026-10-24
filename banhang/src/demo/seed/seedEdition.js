@@ -7,7 +7,10 @@ import { replayTransactions } from './replayTransactions.js';
 import { createSeedApi } from './seedApi.js';
 
 // Wipes the edition's data and rebuilds it through the real API. Caller activates the namespace.
-export const seedEdition = async (editionId, { dispatch, now = new Date() }) => {
+export const seedEdition = async (
+  editionId,
+  { dispatch, now = new Date() }
+) => {
   const edition = getEdition(editionId);
   if (!edition) throw new Error(`Không tìm thấy ngành hàng ${editionId}.`);
   if (getActiveNamespace() !== editionId) {

@@ -12,7 +12,8 @@ const createCodeFactory = () => {
   };
 };
 
-const sumLines = (items) => items.reduce((sum, item) => sum + item.lineTotal, 0);
+const sumLines = (items) =>
+  items.reduce((sum, item) => sum + item.lineTotal, 0);
 
 const replayPurchase = async (event, { api, nextCode }) => {
   const items = event.items.map((item) => ({

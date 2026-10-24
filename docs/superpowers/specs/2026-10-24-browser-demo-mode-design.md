@@ -75,12 +75,13 @@ current semantics (404 -> `null`, non-2xx -> throw `Error(message)`).
 
 ## Sample data
 
-Four editions: `minimart`, `vlxd`, `fashion`, `pharmacy`. Each has 30–50
-products, 8–12 customers (some in debt), 3–5 suppliers, units, settings
-(`systemPassword: '123456'`).
+Four editions: `minimart`, `vlxd`, `fashion`, `pharmacy`. Each has 28–32
+products, 8 customers (some in debt), 3–4 suppliers, units, settings
+(`systemPassword: '123456'`, default invoice template).
 
 Seeding has two layers:
-1. Master data inserted with `insertMany`.
+1. Master data posted to the real CRUD endpoints (`PUT /settings/main`,
+   `POST /<table>/bulk`), so backend defaults (stock, debt) apply.
 2. Transactions (≈10 purchases, 40–60 invoices, debt payments, cashbook)
    replayed through real endpoints with `dispatch`, dated across the last 30
    days, so stock, average cost, debt and snapshots are computed by backend code.

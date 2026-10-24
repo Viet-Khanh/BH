@@ -52,9 +52,9 @@ describe('backend compatibility with demo shims', () => {
     const used = collect(
       new RegExp(`\\b(?:${MODEL_NAMES})\\.([a-zA-Z]+)\\(`, 'g')
     );
-    expect(used.filter((name) => !SUPPORTED_MODEL_METHODS.includes(name))).toEqual(
-      []
-    );
+    expect(
+      used.filter((name) => !SUPPORTED_MODEL_METHODS.includes(name))
+    ).toEqual([]);
   });
 
   it('only uses supported query/update operators', () => {

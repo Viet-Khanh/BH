@@ -48,7 +48,7 @@ Applies to all generated/edited code inside `banhang/`.
 
 ## 6) Data and Side Effects
 
-- Access Dexie/API via repository/service layer (`src/db/*` or dedicated service module).
+- Access the API via the repository layer (`src/db/repository.js`, feature `api/` modules). All requests go through `src/db/transport.js`; never call `fetch` directly.
 - UI components should not directly contain persistence/query logic.
 - Normalize/transform payloads in dedicated helper files.
 - Handle errors consistently with user-facing fallback messages.
@@ -79,7 +79,7 @@ Applies to all generated/edited code inside `banhang/`.
 - [ ] Existing behavior preserved (no accidental regressions).
 - [ ] `npm run build` passes after frontend changes.
 
-## 10) Working Mode for Codex
+## 10) Working Mode for AI agents
 
 When implementing changes, prioritize:
 
@@ -88,3 +88,11 @@ When implementing changes, prioritize:
 3. Small, focused files
 4. Predictable data flow
 5. Easy-to-maintain code over quick hacks
+
+## 11) Demo Mode (`src/demo`)
+
+Read `src/demo/README.md` before touching demo code or backend data access. Key rules:
+
+- Business logic lives only in `banhang-backend`; the demo runs it unchanged in the browser.
+- Demo code is loaded only behind the build flag `__DEMO__` (dynamic `import()`); never import `src/demo` from regular code.
+- Shims fail loudly on unsupported mongoose/express features; extend the shim and its tests instead of working around it.

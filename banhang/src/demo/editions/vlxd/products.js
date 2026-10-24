@@ -1,4 +1,5 @@
 // [group, name, unit, spec, avgCost, sellPriceDefault, sellPriceWholesale, openingStock]
+// prettier-ignore
 export default [
   ['Thép', 'Thép hộp 20x40 dày 1.2ly', 'cây', '6m', 118000, 140000, 133000, 80],
   ['Thép', 'Thép hộp 40x80 dày 1.4ly', 'cây', '6m', 265000, 310000, 295000, 50],

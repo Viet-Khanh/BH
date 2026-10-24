@@ -1,4 +1,5 @@
 // [group, name, unit, spec, avgCost, sellPriceDefault, sellPriceWholesale, openingStock]
+// prettier-ignore
 export default [
   ['Giảm đau - hạ sốt', 'Paracetamol 500mg Stada', 'hộp', '10 vỉ x 10 viên', 38000, 50000, 46000, 40],
   ['Giảm đau - hạ sốt', 'Panadol Extra', 'hộp', '15 vỉ x 12 viên', 165000, 195000, 185000, 20],
