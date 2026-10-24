@@ -1,5 +1,6 @@
 import { Button, Layout, Space } from 'antd';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { DEFAULT_APP_TITLE } from './constants/app.js';
 import Cashbook from './pages/Cashbook/Cashbook.jsx';
 import Catalog from './pages/Catalog/Catalog.jsx';
 import DashboardPage from './pages/Dashboard/DashboardPage.jsx';
@@ -15,7 +16,7 @@ import System from './pages/System/System.jsx';
 
 const { Header, Content } = Layout;
 
-const App = () => {
+const App = ({ title = DEFAULT_APP_TITLE }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -24,7 +25,7 @@ const App = () => {
   return (
     <Layout className="app-shell">
       <Header className="app-header">
-        <div className="app-title">PHẦN MỀM BÁN HÀNG NHÔM KÍNH/SẮT</div>
+        <div className="app-title">{title}</div>
         <Space>
           {showBack && (
             <Button

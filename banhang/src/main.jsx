@@ -18,17 +18,30 @@ const isElectron =
     navigator.userAgent.toLowerCase().includes(' electron/'));
 const Router = isElectron ? HashRouter : BrowserRouter;
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  // <React.StrictMode>
-  <ConfigProvider locale={viVN}>
-    <Router>
-      <App />
-    </Router>
-  </ConfigProvider>
-  // </React.StrictMode>
-);
+const renderApp = (wrap = (node) => node) => {
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    // <React.StrictMode>
+    <ConfigProvider locale={viVN}>
+      <Router>{wrap(<App />)}</Router>
+    </ConfigProvider>
+    // </React.StrictMode>
+  );
+};
 
-if (import.meta.env.PROD && 'serviceWorker' in navigator && !isElectron) {
+if (__DEMO__) {
+  import('./demo/mountDemo.jsx').then(({ wrapWithDemo }) =>
+    renderApp(wrapWithDemo)
+  );
+} else {
+  renderApp();
+}
+
+if (
+  import.meta.env.PROD &&
+  !__DEMO__ &&
+  'serviceWorker' in navigator &&
+  !isElectron
+) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((error) => {
       console.error('Service worker registration failed:', error);
