@@ -3,7 +3,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createCrudRouter } from './routes/crud.js';
+import { crudModels, mountApiRoutes } from './routes/index.js';
 import Product from './models/Product.js';
 import Customer from './models/Customer.js';
 import Supplier from './models/Supplier.js';
@@ -14,28 +14,11 @@ import Cashbook from './models/Cashbook.js';
 import Settings from './models/Settings.js';
 import Unit from './models/Unit.js';
 import { buildSeedData } from './seedData.js';
-import reportRouter from './routes/reports.js';
-import salesRouter from './routes/sales.js';
-import purchasesRouter from './routes/purchases.js';
-import productToolsRouter from './routes/productTools.js';
-import invoicesRouter from './routes/invoices.js';
-import paymentsRouter from './routes/payments.js';
-import openingImportRouter from './routes/openingImport.js';
-import dashboardRouter from './routes/dashboard.js';
-import dataUpgradeRouter from './routes/dataUpgrade.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const models = {
-  products: Product,
-  customers: Customer,
-  suppliers: Supplier,
-  purchases: Purchase,
-  cashbook: Cashbook,
-  settings: Settings,
-  units: Unit,
-};
+export const models = crudModels;
 
 const seedModels = {
   ...models,
@@ -63,19 +46,7 @@ export const createApp = (options = {}) => {
     res.json({ ok: true });
   });
 
-  Object.entries(models).forEach(([key, model]) => {
-    app.use(`/api/${key}`, createCrudRouter(model));
-  });
-
-  app.use('/api/invoices', invoicesRouter);
-  app.use('/api/payments', paymentsRouter);
-  app.use('/api/dashboard', dashboardRouter);
-  app.use('/api/data-upgrade', dataUpgradeRouter);
-  app.use('/api/reports', reportRouter);
-  app.use('/api/sales', salesRouter);
-  app.use('/api/purchases-tools', purchasesRouter);
-  app.use('/api/products-tools', productToolsRouter);
-  app.use('/api/opening-import', openingImportRouter);
+  mountApiRoutes(app);
 
   if (shouldServeFrontend && fs.existsSync(frontendDist)) {
     app.use(express.static(frontendDist));
