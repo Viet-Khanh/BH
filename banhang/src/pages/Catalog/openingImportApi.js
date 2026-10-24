@@ -1,24 +1,12 @@
-import { API_BASE } from '../../db/repository.js';
-
-const parseBody = (text) => {
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
-};
+import { sendRequest } from '../../db/transport.js';
 
 const requestOpeningImport = async (path, body) => {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const { ok, data, text } = await sendRequest(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body || {}),
+    body: body || {},
   });
-  const text = await response.text();
-  const data = parseBody(text);
 
-  if (!response.ok) {
+  if (!ok) {
     const error = new Error(
       (data && data.message) || text || 'Yêu cầu import thất bại.'
     );

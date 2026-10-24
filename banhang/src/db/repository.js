@@ -1,14 +1,6 @@
-export const API_BASE =
-  import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { sendRequest } from './transport.js';
 
-const parseBody = (text) => {
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    return text;
-  }
-};
+export { API_BASE } from './transport.js';
 
 const stripMeta = (payload) => {
   if (!payload || typeof payload !== 'object') return payload;
@@ -17,23 +9,10 @@ const stripMeta = (payload) => {
 };
 
 export const apiRequest = async (path, options = {}) => {
-  const url = `${API_BASE}${path}`;
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  };
+  const { ok, status, data, text } = await sendRequest(path, options);
 
-  const config = { ...options, headers };
-  if (config.body !== undefined && typeof config.body !== 'string') {
-    config.body = JSON.stringify(config.body);
-  }
-
-  const response = await fetch(url, config);
-  const text = await response.text();
-  const data = parseBody(text);
-
-  if (!response.ok) {
-    if (response.status === 404) return null;
+  if (!ok) {
+    if (status === 404) return null;
     const message = (data && data.message) || text || 'Request failed';
     throw new Error(message);
   }
