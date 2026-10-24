@@ -5,6 +5,9 @@ module.exports = {
     es2022: true,
     node: true,
   },
+  globals: {
+    __DEMO__: 'readonly',
+  },
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
