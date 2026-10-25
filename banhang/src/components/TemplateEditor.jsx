@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Form, Input } from 'antd';
-import dayjs from 'dayjs';
 import InvoicePreview from './InvoicePreview.jsx';
+import { useEditionFeature } from '../editions/useEdition.js';
 import { renderInvoiceTemplate } from '../utils/renderTemplate.js';
+import { buildSampleInvoice } from '../utils/sampleInvoice.js';
 
 const { TextArea } = Input;
 
@@ -23,36 +24,11 @@ const TemplateEditor = ({
     setTemplate(settings.invoiceTemplateHtml);
   }, [form, settings, showShopFields]);
 
-  const sampleInvoice = useMemo(() => {
-    const product = products[0];
-    const sampleQty = 1;
-    const sampleLength = 2.4;
-    const sampleWidth = 1.2;
-    const sampleUnitPrice = product?.sellPriceDefault || 50000;
-    return {
-      code: 'INV-20240101-001',
-      date: dayjs().toISOString(),
-      note: 'Ghi chu da luu',
-      printNote: 'Luu y chi dung khi in',
-      items: product
-        ? [
-            {
-              productId: product.id,
-              qty: sampleQty,
-              unitPrice: sampleUnitPrice,
-              discount: 0,
-              length: sampleLength,
-              width: sampleWidth,
-              lineTotal:
-                sampleUnitPrice * sampleQty * sampleLength * sampleWidth,
-            },
-          ]
-        : [],
-      total: product
-        ? sampleUnitPrice * sampleQty * sampleLength * sampleWidth
-        : 0,
-    };
-  }, [products]);
+  const dimensions = useEditionFeature('dimensions');
+  const sampleInvoice = useMemo(
+    () => buildSampleInvoice(products[0], { dimensions }),
+    [products, dimensions]
+  );
 
   const sampleCustomer = customers[0];
 

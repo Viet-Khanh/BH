@@ -1,23 +1,9 @@
 import dayjs from 'dayjs';
+import { escapeHtml } from './htmlEscape.js';
 import { formatMoney, formatRoundedMoney } from './moneyFormat.js';
+import { buildItemsHtml } from './printItems.js';
 
-const escapeHtml = (value) =>
-  String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-
-const formatMeasure = (value, { blankOnZero = false } = {}) => {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return '';
-  if (blankOnZero && number === 0) return '';
-  return new Intl.NumberFormat('vi-VN', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 3,
-  }).format(number);
-};
+export { buildItemsHtml } from './printItems.js';
 
 const formatTemplateText = (value) =>
   escapeHtml(value).replaceAll('\n', '<br />');
@@ -50,104 +36,6 @@ const applyInvoiceFontSizeOverride = (html) => {
     return html.replace('</style>', `</style>${override}`);
   }
   return `${override}${html}`;
-};
-
-const itemColumnStyles = {
-  index: 'width:30px;text-align:center;',
-  name: 'width:38%;text-align:left;overflow-wrap:anywhere;',
-  unit: 'width:44px;text-align:center;',
-  qty: 'width:56px;text-align:center;',
-  dimension: 'width:44px;text-align:center;',
-  areaQty: 'width:66px;text-align:right;',
-  money: 'width:92px;text-align:right;',
-  total: 'width:100px;text-align:right;',
-};
-
-export const buildItemsHtml = (items = [], products = []) => {
-  const rows = items
-    .map((item, index) => {
-      const product = products.find((p) => p.id === item.productId);
-      const name = product ? product.name : item.name || 'Sản phẩm';
-      const previousItem = items[index - 1];
-      const previousProduct = previousItem
-        ? products.find((p) => p.id === previousItem.productId)
-        : null;
-      const previousName = previousProduct
-        ? previousProduct.name
-        : previousItem?.name || 'Sản phẩm';
-      const currentProductKey =
-        item.productId || (product || item.name ? name : '');
-      const previousProductKey =
-        previousItem?.productId ||
-        (previousProduct || previousItem?.name ? previousName : '');
-      const isSameAsPrevious = Boolean(
-        previousItem &&
-          currentProductKey &&
-          previousProductKey &&
-          currentProductKey === previousProductKey
-      );
-      const unit = product?.unit || '';
-      const qty = Number(item.qty || 0);
-      const length = Number(item.length || 0);
-      const width = Number(item.width || 0);
-      const hasDimensions = length > 0 && width > 0;
-      const qtyDisplay = formatMeasure(qty, { blankOnZero: true });
-      const lengthDisplay = hasDimensions
-        ? formatMeasure(length, { blankOnZero: true })
-        : '';
-      const widthDisplay = hasDimensions
-        ? formatMeasure(width, { blankOnZero: true })
-        : '';
-      const areaQty = hasDimensions ? qty * length * width : 0;
-      const areaQtyDisplay = hasDimensions
-        ? formatMeasure(areaQty, { blankOnZero: true })
-        : '';
-      const note = item.lineNote || '';
-      const noteCell = note
-        ? `<div class="item-note">${escapeHtml(note)}</div>`
-        : '';
-      const nameCell = isSameAsPrevious
-        ? ''
-        : `<div class="item-name" style="font-weight:500;color:#444;">${escapeHtml(name)}</div>`;
-      return `
-        <tr>
-          <td style="${itemColumnStyles.index}">${index + 1}</td>
-          <td style="${itemColumnStyles.name}">
-            ${nameCell}
-            ${noteCell}
-          </td>
-          <td style="${itemColumnStyles.unit}">${escapeHtml(unit)}</td>
-          <td style="${itemColumnStyles.qty}">${qtyDisplay}</td>
-          <td style="${itemColumnStyles.dimension}">${lengthDisplay}</td>
-          <td style="${itemColumnStyles.dimension}">${widthDisplay}</td>
-          <td style="${itemColumnStyles.areaQty}">${areaQtyDisplay}</td>
-          <td style="${itemColumnStyles.money}">${formatRoundedMoney(item.unitPrice)}</td>
-          <td style="${itemColumnStyles.total}">${formatRoundedMoney(item.lineTotal)}</td>
-        </tr>
-      `;
-    })
-    .join('');
-
-  return `
-    <table class="items">
-      <thead>
-        <tr>
-          <th style="${itemColumnStyles.index}">TT</th>
-          <th style="${itemColumnStyles.name}">Tên hàng</th>
-          <th style="${itemColumnStyles.unit}">ĐVT</th>
-          <th style="${itemColumnStyles.qty}">SL</th>
-          <th style="${itemColumnStyles.dimension}">D</th>
-          <th style="${itemColumnStyles.dimension}">R</th>
-          <th style="${itemColumnStyles.areaQty}">M2</th>
-          <th style="${itemColumnStyles.money}">Đơn giá</th>
-          <th style="${itemColumnStyles.total}">Thành tiền</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows}
-      </tbody>
-    </table>
-  `;
 };
 
 export const renderInvoiceTemplate = ({

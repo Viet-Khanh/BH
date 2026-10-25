@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TEMPLATE } from '../../features/settings/templates/defaultInvoiceTemplate.js';
+import { buildDefaultTemplate } from '../../features/settings/templates/defaultInvoiceTemplate.js';
 import { renderInvoiceTemplate } from '../renderTemplate.js';
 
 describe('renderInvoiceTemplate', () => {
   it('rounds invoice summary money values for printing', () => {
     const html = renderInvoiceTemplate({
-      template: DEFAULT_TEMPLATE,
+      template: buildDefaultTemplate(),
       invoice: {
         code: 'INV-1',
         date: '2026-05-17T00:00:00.000Z',
@@ -28,7 +28,7 @@ describe('renderInvoiceTemplate', () => {
 
   it('rounds item unit price and line total for printing', () => {
     const html = renderInvoiceTemplate({
-      template: DEFAULT_TEMPLATE,
+      template: buildDefaultTemplate(),
       invoice: {
         code: 'INV-2',
         date: '2026-05-17T00:00:00.000Z',

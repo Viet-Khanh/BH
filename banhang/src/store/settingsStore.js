@@ -1,44 +1,38 @@
 import { create } from 'zustand';
 import { getSettings, saveSettings } from '../db/repository.js';
-import { DEFAULT_TEMPLATE } from '../features/settings/templates/defaultInvoiceTemplate.js';
-
-export const DEFAULT_SETTINGS = {
-  id: 'main',
-  shopName: 'Cửa hàng nhôm kính',
-  shopPhone: '0900 000 000',
-  shopAddress: '123 Đường ABC, Quận 1',
-  allowNegativeStock: false,
-  autoUpdateAvgCostOnPurchase: true,
-  showSensitiveInfo: false,
-  lowStockThreshold: 5,
-  printCopies: 1,
-  invoiceTemplateHtml: DEFAULT_TEMPLATE,
-  dataVersion: 2,
-};
+import { getDefaultSettings } from './settingsDefaults.js';
 
 const normalizeSettings = (data) => {
+  const defaults = getDefaultSettings();
   const hasExistingData = Boolean(data);
   const hasDataVersion = Object.prototype.hasOwnProperty.call(
     data || {},
     'dataVersion'
   );
-  const normalized = { ...DEFAULT_SETTINGS, ...(data || {}) };
+  const normalized = { ...defaults, ...(data || {}) };
   if (hasExistingData && !hasDataVersion) {
     normalized.dataVersion = 0;
   }
   if (!normalized.invoiceTemplateHtml) {
-    normalized.invoiceTemplateHtml = DEFAULT_TEMPLATE;
+    normalized.invoiceTemplateHtml = defaults.invoiceTemplateHtml;
   }
   const copies = Number(normalized.printCopies || 0);
   normalized.printCopies =
     Number.isFinite(copies) && copies > 0
       ? Math.round(copies)
-      : DEFAULT_SETTINGS.printCopies;
+      : defaults.printCopies;
   return normalized;
 };
 
+const saveDefaults = async (set) => {
+  const defaults = getDefaultSettings();
+  await saveSettings(defaults);
+  set({ settings: defaults });
+};
+
 export const useSettingsStore = create((set, get) => ({
-  settings: DEFAULT_SETTINGS,
+  // Placeholder until load(); real values come from the API.
+  settings: getDefaultSettings(),
   load: async () => {
     const data = await getSettings();
     if (data) {
@@ -47,18 +41,12 @@ export const useSettingsStore = create((set, get) => ({
   },
   ensureDefaults: async () => {
     const data = await getSettings();
-    if (!data) {
-      await saveSettings(DEFAULT_SETTINGS);
-      set({ settings: DEFAULT_SETTINGS });
-    }
+    if (!data) await saveDefaults(set);
   },
   update: async (partial) => {
     const next = normalizeSettings({ ...get().settings, ...partial });
     await saveSettings(next);
     set({ settings: next });
   },
-  reset: async () => {
-    await saveSettings(DEFAULT_SETTINGS);
-    set({ settings: DEFAULT_SETTINGS });
-  },
+  reset: () => saveDefaults(set),
 }));

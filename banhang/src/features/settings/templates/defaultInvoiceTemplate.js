@@ -1,4 +1,8 @@
-export const DEFAULT_TEMPLATE = `
+import { getEdition } from '../../../editions/editionRuntime.js';
+
+// Function, not a constant: the demo chooses the edition after modules load.
+// The tagline is trusted config text (src/editions), not user input.
+export const buildDefaultTemplate = (tagline = getEdition().invoiceTagline) => `
 <style>
   @page { size: A4; margin: 8mm 10mm; }
   body { margin: 0; font-family: Arial, sans-serif; color: #111; background: #fff; }
@@ -88,7 +92,7 @@ export const DEFAULT_TEMPLATE = `
       <div class="logo-box">LOGO</div>
       <div class="shop-main">
         <div class="shop-name">{{shop.name}}</div>
-        <div class="shop-line">CHUYÊN NHÔM - XINGFA - PMA - SHALUMI - KÍNH - TRẦN THẢ - ALU CÁC LOẠI</div>
+        <div class="shop-line">${tagline}</div>
         <div class="shop-line">Địa chỉ: {{shop.address}}</div>
         <div class="shop-line">ĐT: {{shop.phone}}</div>
         <div class="shop-line">STK: ..........................................................</div>
