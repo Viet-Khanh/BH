@@ -36,6 +36,7 @@ npx vitest run              # tests
 npm run lint
 npm run build               # web build;  npm run build:demo → Vercel demo build
 npm run build:electron      # desktop app
+VITE_EDITION=pharmacy npm run build:electron  # one industry (default nhomkinh)
 
 # backend (banhang-backend/)
 npm run dev
