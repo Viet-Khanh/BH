@@ -96,3 +96,11 @@ Read `src/demo/README.md` before touching demo code or backend data access. Key 
 - Business logic lives only in `banhang-backend`; the demo runs it unchanged in the browser.
 - Demo code is loaded only behind the build flag `__DEMO__` (dynamic `import()`); never import `src/demo` from regular code.
 - Shims fail loudly on unsupported mongoose/express features; extend the shim and its tests instead of working around it.
+
+## 12) Editions (`src/editions`)
+
+Read `src/editions/README.md` before adding industry-specific UI. Key rules:
+
+- Read the edition via `useEdition()` / `useEditionFeature()` (React) or `getEdition()` / `hasFeature()` (plain code); never import edition files directly.
+- Keep formulas edition-agnostic; flags only decide what is shown.
+- Values that depend on the edition must be computed lazily (functions), never module-level constants.
