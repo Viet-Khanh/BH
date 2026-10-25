@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:demo": "cross-env VITE_DEMO=true vite build",
+    "verify:bundles": "node scripts/verifyBundles.mjs",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{js,jsx}\" \"*.js\"",
     "test": "vitest run",
