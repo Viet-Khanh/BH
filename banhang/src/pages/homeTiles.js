@@ -38,8 +38,11 @@ export const HOME_TILES = [
   },
 ];
 
-export const getVisibleTiles = (modules) =>
-  HOME_TILES.filter((tile) => modules.includes(tile.module));
+// Core tiles first, then tiles added by edition/customer modules; hidden modules removed.
+export const getVisibleTiles = (moduleTiles = [], hiddenModules = []) =>
+  [...HOME_TILES, ...moduleTiles].filter(
+    (tile) => !hiddenModules.includes(tile.module)
+  );
 
 export const splitIntoColumns = (tiles, columnCount) => {
   const size = Math.ceil(tiles.length / columnCount);

@@ -1,8 +1,10 @@
-import { getEdition } from '../../../editions/editionRuntime.js';
+import { getEditionConfig } from '../../../platform/moduleRuntime.js';
 
 // Function, not a constant: the demo chooses the edition after modules load.
 // The tagline is trusted config text (src/editions), not user input.
-export const buildDefaultTemplate = (tagline = getEdition().invoiceTagline) => `
+export const buildDefaultTemplate = (
+  tagline = getEditionConfig().invoiceTagline
+) => `
 <style>
   @page { size: A4; margin: 8mm 10mm; }
   body { margin: 0; font-family: Arial, sans-serif; color: #111; background: #fff; }

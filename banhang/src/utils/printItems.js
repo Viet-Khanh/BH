@@ -1,4 +1,4 @@
-import { hasFeature } from '../editions/editionRuntime.js';
+import { hasFeature } from '../platform/moduleRuntime.js';
 import { escapeHtml } from './htmlEscape.js';
 import { getMeasuredQty, hasDimensions } from './lineMeasure.js';
 import { formatMeasure } from './measureFormat.js';

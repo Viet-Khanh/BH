@@ -79,7 +79,7 @@ codePrefix, shop, units, products, customers, suppliers, expenses, activity`) an
    `EDITION_IDS` order (= picker order).
 3. Run `npx vitest run src/demo` — `editions.test.js` and `seedContract.test.js` cover it automatically.
 
-The demo session (`session/demoSession.js`) calls `setEdition()` from `src/editions/editionRuntime.js`
+The demo session (`session/demoSession.js`) calls `setEdition()` from `src/platform/moduleRuntime.js`
 when an edition becomes active, so the whole UI follows it.
 
 ### The backend starts using a new Mongo feature

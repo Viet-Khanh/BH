@@ -1,7 +1,7 @@
 import {
   applyEditionToDocument,
-  setEdition,
-} from '../../editions/editionRuntime.js';
+  setActiveEdition as setRuntimeEdition,
+} from '../../platform/moduleRuntime.js';
 import { dispatch } from '../demoApp.js';
 import {
   findCorruptCollections,
@@ -29,10 +29,10 @@ const requireEdition = (editionId) => {
   return edition;
 };
 
-// The UI reads the edition from the shared runtime (src/editions).
+// The UI reads the edition from the shared module runtime (src/platform).
 const activateRuntime = (edition) => {
-  setEdition(edition.id);
-  applyEditionToDocument(edition);
+  setRuntimeEdition(edition.id);
+  applyEditionToDocument();
 };
 
 export const resetEdition = async (editionId) => {

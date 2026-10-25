@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Form, Input } from 'antd';
 import InvoicePreview from './InvoicePreview.jsx';
-import { useEditionFeature } from '../editions/useEdition.js';
+import { useEditionFeature } from '../platform/useActiveModule.js';
 import { renderInvoiceTemplate } from '../utils/renderTemplate.js';
 import { buildSampleInvoice } from '../utils/sampleInvoice.js';
 

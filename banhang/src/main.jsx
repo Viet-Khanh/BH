@@ -6,7 +6,7 @@ import viVN from 'antd/locale/vi_VN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import App from './App.jsx';
-import { applyEditionToDocument } from './editions/editionRuntime.js';
+import { applyEditionToDocument } from './platform/moduleRuntime.js';
 import './styles.css';
 import 'antd/dist/reset.css';
 

@@ -1,4 +1,4 @@
-import { useEditionFeature } from '../../editions/useEdition.js';
+import { useEditionFeature } from '../../platform/useActiveModule.js';
 import { getMeasuredQty } from '../../utils/lineMeasure.js';
 import { formatDimension, formatMeasure } from '../../utils/measureFormat.js';
 

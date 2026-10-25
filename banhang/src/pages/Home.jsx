@@ -3,7 +3,7 @@ import { Button, Form, Input, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import BigTileButton from '../components/BigTileButton.jsx';
 import TodayDashboard from '../features/dashboard/components/TodayDashboard.jsx';
-import { useEdition } from '../editions/useEdition.js';
+import { useActiveModule } from '../platform/useActiveModule.js';
 import { useSettingsStore } from '../store/settingsStore.js';
 import { grantSystemAccess } from './System/systemAccess.js';
 import { getSystemPasswordFromSettings } from './System/systemPassword.js';
@@ -18,7 +18,7 @@ const Home = () => {
   const [systemError, setSystemError] = useState('');
   const [systemForm] = Form.useForm();
   const { load: loadSettings } = useSettingsStore();
-  const { modules } = useEdition();
+  const { homeTiles, hiddenModules } = useActiveModule();
 
   const handleCloseReportModal = () => setReportModalOpen(false);
   const handleReportNavigate = (path) => {
@@ -56,7 +56,10 @@ const Home = () => {
     }
   };
 
-  const tileColumns = splitIntoColumns(getVisibleTiles(modules), 2);
+  const tileColumns = splitIntoColumns(
+    getVisibleTiles(homeTiles, hiddenModules),
+    2
+  );
   const tileActions = {
     openSystem: handleOpenSystemModal,
     openReports: () => setReportModalOpen(true),

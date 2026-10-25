@@ -15,7 +15,7 @@ import TemplateEditor from '../../components/TemplateEditor.jsx';
 import DataUpgradePanel from '../../features/dataUpgrade/components/DataUpgradePanel.jsx';
 import { consumeSystemAccess } from './systemAccess.js';
 import { getSystemPasswordFromSettings } from './systemPassword.js';
-import { useEditionFeature } from '../../editions/useEdition.js';
+import { useEditionFeature } from '../../platform/useActiveModule.js';
 
 const System = () => {
   const navigate = useNavigate();

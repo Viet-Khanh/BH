@@ -1,5 +1,5 @@
 import { Checkbox, Col, Form, Input, InputNumber, Modal, Row } from 'antd';
-import { useEdition } from '../../editions/useEdition.js';
+import { useEdition } from '../../platform/useActiveModule.js';
 import { formatNumberInput, parseNumberInput } from './catalogUtils.js';
 
 const CatalogFormModal = ({

@@ -1,6 +1,6 @@
 import { Button, Modal } from 'antd';
 import { useCallback } from 'react';
-import { useEditionFeature } from '../../../editions/useEdition.js';
+import { useEditionFeature } from '../../../platform/useActiveModule.js';
 import CatalogFormModal from '../../../pages/Catalog/CatalogFormModal.jsx';
 import ProductPicker from '../../ProductPicker.jsx';
 import ProductInfoPanel from './ProductInfoPanel.jsx';

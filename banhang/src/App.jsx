@@ -1,6 +1,6 @@
 import { Button, Layout, Space } from 'antd';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { useEdition } from './editions/useEdition.js';
+import { useEdition } from './platform/useActiveModule.js';
 import Cashbook from './pages/Cashbook/Cashbook.jsx';
 import Catalog from './pages/Catalog/Catalog.jsx';
 import DashboardPage from './pages/Dashboard/DashboardPage.jsx';

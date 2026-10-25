@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useEditionFeature } from '../../../editions/useEdition.js';
+import { useEditionFeature } from '../../../platform/useActiveModule.js';
 import { confirmRemoveItem } from './confirmRemoveItem.js';
 import InvoiceItemRow from './InvoiceItemRow.jsx';
 import { buildItemColumns } from './itemColumns.js';
