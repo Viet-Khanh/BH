@@ -5,7 +5,7 @@ import InvoiceItemsTable from '../../../components/invoice/itemsTable/InvoiceIte
 import InvoicePaymentModal from '../../../components/invoice/InvoicePaymentModal.jsx';
 import InvoicePaymentsSection from '../../../components/invoice/InvoicePaymentsSection.jsx';
 import InvoicePreviewModal from '../../../components/invoice/InvoicePreviewModal.jsx';
-import InvoiceProductModal from '../../../components/invoice/InvoiceProductModal.jsx';
+import InvoiceProductModal from '../../../components/invoice/productModal/InvoiceProductModal.jsx';
 import InvoiceSearchBar from '../../../components/invoice/InvoiceSearchBar.jsx';
 import InvoiceTopSection from '../../../components/invoice/InvoiceTopSection.jsx';
 import SupplierDebtPaymentModal from '../../../components/SupplierDebtPaymentModal.jsx';

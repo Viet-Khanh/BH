@@ -3,7 +3,7 @@ import InvoiceItemsTable from './invoice/itemsTable/InvoiceItemsTable.jsx';
 import InvoicePaymentModal from './invoice/InvoicePaymentModal.jsx';
 import InvoicePaymentsSection from './invoice/InvoicePaymentsSection.jsx';
 import InvoicePreviewModal from './invoice/InvoicePreviewModal.jsx';
-import InvoiceProductModal from './invoice/InvoiceProductModal.jsx';
+import InvoiceProductModal from './invoice/productModal/InvoiceProductModal.jsx';
 import InvoiceSearchBar from './invoice/InvoiceSearchBar.jsx';
 import InvoiceTopSection from './invoice/InvoiceTopSection.jsx';
 import useInvoiceEditorState from './invoice/useInvoiceEditorState.js';
