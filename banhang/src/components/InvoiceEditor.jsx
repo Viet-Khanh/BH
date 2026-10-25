@@ -1,5 +1,5 @@
 import InvoiceHeader from './invoice/InvoiceHeader.jsx';
-import InvoiceItemsTable from './invoice/InvoiceItemsTable.jsx';
+import InvoiceItemsTable from './invoice/itemsTable/InvoiceItemsTable.jsx';
 import InvoicePaymentModal from './invoice/InvoicePaymentModal.jsx';
 import InvoicePaymentsSection from './invoice/InvoicePaymentsSection.jsx';
 import InvoicePreviewModal from './invoice/InvoicePreviewModal.jsx';

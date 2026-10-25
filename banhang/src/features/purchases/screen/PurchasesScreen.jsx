@@ -1,7 +1,7 @@
 import { Button } from 'antd';
 import { useMemo } from 'react';
 import InvoiceHeader from '../../../components/invoice/InvoiceHeader.jsx';
-import InvoiceItemsTable from '../../../components/invoice/InvoiceItemsTable.jsx';
+import InvoiceItemsTable from '../../../components/invoice/itemsTable/InvoiceItemsTable.jsx';
 import InvoicePaymentModal from '../../../components/invoice/InvoicePaymentModal.jsx';
 import InvoicePaymentsSection from '../../../components/invoice/InvoicePaymentsSection.jsx';
 import InvoicePreviewModal from '../../../components/invoice/InvoicePreviewModal.jsx';
