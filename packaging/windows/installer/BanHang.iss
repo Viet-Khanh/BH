@@ -1,18 +1,31 @@
-#define MyAppName "BanHang"
+; Per-edition/customer values come from build-release.ps1 (ISCC /DAppName=... etc.).
+; Defaults = the original aluminium/glass installer, so existing installs upgrade in place.
+#ifndef AppName
+  #define AppName "BanHang"
+#endif
+#ifndef AppExeName
+  #define AppExeName "BanHang.exe"
+#endif
+#ifndef AppGuid
+  #define AppGuid "D0196E87-7934-44B9-A107-6C5F0B6F9C72"
+#endif
+#ifndef OutputBase
+  #define OutputBase "BanHang-Setup"
+#endif
 #define MyAppVersion "0.0.1"
 #define MyAppPublisher "Rostek"
 #define StageDir "..\..\..\release\windows\stage"
 
 [Setup]
-AppId={{D0196E87-7934-44B9-A107-6C5F0B6F9C72}
-AppName={#MyAppName}
+AppId={{{#AppGuid}}
+AppName={#AppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\BanHang
-DefaultGroupName=BanHang
+DefaultDirName={autopf}\{#AppName}
+DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 OutputDir=..\..\..\release\windows\installer
-OutputBaseFilename=BanHang-Setup-{#MyAppVersion}
+OutputBaseFilename={#OutputBase}-{#MyAppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -20,7 +33,7 @@ ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=admin
 SetupLogging=yes
-UninstallDisplayName=BanHang
+UninstallDisplayName={#AppName}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -42,8 +55,8 @@ Source: "..\scripts\backup.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "{#StageDir}\prerequisites\mongodb.msi"; DestDir: "{tmp}"; DestName: "mongodb.msi"; Flags: deleteafterinstall; Check: not ServiceExists('MongoDB')
 
 [Icons]
-Name: "{autoprograms}\BanHang"; Filename: "{app}\BanHang.exe"
-Name: "{autodesktop}\BanHang"; Filename: "{app}\BanHang.exe"; Tasks: desktopicon
+Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Tao shortcut ngoai Desktop"; GroupDescription: "Shortcut:"

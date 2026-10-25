@@ -47,6 +47,43 @@ release\windows\stage\
   prerequisites\    # mongodb.msi
 ```
 
+## Build theo nganh / theo khach
+
+Mac dinh (khong truyen tham so) la ban Nhom kinh, giu nguyen ten `BanHang`,
+AppId va duong dan cai dat cu: khach dang dung cai de len de nang cap.
+
+```powershell
+# Ban Nhom kinh (mac dinh, y het truoc day)
+powershell -ExecutionPolicy Bypass -File packaging\windows\scripts\build-release.ps1
+
+# Ban theo nganh: nhomkinh | vlxd | minimart | fashion | pharmacy
+powershell -ExecutionPolicy Bypass -File packaging\windows\scripts\build-release.ps1 -Edition pharmacy
+
+# Ban rieng cho 1 khach (tu biet nganh tu banhang\src\customers\catalog.js)
+powershell -ExecutionPolicy Bypass -File packaging\windows\scripts\build-release.ps1 -Customer example
+```
+
+Script se:
+
+- doc thong tin ban build tu `node banhang\scripts\buildTarget.mjs` (ten app, appId, GUID installer);
+- build frontend chi chua code nganh/khach duoc chon (`VITE_EDITION` / `VITE_CUSTOMER`);
+- xoa thu muc `banhang-backend\src\editions\*` va `customers\*` khong dung trong ban stage;
+- ghi `BANHANG_EDITION` / `BANHANG_CUSTOMER` vao `backend\.env`;
+- ghi `stage\build-target.json` va in ra lenh ISCC can chay, vi du:
+
+```text
+ISCC /DAppName=BanHang-NhaThuoc /DAppExeName=BanHang-NhaThuoc.exe /DAppGuid=... /DOutputBase=BanHang-NhaThuoc-Setup packaging\windows\installer\BanHang.iss
+```
+
+Ket qua: `release\windows\installer\BanHang-NhaThuoc-Setup-<version>.exe`.
+
+Luu y:
+
+- Moi may chi cai 1 nganh: cac ban dung chung service `BanHangBackend`, MongoDB
+  va thu muc du lieu `C:\ProgramData\BanHang`.
+- `installerGuid` trong catalog la AppId cua Inno Setup: khong doi sau khi da phat hanh.
+- Them nganh/khach moi: xem `banhang/src/editions/README.md` va `banhang/src/customers/README.md`.
+
 ## Build installer
 
 Mo file sau bang Inno Setup va bam Compile:
