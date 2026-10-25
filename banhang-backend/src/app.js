@@ -46,7 +46,7 @@ export const createApp = (options = {}) => {
     res.json({ ok: true });
   });
 
-  mountApiRoutes(app);
+  mountApiRoutes(app, { modules: options.modules || [] });
 
   if (shouldServeFrontend && fs.existsSync(frontendDist)) {
     app.use(express.static(frontendDist));

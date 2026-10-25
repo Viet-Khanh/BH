@@ -38,11 +38,18 @@ const moduleRouters = [
   ['/api/opening-import', openingImportRouter],
 ];
 
+const mountModuleRouters = (app, modules) =>
+  modules.forEach((module) =>
+    module.routers.forEach(([path, router]) => app.use(path, router))
+  );
+
 // Shared by the Express server (app.js) and the browser demo (banhang/src/demo).
-export const mountApiRoutes = (app) => {
+// `modules`: edition/customer backend modules (src/platform/loadBackendModules.js).
+export const mountApiRoutes = (app, { modules = [] } = {}) => {
   Object.entries(crudModels).forEach(([key, model]) => {
     app.use(`/api/${key}`, createCrudRouter(model));
   });
   moduleRouters.forEach(([path, router]) => app.use(path, router));
+  mountModuleRouters(app, modules);
   return app;
 };

@@ -4,6 +4,14 @@ import { createResponse, createRouter } from './shims/express.js';
 
 const app = createRouter();
 
+// Backend parts of every edition (customers never ship in the public demo).
+const editionBackendModules = Object.values(
+  import.meta.glob('@backend/editions/*/index.js', {
+    eager: true,
+    import: 'default',
+  })
+);
+
 // Mimics the JSON round trip of a real HTTP call (drops undefined, copies objects).
 const toWire = (value) =>
   value === undefined ? null : JSON.parse(JSON.stringify(value));
@@ -33,4 +41,4 @@ export const dispatch = async ({ method = 'GET', path, body } = {}) => {
 };
 
 registerDemoSystemRoutes(app, { dispatch });
-mountApiRoutes(app);
+mountApiRoutes(app, { modules: editionBackendModules });
