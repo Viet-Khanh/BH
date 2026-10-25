@@ -2,6 +2,8 @@ import { Button } from 'antd';
 import { useMemo } from 'react';
 import InvoiceHeader from '../../../components/invoice/InvoiceHeader.jsx';
 import InvoiceItemsTable from '../../../components/invoice/itemsTable/InvoiceItemsTable.jsx';
+import Slot from '../../../platform/Slot.jsx';
+import { SLOTS } from '../../../platform/slots.js';
 import InvoicePaymentModal from '../../../components/invoice/InvoicePaymentModal.jsx';
 import InvoicePaymentsSection from '../../../components/invoice/InvoicePaymentsSection.jsx';
 import InvoicePreviewModal from '../../../components/invoice/InvoicePreviewModal.jsx';
@@ -115,7 +117,9 @@ const PurchasesScreen = () => {
         showPrint={false}
         disabled={draft.readOnlyEdit}
       />
-      <InvoiceItemsTable
+      <Slot
+        name={SLOTS.purchasesItemsTable}
+        fallback={InvoiceItemsTable}
         items={draft.items}
         products={data.products}
         onUpdateItem={productSelection.updateItem}

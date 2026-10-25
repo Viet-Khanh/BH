@@ -1,4 +1,6 @@
 import { Checkbox, Col, Form, Input, InputNumber, Modal, Row } from 'antd';
+import Slot from '../../platform/Slot.jsx';
+import { SLOTS } from '../../platform/slots.js';
 import { useEdition } from '../../platform/useActiveModule.js';
 import { formatNumberInput, parseNumberInput } from './catalogUtils.js';
 
@@ -65,6 +67,7 @@ const CatalogFormModal = ({
               </Form.Item>
             </Col>
           </Row>
+          <Slot name={SLOTS.catalogProductFields} form={form} labels={labels} />
           <Row gutter={16}>
             <Col xs={24} md={12}>
               <Form.Item label="Đơn giá lẻ" name="sellPriceDefault">

@@ -7,6 +7,8 @@ import InvoiceProductModal from './invoice/productModal/InvoiceProductModal.jsx'
 import InvoiceSearchBar from './invoice/InvoiceSearchBar.jsx';
 import InvoiceTopSection from './invoice/InvoiceTopSection.jsx';
 import useInvoiceEditorState from './invoice/useInvoiceEditorState.js';
+import Slot from '../platform/Slot.jsx';
+import { SLOTS } from '../platform/slots.js';
 
 const InvoiceEditor = (props) => {
   const {
@@ -25,7 +27,11 @@ const InvoiceEditor = (props) => {
       <InvoiceHeader {...headerProps} />
       <InvoiceTopSection {...topSectionProps} />
       <InvoiceSearchBar {...searchProps} />
-      <InvoiceItemsTable {...itemsTableProps} />
+      <Slot
+        name={SLOTS.salesItemsTable}
+        fallback={InvoiceItemsTable}
+        {...itemsTableProps}
+      />
       <InvoicePaymentsSection {...paymentsSectionProps} />
       <InvoicePaymentModal {...paymentModalProps} />
       <InvoiceProductModal {...productModalProps} />

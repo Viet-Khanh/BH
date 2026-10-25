@@ -1,4 +1,6 @@
 import { hasFeature } from '../platform/moduleRuntime.js';
+import { resolveSlot } from '../platform/resolveSlot.js';
+import { SLOTS } from '../platform/slots.js';
 import { escapeHtml } from './htmlEscape.js';
 import { getMeasuredQty, hasDimensions } from './lineMeasure.js';
 import { formatMeasure } from './measureFormat.js';
@@ -98,7 +100,11 @@ export const buildItemsHtml = (
   products = [],
   { dimensions = hasFeature('dimensions') } = {}
 ) => {
-  const columns = buildPrintItemColumns({ dimensions });
+  const buildColumns = resolveSlot(
+    SLOTS.printItemColumns,
+    buildPrintItemColumns
+  );
+  const columns = buildColumns({ dimensions });
   const header = columns
     .map((column) => `<th style="${column.style}">${column.title}</th>`)
     .join('');

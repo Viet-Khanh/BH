@@ -1,6 +1,7 @@
 import { Button, Layout, Space } from 'antd';
+import { createElement } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { useEdition } from './platform/useActiveModule.js';
+import { useActiveModule } from './platform/useActiveModule.js';
 import Cashbook from './pages/Cashbook/Cashbook.jsx';
 import Catalog from './pages/Catalog/Catalog.jsx';
 import DashboardPage from './pages/Dashboard/DashboardPage.jsx';
@@ -17,7 +18,7 @@ import System from './pages/System/System.jsx';
 const { Header, Content } = Layout;
 
 const App = () => {
-  const { appTitle } = useEdition();
+  const { config, routes: moduleRoutes } = useActiveModule();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,7 +27,7 @@ const App = () => {
   return (
     <Layout className="app-shell">
       <Header className="app-header">
-        <div className="app-title">{appTitle}</div>
+        <div className="app-title">{config.appTitle}</div>
         <Space>
           {showBack && (
             <Button
@@ -53,6 +54,13 @@ const App = () => {
           <Route path="/reports" element={<Reports />} />
           <Route path="/report-purchase" element={<ReportPurchasePage />} />
           <Route path="/report-stock" element={<ReportStockPage />} />
+          {moduleRoutes.map((route) => (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={createElement(route.page)}
+            />
+          ))}
           <Route path="*" element={<Home />} />
         </Routes>
       </Content>
