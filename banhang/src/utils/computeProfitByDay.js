@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { getAreaMultiplier } from './lineMeasure.js';
 
 export const computeProfitByDay = (invoices = []) => {
   const map = {};
@@ -15,9 +16,7 @@ export const computeProfitByDay = (invoices = []) => {
         const lineTotalValue = item.lineTotal ?? qty * unitPrice;
         const lineTotal = Number(lineTotalValue || 0);
         const unitCost = Number(item.costPriceSnapshot || 0);
-        const length = Number(item.length || 0);
-        const width = Number(item.width || 0);
-        const area = length > 0 && width > 0 ? length * width : 1;
+        const area = getAreaMultiplier(item);
         acc.revenue += lineTotal;
         acc.cost += qty * unitCost * area;
         return acc;

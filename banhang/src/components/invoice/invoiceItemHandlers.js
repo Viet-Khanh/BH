@@ -1,9 +1,5 @@
 import { message } from 'antd';
-
-const getValidDimension = (value) => {
-  const numeric = Number(value || 0);
-  return numeric > 0 ? numeric : null;
-};
+import { getLineAmount, readDimensions } from '../../utils/lineMeasure.js';
 
 export const createConfirmAddHandler =
   ({
@@ -27,27 +23,22 @@ export const createConfirmAddHandler =
       return false;
     }
 
-    const lengthValue = getValidDimension(pendingLength);
-    const widthValue = getValidDimension(pendingWidth);
-    if ((lengthValue && !widthValue) || (!lengthValue && widthValue)) {
-      message.error('Vui lòng nhập đủ chiều dài và chiều rộng.');
+    const dimensions = readDimensions(pendingLength, pendingWidth);
+    if (dimensions.error) {
+      message.error(dimensions.error);
       return false;
     }
 
-    let lineTotal = qty * unitPrice;
-    if (lengthValue && widthValue) {
-      lineTotal *= lengthValue * widthValue;
-    }
     const newItem = {
       productId: pendingProduct.id,
       qty,
       unitPrice,
-      lineTotal,
+      lineTotal: getLineAmount({ qty, unitPrice, ...dimensions }),
       costPriceSnapshot: Number(pendingProduct.avgCost || 0),
       excludeFromProfitSnapshot: Boolean(pendingProduct.excludeFromProfit),
       lineNote: '',
-      length: lengthValue,
-      width: widthValue,
+      length: dimensions.length,
+      width: dimensions.width,
     };
     setItems((prev) => [...prev, newItem]);
     if (closeAfter) {

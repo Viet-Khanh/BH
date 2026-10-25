@@ -1,3 +1,5 @@
+import { getAreaMultiplier } from '../../utils/lineMeasure.js';
+
 export const buildPaymentsByInvoice = (payments = []) => {
   const map = {};
   payments.forEach((payment) => {
@@ -39,12 +41,6 @@ export const buildProductMap = (products = []) =>
     acc[product.id] = product;
     return acc;
   }, {});
-
-const getAreaMultiplier = (item) => {
-  const length = Number(item.length || 0);
-  const width = Number(item.width || 0);
-  return length > 0 && width > 0 ? length * width : 1;
-};
 
 const isProfitExcludedItem = (item, productMap = {}) => {
   if (

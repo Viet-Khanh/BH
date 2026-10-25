@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
 import { getPurchaseLineTotal } from '../../features/purchases/domain/purchasesDomain.js';
+import { readDimensions } from '../../utils/lineMeasure.js';
 import { hasSearchMatch, normalizeSearchText } from '../../utils/searchText.js';
-
-const getValidDimension = (value) => {
-  const numeric = Number(value || 0);
-  return numeric > 0 ? numeric : null;
-};
 
 const usePurchaseProductModal = ({
   activeProducts,
@@ -92,19 +88,13 @@ const usePurchaseProductModal = ({
     const qty = Number(pendingQty || 0);
     const unitCost = Number(pendingPrice || 0);
 
-    const lengthValue = getValidDimension(pendingLength);
-    const widthValue = getValidDimension(pendingWidth);
-    if ((lengthValue && !widthValue) || (!lengthValue && widthValue)) {
-      message.error('Vui lòng nhập đủ chiều dài và chiều rộng.');
+    const dimensions = readDimensions(pendingLength, pendingWidth);
+    if (dimensions.error) {
+      message.error(dimensions.error);
       return false;
     }
 
-    const lineTotal = getPurchaseLineTotal({
-      qty,
-      unitCost,
-      length: lengthValue,
-      width: widthValue,
-    });
+    const lineTotal = getPurchaseLineTotal({ qty, unitCost, ...dimensions });
 
     setItems((prev) => [
       ...prev,
@@ -114,8 +104,8 @@ const usePurchaseProductModal = ({
         unitCost,
         lineTotal,
         lineNote: '',
-        length: lengthValue,
-        width: widthValue,
+        length: dimensions.length,
+        width: dimensions.width,
       },
     ]);
 

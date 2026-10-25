@@ -3,7 +3,7 @@ import {
   hasSearchMatch,
   normalizeSearchText,
 } from '../../../utils/searchText.js';
-import { getLineBase } from '../invoiceUtils.js';
+import { getLineAmount } from '../../../utils/lineMeasure.js';
 import { createConfirmAddHandler } from '../invoiceItemHandlers.js';
 import {
   createAddProductHandler,
@@ -91,14 +91,11 @@ export const useInvoiceProductSelection = ({
     (index, field, value) => {
       const nextItems = [...items];
       const nextItem = { ...nextItems[index], [field]: value };
-      const product = products.find(
-        (currentProduct) => currentProduct.id === nextItem.productId
-      );
-      nextItem.lineTotal = getLineBase(nextItem, product);
+      nextItem.lineTotal = getLineAmount(nextItem);
       nextItems[index] = nextItem;
       setItems(nextItems);
     },
-    [items, products, setItems]
+    [items, setItems]
   );
 
   const pendingPreviousPrice = useMemo(() => {

@@ -1,20 +1,16 @@
+import {
+  getLineAmount,
+  normalizeDimension,
+} from '../../../utils/lineMeasure.js';
+
 export const buildPurchaseItems = (purchase) =>
   (purchase?.items || []).map((item) => ({
     ...item,
     lineNote: item.lineNote || '',
   }));
 
-export const getPurchaseLineTotal = (item = {}) => {
-  const qty = Number(item.qty || 0);
-  const unitCost = Number(item.unitCost || 0);
-  let lineTotal = qty * unitCost;
-  const length = Number(item.length || 0);
-  const width = Number(item.width || 0);
-  if (length > 0 && width > 0) {
-    lineTotal *= length * width;
-  }
-  return lineTotal;
-};
+export const getPurchaseLineTotal = (item = {}) =>
+  getLineAmount(item, 'unitCost');
 
 export const mergeProducts = (current = [], incoming = []) => {
   const productMap = new Map();
@@ -33,8 +29,8 @@ export const normalizePurchaseItem = (item) => ({
   ...item,
   qty: Number(item.qty || 0),
   unitCost: Number(item.unitCost || 0),
-  length: Number(item.length || 0) > 0 ? Number(item.length) : null,
-  width: Number(item.width || 0) > 0 ? Number(item.width) : null,
+  length: normalizeDimension(item.length),
+  width: normalizeDimension(item.width),
   lineNote: item.lineNote || '',
   lineTotal: getPurchaseLineTotal(item),
 });
