@@ -2,9 +2,6 @@ import products from './products.js';
 
 export default {
   id: 'vlxd',
-  name: 'Vật liệu xây dựng',
-  tagline: 'Sắt thép, nhôm kính, xi măng — bán sỉ cho thầu thợ, công nợ nhiều.',
-  appTitle: 'PHẦN MỀM BÁN HÀNG VẬT LIỆU XÂY DỰNG',
   seed: 2202,
   codePrefix: 'VL',
   shop: {

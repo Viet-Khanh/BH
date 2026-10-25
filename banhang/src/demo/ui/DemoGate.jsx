@@ -1,5 +1,4 @@
 import { Button, Result, Spin, Typography } from 'antd';
-import { cloneElement } from 'react';
 import DemoBanner from './DemoBanner.jsx';
 import EditionPicker from './EditionPicker.jsx';
 import { useDemoSession } from './useDemoSession.js';
@@ -45,7 +44,7 @@ const DemoGate = ({ app }) => {
       return (
         <>
           <DemoBanner edition={state.edition} notices={state.notices} />
-          {cloneElement(app, { title: state.edition.appTitle })}
+          {app}
         </>
       );
   }

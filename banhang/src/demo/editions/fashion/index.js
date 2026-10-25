@@ -2,9 +2,6 @@ import products from './products.js';
 
 export default {
   id: 'fashion',
-  name: 'Thời trang / Giày dép',
-  tagline: 'Quần áo, giày dép, phụ kiện — bán lẻ tại quầy và bán sỉ cho shop.',
-  appTitle: 'PHẦN MỀM BÁN HÀNG THỜI TRANG - GIÀY DÉP',
   seed: 3303,
   codePrefix: 'TT',
   shop: {

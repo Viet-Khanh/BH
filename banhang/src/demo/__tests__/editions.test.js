@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { EDITIONS, getEdition } from '../editions/index.js';
+import { DEMO_EDITIONS, getDemoEdition } from '../editions/index.js';
 
-describe.each(EDITIONS)('edition $id', (edition) => {
+describe.each(DEMO_EDITIONS)('edition $id', (edition) => {
   it('has complete metadata', () => {
     ['id', 'name', 'tagline', 'appTitle', 'codePrefix'].forEach((key) =>
       expect(edition[key]).toBeTruthy()
@@ -49,6 +49,6 @@ describe.each(EDITIONS)('edition $id', (edition) => {
 });
 
 it('looks editions up by id', () => {
-  expect(getEdition('vlxd').id).toBe('vlxd');
-  expect(getEdition('nope')).toBeNull();
+  expect(getDemoEdition('vlxd').id).toBe('vlxd');
+  expect(getDemoEdition('nope')).toBeNull();
 });

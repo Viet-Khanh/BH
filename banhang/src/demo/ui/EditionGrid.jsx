@@ -1,5 +1,5 @@
 import { Card, Col, Row, Tag, Typography } from 'antd';
-import { EDITIONS } from '../editions/index.js';
+import { DEMO_EDITIONS } from '../editions/index.js';
 
 const onActivateKey = (callback) => (event) => {
   if (event.key === 'Enter' || event.key === ' ') {
@@ -10,7 +10,7 @@ const onActivateKey = (callback) => (event) => {
 
 const EditionGrid = ({ activeId, onPick }) => (
   <Row gutter={[16, 16]}>
-    {EDITIONS.map((edition) => (
+    {DEMO_EDITIONS.map((edition) => (
       <Col xs={24} sm={12} key={edition.id}>
         <Card
           hoverable

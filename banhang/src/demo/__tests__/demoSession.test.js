@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { getEdition, setEdition } from '../../editions/editionRuntime.js';
 import { META_KEY } from '../config.js';
 import { configureStorage, readCollection } from '../db/localStore.js';
 import {
@@ -16,6 +17,17 @@ describe('demo session', () => {
     storage = createMemoryStorage();
     configureStorage(storage);
   });
+
+  afterEach(() => setEdition('nhomkinh'));
+
+  it('applies the chosen edition to the shared runtime', async () => {
+    await activateEdition('pharmacy');
+    expect(getEdition().id).toBe('pharmacy');
+    configureStorage(storage);
+    setEdition('nhomkinh');
+    await bootDemoSession();
+    expect(getEdition().id).toBe('pharmacy');
+  }, 30000);
 
   it('asks for an edition on first visit, then resumes it', async () => {
     expect(await bootDemoSession()).toEqual({ status: 'picking', notices: [] });

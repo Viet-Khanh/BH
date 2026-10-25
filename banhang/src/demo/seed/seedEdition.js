@@ -1,5 +1,5 @@
 import { clearNamespace, getActiveNamespace } from '../db/localStore.js';
-import { getEdition } from '../editions/index.js';
+import { getDemoEdition } from '../editions/index.js';
 import { buildMasterData } from './buildMasterData.js';
 import { buildTransactions } from './buildTransactions.js';
 import { createRandom } from './random.js';
@@ -11,7 +11,7 @@ export const seedEdition = async (
   editionId,
   { dispatch, now = new Date() }
 ) => {
-  const edition = getEdition(editionId);
+  const edition = getDemoEdition(editionId);
   if (!edition) throw new Error(`Không tìm thấy ngành hàng ${editionId}.`);
   if (getActiveNamespace() !== editionId) {
     throw new Error(

@@ -2,9 +2,6 @@ import products from './products.js';
 
 export default {
   id: 'minimart',
-  name: 'Tạp hoá / Minimart',
-  tagline: 'Hàng tiêu dùng nhanh, nhiều mặt hàng, bán lẻ là chính.',
-  appTitle: 'PHẦN MỀM BÁN HÀNG TẠP HOÁ - MINIMART',
   seed: 1101,
   codePrefix: 'TH',
   shop: {

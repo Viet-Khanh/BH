@@ -2,9 +2,6 @@ import products from './products.js';
 
 export default {
   id: 'pharmacy',
-  name: 'Nhà thuốc',
-  tagline: 'Thuốc, vitamin, thiết bị y tế — bán lẻ và bán sỉ cho phòng khám.',
-  appTitle: 'PHẦN MỀM BÁN HÀNG NHÀ THUỐC',
   seed: 4404,
   codePrefix: 'NT',
   shop: {

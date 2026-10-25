@@ -1,10 +1,14 @@
+import {
+  applyEditionToDocument,
+  setEdition,
+} from '../../editions/editionRuntime.js';
 import { dispatch } from '../demoApp.js';
 import {
   findCorruptCollections,
   isStorageAvailable,
   setActiveNamespace,
 } from '../db/localStore.js';
-import { getEdition } from '../editions/index.js';
+import { getDemoEdition } from '../editions/index.js';
 import { seedEdition } from '../seed/seedEdition.js';
 import {
   ensureSchemaVersion,
@@ -20,9 +24,15 @@ export const DEMO_NOTICES = {
 };
 
 const requireEdition = (editionId) => {
-  const edition = getEdition(editionId);
+  const edition = getDemoEdition(editionId);
   if (!edition) throw new Error(`Không tìm thấy ngành hàng ${editionId}.`);
   return edition;
+};
+
+// The UI reads the edition from the shared runtime (src/editions).
+const activateRuntime = (edition) => {
+  setEdition(edition.id);
+  applyEditionToDocument(edition);
 };
 
 export const resetEdition = async (editionId) => {
@@ -38,7 +48,7 @@ export const bootDemoSession = async () => {
   const notices = [];
   if (ensureSchemaVersion()) notices.push(DEMO_NOTICES.schemaReset);
 
-  const edition = getEdition(readMeta().activeEdition);
+  const edition = getDemoEdition(readMeta().activeEdition);
   if (!edition) return { status: 'picking', notices };
 
   const corrupt = findCorruptCollections(edition.id).length > 0;
@@ -48,6 +58,7 @@ export const bootDemoSession = async () => {
   } else {
     setActiveNamespace(edition.id);
   }
+  activateRuntime(edition);
   return { status: 'ready', edition, notices };
 };
 
@@ -60,5 +71,6 @@ export const activateEdition = async (editionId) => {
     await resetEdition(editionId);
   }
   setActiveEdition(editionId);
+  activateRuntime(edition);
   return edition;
 };

@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { dispatch } from '../demoApp.js';
 import { configureStorage, setActiveNamespace } from '../db/localStore.js';
-import { EDITIONS } from '../editions/index.js';
+import { DEMO_EDITIONS } from '../editions/index.js';
 import { seedEdition } from '../seed/seedEdition.js';
 import { createMemoryStorage } from './helpers/memoryStorage.js';
 
@@ -13,7 +13,7 @@ const get = async (path) => {
 
 const sumBy = (list, pick) => list.reduce((sum, item) => sum + pick(item), 0);
 
-describe.each(EDITIONS)('seeded edition $id', (edition) => {
+describe.each(DEMO_EDITIONS)('seeded edition $id', (edition) => {
   beforeAll(async () => {
     configureStorage(createMemoryStorage());
     setActiveNamespace(edition.id);
