@@ -15,9 +15,11 @@ import TemplateEditor from '../../components/TemplateEditor.jsx';
 import DataUpgradePanel from '../../features/dataUpgrade/components/DataUpgradePanel.jsx';
 import { consumeSystemAccess } from './systemAccess.js';
 import { getSystemPasswordFromSettings } from './systemPassword.js';
+import { useEditionFeature } from '../../editions/useEdition.js';
 
 const System = () => {
   const navigate = useNavigate();
+  const sampleDataEnabled = useEditionFeature('sampleData');
   const {
     settings,
     update: updateSettings,
@@ -175,12 +177,16 @@ const System = () => {
       <div className="section-title">Tối ưu dữ liệu</div>
       <DataUpgradePanel onCommitted={reloadAll} />
 
-      <div className="section-title">Dữ liệu mẫu</div>
-      <div className="action-row">
-        <Button size="large" onClick={handleSeed}>
-          Nạp dữ liệu mẫu
-        </Button>
-      </div>
+      {sampleDataEnabled && (
+        <>
+          <div className="section-title">Dữ liệu mẫu</div>
+          <div className="action-row">
+            <Button size="large" onClick={handleSeed}>
+              Nạp dữ liệu mẫu
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

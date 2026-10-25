@@ -3,9 +3,11 @@ import { Button, Form, Input, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import BigTileButton from '../components/BigTileButton.jsx';
 import TodayDashboard from '../features/dashboard/components/TodayDashboard.jsx';
+import { useEdition } from '../editions/useEdition.js';
 import { useSettingsStore } from '../store/settingsStore.js';
 import { grantSystemAccess } from './System/systemAccess.js';
 import { getSystemPasswordFromSettings } from './System/systemPassword.js';
+import { getVisibleTiles, splitIntoColumns } from './homeTiles.js';
 import './Home.css';
 
 const Home = () => {
@@ -16,6 +18,7 @@ const Home = () => {
   const [systemError, setSystemError] = useState('');
   const [systemForm] = Form.useForm();
   const { load: loadSettings } = useSettingsStore();
+  const { modules } = useEdition();
 
   const handleCloseReportModal = () => setReportModalOpen(false);
   const handleReportNavigate = (path) => {
@@ -53,6 +56,12 @@ const Home = () => {
     }
   };
 
+  const tileColumns = splitIntoColumns(getVisibleTiles(modules), 2);
+  const tileActions = {
+    openSystem: handleOpenSystemModal,
+    openReports: () => setReportModalOpen(true),
+  };
+
   return (
     <div className="page-card home-page">
       {/* <div className="page-title">Màn hình chính</div> */}
@@ -61,40 +70,19 @@ const Home = () => {
       <section className="home-actions-section">
         {/* <div className="home-actions-title">Thao tác nhanh</div> */}
         <div className="home-grid home-grid-large">
-          <div className="home-button-column">
-            <BigTileButton
-              label="HỆ THỐNG"
-              tone="linear-gradient(135deg, #0f6f75, #0d8f8a)"
-              onClick={handleOpenSystemModal}
-            />
-            <BigTileButton
-              to="/catalog"
-              label="DANH MỤC"
-              tone="linear-gradient(135deg, #118d6c, #0dbf6a)"
-            />
-            <BigTileButton
-              to="/sales"
-              label="BÁN HÀNG"
-              tone="linear-gradient(135deg, #0f8f8a, #14b36a)"
-            />
-          </div>
-          <div className="home-button-column">
-            <BigTileButton
-              to="/purchases"
-              label="NHẬP HÀNG"
-              tone="linear-gradient(135deg, #12a36e, #0bc26b)"
-            />
-            <BigTileButton
-              to="/cashbook"
-              label="THU CHI"
-              tone="linear-gradient(135deg, #0f7f86, #0ea06d)"
-            />
-            <BigTileButton
-              label="BÁO CÁO"
-              tone="linear-gradient(135deg, #0c7c78, #0f9e8b)"
-              onClick={() => setReportModalOpen(true)}
-            />
-          </div>
+          {tileColumns.map((column, columnIndex) => (
+            <div className="home-button-column" key={columnIndex}>
+              {column.map((tile) => (
+                <BigTileButton
+                  key={tile.module}
+                  to={tile.to}
+                  label={tile.label}
+                  tone={tile.tone}
+                  onClick={tile.action ? tileActions[tile.action] : undefined}
+                />
+              ))}
+            </div>
+          ))}
         </div>
       </section>
 

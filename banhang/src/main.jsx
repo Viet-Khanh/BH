@@ -6,6 +6,7 @@ import viVN from 'antd/locale/vi_VN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import App from './App.jsx';
+import { applyEditionToDocument } from './editions/editionRuntime.js';
 import './styles.css';
 import 'antd/dist/reset.css';
 
@@ -33,6 +34,7 @@ if (__DEMO__) {
     renderApp(wrapWithDemo)
   );
 } else {
+  applyEditionToDocument();
   renderApp();
 }
 
