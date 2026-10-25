@@ -68,7 +68,7 @@ store / feature api
 
 ### Add an edition
 
-First create the edition config in `src/editions` (see `src/editions/README.md`). Then:
+First create the edition module in `src/editions/<id>/` (see `src/editions/README.md`). Then:
 
 1. Copy `editions/minimart/` to `editions/<id>/`; edit `index.js` (seed data only: `id, seed,
 codePrefix, shop, units, products, customers, suppliers, expenses, activity`) and `products.js`.
@@ -79,7 +79,7 @@ codePrefix, shop, units, products, customers, suppliers, expenses, activity`) an
    `EDITION_IDS` order (= picker order).
 3. Run `npx vitest run src/demo` — `editions.test.js` and `seedContract.test.js` cover it automatically.
 
-The demo session (`session/demoSession.js`) calls `setEdition()` from `src/platform/moduleRuntime.js`
+The demo session (`session/demoSession.js`) calls `setActiveEdition()` from `src/platform/moduleRuntime.js`
 when an edition becomes active, so the whole UI follows it.
 
 ### The backend starts using a new Mongo feature

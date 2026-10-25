@@ -97,10 +97,11 @@ Read `src/demo/README.md` before touching demo code or backend data access. Key 
 - Demo code is loaded only behind the build flag `__DEMO__` (dynamic `import()`); never import `src/demo` from regular code.
 - Shims fail loudly on unsupported mongoose/express features; extend the shim and its tests instead of working around it.
 
-## 12) Editions (`src/editions`)
+## 12) Modules: core + editions + customers
 
-Read `src/editions/README.md` before adding industry-specific UI. Key rules:
+Read `src/platform/README.md` before adding industry- or customer-specific behaviour. Key rules:
 
-- Read the edition via `useEdition()` / `useEditionFeature()` (React) or `getEdition()` / `hasFeature()` (plain code); never import edition files directly.
-- Keep formulas edition-agnostic; flags only decide what is shown.
-- Values that depend on the edition must be computed lazily (functions), never module-level constants.
+- Industry differences live in `src/editions/<id>/`, customer differences in `src/customers/<id>/`; core never imports them (boundary tests enforce it).
+- Core exposes extension points (`SLOTS` + `<Slot>` / `resolveSlot`, routes, home tiles); add a slot instead of branching on the edition in core.
+- Read config via `useEdition()` / `useEditionFeature()` / `useActiveModule()` (React) or `getEditionConfig()` / `hasFeature()` (plain code).
+- Keep formulas edition-agnostic; edition-dependent values are computed lazily, never module-level constants.
