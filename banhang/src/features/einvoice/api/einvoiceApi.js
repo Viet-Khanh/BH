@@ -50,3 +50,13 @@ export const importEinvoiceResults = ({ rows, dryRun }) =>
       utcOffsetMinutes: -new Date().getTimezoneOffset(),
     },
   });
+
+export const getEinvoiceReport = ({ from, to, groupBy }) =>
+  apiRequest(
+    `/einvoice/report?${new URLSearchParams({
+      from,
+      to,
+      groupBy,
+      utcOffsetMinutes: String(-new Date().getTimezoneOffset()),
+    }).toString()}`
+  );

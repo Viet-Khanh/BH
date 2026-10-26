@@ -6,6 +6,7 @@ const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
 router.get('/documents', asyncHandler(EinvoiceController.getDocuments));
+router.get('/report', asyncHandler(EinvoiceController.getReport));
 router.get('/summary', asyncHandler(EinvoiceController.getSummary));
 router.post(
   '/mark-exported',

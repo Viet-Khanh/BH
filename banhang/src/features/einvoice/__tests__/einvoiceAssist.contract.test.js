@@ -134,4 +134,22 @@ describe('e-invoice assist API (in-browser backend)', () => {
       einvoice: { number: '0000109' },
     });
   });
+
+  it('reports revenue that matches the exported documents', async () => {
+    const report = await call(
+      'GET',
+      `/einvoice/report?${RANGE}&groupBy=quarter&utcOffsetMinutes=${VN_OFFSET}`
+    );
+    const active = (await documents('all')).items.filter(
+      (item) => !item.deleted
+    );
+    const sum = (items) =>
+      items.reduce((total, item) => total + item.document.totals.total, 0);
+    expect(report.totals.invoiceCount).toBe(active.length);
+    expect(report.totals.total).toBe(sum(active));
+    expect(report.totals.exportedCount).toBe(
+      active.filter((item) => item.status !== 'pending').length
+    );
+    expect(report.rows.length).toBeGreaterThan(0);
+  });
 });
