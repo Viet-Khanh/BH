@@ -134,6 +134,15 @@ const Home = () => {
           >
             Kho
           </Button>
+          <Button
+            size="large"
+            type="primary"
+            className="btn-primary home-report-button"
+            block
+            onClick={() => handleReportNavigate('/einvoice')}
+          >
+            Hoá đơn điện tử
+          </Button>
         </div>
       </Modal>
 

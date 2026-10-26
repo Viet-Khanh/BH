@@ -5,6 +5,7 @@ import { useActiveModule } from './platform/useActiveModule.js';
 import Cashbook from './pages/Cashbook/Cashbook.jsx';
 import Catalog from './pages/Catalog/Catalog.jsx';
 import DashboardPage from './pages/Dashboard/DashboardPage.jsx';
+import EinvoicePage from './pages/Einvoice/EinvoicePage.jsx';
 import Home from './pages/Home.jsx';
 import Purchases from './pages/Purchases/Purchases.jsx';
 import ReportPurchasePage from './pages/Reports/ReportPurchasePage.jsx';
@@ -54,6 +55,7 @@ const App = () => {
           <Route path="/reports" element={<Reports />} />
           <Route path="/report-purchase" element={<ReportPurchasePage />} />
           <Route path="/report-stock" element={<ReportStockPage />} />
+          <Route path="/einvoice" element={<EinvoicePage />} />
           {moduleRoutes.map((route) => (
             <Route
               key={route.path}
