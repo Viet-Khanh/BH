@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Form, Input, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import BigTileButton from '../components/BigTileButton.jsx';
 import TodayDashboard from '../features/dashboard/components/TodayDashboard.jsx';
+import EinvoiceReminder from '../features/einvoice/components/home/EinvoiceReminder.jsx';
 import { useActiveModule } from '../platform/useActiveModule.js';
 import { useSettingsStore } from '../store/settingsStore.js';
 import { grantSystemAccess } from './System/systemAccess.js';
@@ -17,8 +18,12 @@ const Home = () => {
   const [systemUnlocking, setSystemUnlocking] = useState(false);
   const [systemError, setSystemError] = useState('');
   const [systemForm] = Form.useForm();
-  const { load: loadSettings } = useSettingsStore();
+  const { settings, load: loadSettings } = useSettingsStore();
   const { homeTiles, hiddenModules } = useActiveModule();
+
+  useEffect(() => {
+    loadSettings().catch(() => {});
+  }, [loadSettings]);
 
   const handleCloseReportModal = () => setReportModalOpen(false);
   const handleReportNavigate = (path) => {
@@ -69,6 +74,8 @@ const Home = () => {
     <div className="page-card home-page">
       {/* <div className="page-title">Màn hình chính</div> */}
       {/* <TodayDashboard showShortcuts={false} /> */}
+
+      <EinvoiceReminder settings={settings} />
 
       <section className="home-actions-section">
         {/* <div className="home-actions-title">Thao tác nhanh</div> */}

@@ -15,8 +15,14 @@ export const markEinvoicesExported = (invoiceIds, profile) =>
 export const unmarkEinvoices = (invoiceIds) =>
   apiRequest('/einvoice/unmark', { method: 'POST', body: { invoiceIds } });
 
-export const setEinvoiceNumber = (invoiceId, number) =>
+// values: { number, series?, lookupCode?, taxAuthorityCode? }
+export const setEinvoiceNumber = (invoiceId, values) =>
   apiRequest(`/einvoice/${invoiceId}/number`, {
     method: 'PUT',
-    body: { number },
+    body: values,
   });
+
+export const getEinvoiceSummary = ({ since, todayStart }) =>
+  apiRequest(
+    `/einvoice/summary?${new URLSearchParams({ since, todayStart }).toString()}`
+  );

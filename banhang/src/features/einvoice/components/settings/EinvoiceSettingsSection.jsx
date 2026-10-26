@@ -1,21 +1,17 @@
 import { Button, Form, Input, message, Radio, Select, Switch } from 'antd';
 import { useEffect } from 'react';
 import { useSettingsStore } from '../../../../store/settingsStore.js';
-import {
-  EINVOICE_DEFAULT_SETTINGS,
-  TAX_METHOD_OPTIONS,
-} from '../../domain/settingsDefaults.js';
+import { TAX_METHOD_OPTIONS } from '../../domain/settingsDefaults.js';
+import { fromFormValues, toFormValues } from '../../domain/settingsForm.js';
 import { VAT_RATE_OPTIONS } from '../../domain/vatRates.js';
 import { PROFILES } from '../../profiles/index.js';
+import EinvoiceWorkflowFields from './EinvoiceWorkflowFields.jsx';
 import ReducedVatAlert from './ReducedVatAlert.jsx';
 
-const FIELDS = Object.keys(EINVOICE_DEFAULT_SETTINGS);
 const PROFILE_OPTIONS = PROFILES.map(({ id, name }) => ({
   value: id,
   label: name,
 }));
-const pickFields = (settings) =>
-  Object.fromEntries(FIELDS.map((field) => [field, settings[field]]));
 
 // "Hoá đơn điện tử" section of the System page; owns its form.
 const EinvoiceSettingsSection = () => {
@@ -24,15 +20,12 @@ const EinvoiceSettingsSection = () => {
   const taxMethod = Form.useWatch('taxMethod', form);
 
   useEffect(() => {
-    form.setFieldsValue(pickFields(settings));
+    form.setFieldsValue(toFormValues(settings));
   }, [form, settings]);
 
   const save = async () => {
     const values = await form.validateFields();
-    await update({
-      ...values,
-      sellerTaxCode: values.sellerTaxCode?.trim() || '',
-    });
+    await update(fromFormValues(values));
     message.success('Đã lưu cài đặt hoá đơn điện tử.');
   };
 
@@ -71,6 +64,7 @@ const EinvoiceSettingsSection = () => {
         <Form.Item label="Mẫu file mặc định" name="einvoiceProfile">
           <Select options={PROFILE_OPTIONS} />
         </Form.Item>
+        <EinvoiceWorkflowFields />
         <Button type="primary" onClick={save}>
           Lưu cài đặt hoá đơn điện tử
         </Button>

@@ -101,10 +101,27 @@ describe('e-invoice API (in-browser backend)', () => {
   it('stores provider numbers and unmarks', async () => {
     const einvoice = await call('PUT', `/einvoice/${first.invoiceId}/number`, {
       number: '0000123',
+      series: '1C26TAA',
     });
+    expect(einvoice.series).toBe('1C26TAA');
     expect(einvoice.number).toBe('0000123');
     await call('POST', '/einvoice/unmark', { invoiceIds: [first.invoiceId] });
     expect((await statusOf(first.invoiceId)).status).toBe('pending');
+  });
+
+  it('summarises what the shop still has to do', async () => {
+    const count = async (status) => (await documents(status)).items.length;
+    const summary = await call(
+      'GET',
+      '/einvoice/summary?since=2000-01-01T00:00:00.000Z&todayStart=2100-01-01T00:00:00.000Z'
+    );
+    expect(summary).toEqual({
+      pendingToday: 0,
+      pendingEarlier: await count('pending'),
+      changed: await count('changed'),
+      unnumbered: await count('unnumbered'),
+    });
+    expect(summary.pendingEarlier).toBeGreaterThan(0);
   });
 
   it('rejects bad input with 400', async () => {

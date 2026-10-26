@@ -1,5 +1,6 @@
 import { EinvoiceInputError } from '../domain/status.js';
 import { listDocuments } from '../services/documents.service.js';
+import { getSummary as buildSummary } from '../services/summary.service.js';
 import {
   markExported,
   setNumber,
@@ -17,6 +18,8 @@ const respond = (handler) => async (req, res) => {
 };
 
 export const getDocuments = respond((req) => listDocuments(req.query));
+
+export const getSummary = respond((req) => buildSummary(req.query));
 
 export const postMarkExported = respond((req) => markExported(req.body));
 

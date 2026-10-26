@@ -7,6 +7,12 @@ export const EINVOICE_DEFAULT_SETTINGS = {
   pricesIncludeVat: true,
   defaultVatRate: '8',
   einvoiceProfile: 'generic',
+  einvoiceAdjustProfile: 'generic-adjust',
+  einvoiceCustomProfiles: [],
+  einvoiceStartDate: '',
+  einvoiceReminder: true,
+  einvoiceLockExported: false,
+  einvoiceLookupUrl: '',
 };
 
 export const TAX_METHOD_OPTIONS = [

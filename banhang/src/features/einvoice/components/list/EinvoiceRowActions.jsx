@@ -12,7 +12,7 @@ const EinvoiceRowActions = ({ item, onChanged }) => {
 
   const saveNumber = async () => {
     try {
-      await setEinvoiceNumber(item.invoiceId, number);
+      await setEinvoiceNumber(item.invoiceId, { number });
       setNumberOpen(false);
       onChanged();
     } catch (error) {
