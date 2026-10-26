@@ -37,6 +37,14 @@ const InvoiceSchema = new mongoose.Schema(
     note: String,
     changeLog: [ChangeLogSchema],
     importBatchId: String,
+    // Export state for manual e-invoice upload (modules/einvoice). Server-owned.
+    einvoice: {
+      exportedAt: String,
+      exportBatchId: String,
+      profile: String,
+      number: String,
+      changedAfterExport: Boolean,
+    },
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,
   },

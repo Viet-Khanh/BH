@@ -14,6 +14,13 @@ const SettingsSchema = new mongoose.Schema(
     invoiceTemplateHtml: String,
     systemPassword: { type: String, default: '123456' },
     dataVersion: { type: Number, default: 2 },
+    // E-invoice export (modules/einvoice)
+    taxMethod: String,
+    sellerTaxCode: String,
+    businessLocationCode: String,
+    pricesIncludeVat: Boolean,
+    defaultVatRate: String,
+    einvoiceProfile: String,
     stockDebtSnapshotAt: String,
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,

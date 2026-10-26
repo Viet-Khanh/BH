@@ -12,6 +12,7 @@ const ProductSchema = new mongoose.Schema(
     sellPriceDefault: Number,
     sellPriceWholesale: Number,
     excludeFromProfit: { type: Boolean, default: false },
+    vatRate: String,
     openingStock: Number,
     stock: {
       type: Number,
