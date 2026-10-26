@@ -9,6 +9,7 @@ const buildSettings = (edition, createdAt) => ({
   shopName: edition.shop.name,
   shopPhone: edition.shop.phone,
   shopAddress: edition.shop.address,
+  sellerTaxCode: edition.shop.taxCode || '',
   allowNegativeStock: false,
   autoUpdateAvgCostOnPurchase: true,
   showSensitiveInfo: false,

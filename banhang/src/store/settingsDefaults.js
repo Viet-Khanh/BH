@@ -1,4 +1,5 @@
 import { getEditionConfig } from '../platform/moduleRuntime.js';
+import { EINVOICE_DEFAULT_SETTINGS } from '../features/einvoice/domain/settingsDefaults.js';
 import { buildDefaultTemplate } from '../features/settings/templates/defaultInvoiceTemplate.js';
 
 // Function, not a constant: the demo chooses the edition after modules load.
@@ -14,4 +15,5 @@ export const getDefaultSettings = () => ({
   printCopies: 1,
   invoiceTemplateHtml: buildDefaultTemplate(),
   dataVersion: 2,
+  ...EINVOICE_DEFAULT_SETTINGS,
 });

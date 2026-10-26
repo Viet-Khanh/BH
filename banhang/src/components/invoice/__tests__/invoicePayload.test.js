@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildInvoicePayload } from '../invoicePayload.js';
+import {
+  buildInvoicePayload,
+  createPersistInvoice,
+} from '../invoicePayload.js';
 
 describe('buildInvoicePayload', () => {
   it('snapshots product profit exclusion into invoice items', () => {
@@ -20,5 +23,29 @@ describe('buildInvoicePayload', () => {
       costPriceSnapshot: 20,
       excludeFromProfitSnapshot: true,
     });
+  });
+});
+
+describe('createPersistInvoice', () => {
+  const deps = {
+    items: [{ productId: 'p1', qty: 1, unitPrice: 10 }],
+    products: [{ id: 'p1' }],
+    totals: { subTotal: 10, total: 10 },
+    invoice: { id: 'old' },
+  };
+
+  it('returns null when the save was cancelled (onSave → null)', async () => {
+    const persist = createPersistInvoice({ ...deps, onSave: async () => null });
+    expect(await persist()).toBeNull();
+  });
+
+  it('returns the saved invoice, falling back to the current one', async () => {
+    const saved = { id: 'new' };
+    expect(
+      await createPersistInvoice({ ...deps, onSave: async () => saved })()
+    ).toBe(saved);
+    expect(
+      await createPersistInvoice({ ...deps, onSave: async () => undefined })()
+    ).toEqual({ id: 'old' });
   });
 });

@@ -1,4 +1,6 @@
 import { Checkbox, Col, Form, Input, InputNumber, Modal, Row } from 'antd';
+import CustomerTaxFields from '../../features/einvoice/components/CustomerTaxFields.jsx';
+import ProductTaxField from '../../features/einvoice/components/ProductTaxField.jsx';
 import Slot from '../../platform/Slot.jsx';
 import { SLOTS } from '../../platform/slots.js';
 import { useEdition } from '../../platform/useActiveModule.js';
@@ -119,6 +121,7 @@ const CatalogFormModal = ({
               </Form.Item>
             </Col>
           </Row>
+          <ProductTaxField />
         </Form>
       )}
 
@@ -141,6 +144,7 @@ const CatalogFormModal = ({
           <Form.Item label="Địa chỉ" name="address">
             <Input />
           </Form.Item>
+          {activeKey === 'customers' && <CustomerTaxFields />}
         </Form>
       )}
     </Modal>

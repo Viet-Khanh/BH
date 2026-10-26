@@ -6,6 +6,7 @@ export default {
   codePrefix: 'TT',
   shop: {
     name: 'Thời trang Mộc Lan',
+    taxCode: '8023456789',
     phone: '0938 456 789',
     address: '88 Lê Văn Sỹ, P.13, Q.3, TP.HCM',
   },
@@ -47,6 +48,7 @@ export default {
       name: 'Cửa hàng thời trang Bảo Anh',
       phone: '0936 666 777',
       address: 'Biên Hoà, Đồng Nai',
+      taxCode: '3603344557',
       profile: 'debtor',
     },
     {

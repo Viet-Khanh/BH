@@ -6,6 +6,7 @@ export default {
   codePrefix: 'TH',
   shop: {
     name: 'Tạp hoá Minh Anh',
+    taxCode: '8012345678',
     phone: '0901 234 567',
     address: '12 Nguyễn Trãi, P.2, Q.5, TP.HCM',
   },
@@ -53,6 +54,7 @@ export default {
       name: 'Bếp ăn công ty An Phát',
       phone: '028 3838 1234',
       address: 'KCN Tân Tạo',
+      taxCode: '0313344556',
       profile: 'debtor',
     },
   ],

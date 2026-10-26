@@ -6,6 +6,7 @@ export default {
   codePrefix: 'NT',
   shop: {
     name: 'Nhà thuốc An Khang Phúc',
+    taxCode: '0314567890',
     phone: '0977 567 890',
     address: '156 Phan Đăng Lưu, P.3, Q. Phú Nhuận, TP.HCM',
   },
@@ -41,6 +42,7 @@ export default {
       name: 'Phòng khám Đa khoa An Tâm',
       phone: '028 3995 1234',
       address: 'Q. Tân Bình',
+      taxCode: '0314455667',
       profile: 'debtor',
     },
     {

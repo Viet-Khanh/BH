@@ -38,6 +38,7 @@ describe('e-invoice API (in-browser backend)', () => {
   }, 30000);
 
   it('blocks export until the seller tax code is set', async () => {
+    await call('PUT', '/settings/main', { sellerTaxCode: '' });
     const before = await documents('pending');
     expect(before.blocking).toHaveLength(1);
     await call('PUT', '/settings/main', { sellerTaxCode: '8012345678' });

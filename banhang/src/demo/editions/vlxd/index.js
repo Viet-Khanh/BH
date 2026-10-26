@@ -6,6 +6,7 @@ export default {
   codePrefix: 'VL',
   shop: {
     name: 'VLXD Phúc Thành',
+    taxCode: '0315678901',
     phone: '0912 345 678',
     address: '245 Quốc lộ 1A, Bình Chánh, TP.HCM',
   },
@@ -41,6 +42,7 @@ export default {
       name: 'Công ty TNHH Xây dựng Phúc Thịnh',
       phone: '028 3756 7890',
       address: 'KCN Lê Minh Xuân',
+      taxCode: '0311122334',
       profile: 'debtor',
     },
     {

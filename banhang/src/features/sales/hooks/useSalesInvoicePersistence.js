@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { message } from 'antd';
 import { v4 as uuid } from 'uuid';
+import { confirmEinvoiceEdit } from '../../einvoice/components/einvoiceGuards.js';
 import { createInvoice, updateInvoice } from '../api/salesApi.js';
 import {
   buildCreatedInvoicePayload,
@@ -19,6 +20,7 @@ export const useSalesInvoicePersistence = ({
   const saveInvoice = useCallback(
     async (data) => {
       if (editing) {
+        if (!(await confirmEinvoiceEdit(editing))) return null;
         const nextInvoice = buildUpdatedInvoicePayload({
           editing,
           data,

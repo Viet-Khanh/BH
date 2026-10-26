@@ -52,5 +52,7 @@ export const createPersistInvoice =
     const payload = buildInvoicePayload(payloadDeps);
     if (!payload) return null;
     const saved = await onSave(payload);
+    // null = the user cancelled (e.g. e-invoice edit warning): stop the flow.
+    if (saved === null) return null;
     return saved || invoice || null;
   };

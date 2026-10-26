@@ -10,6 +10,7 @@ import {
   exportReportInvoiceItems,
   printReportInvoicePreview,
 } from '../reportInvoiceActions.js';
+import { einvoiceDeleteNotice } from '../../../features/einvoice/components/einvoiceGuards.js';
 
 export const useReportSalesInvoiceModal = ({
   location,
@@ -95,7 +96,12 @@ export const useReportSalesInvoiceModal = ({
     if (!selectedInvoice) return;
     Modal.confirm({
       title: 'Xóa hóa đơn?',
-      content: 'Thao tác này không thể hoàn tác.',
+      content: [
+        'Thao tác này không thể hoàn tác.',
+        einvoiceDeleteNotice(selectedInvoice),
+      ]
+        .filter(Boolean)
+        .join(' '),
       okText: 'Xóa',
       cancelText: 'Hủy',
       onOk: async () => {

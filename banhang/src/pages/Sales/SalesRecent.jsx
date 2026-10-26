@@ -9,6 +9,7 @@ import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
 import { apiRequest } from '../../db/repository.js';
 import { saveWorkbook } from '../../utils/excelExport.js';
 import { printHtml } from '../../utils/printUtils.js';
+import { einvoiceDeleteNotice } from '../../features/einvoice/components/einvoiceGuards.js';
 
 const SalesRecent = () => {
   const navigate = useNavigate();
@@ -147,7 +148,12 @@ const SalesRecent = () => {
     if (!selectedInvoice) return;
     Modal.confirm({
       title: 'Xóa hóa đơn?',
-      content: 'Thao tác này không thể hoàn tác.',
+      content: [
+        'Thao tác này không thể hoàn tác.',
+        einvoiceDeleteNotice(selectedInvoice),
+      ]
+        .filter(Boolean)
+        .join(' '),
       okText: 'Xóa',
       cancelText: 'Hủy',
       onOk: async () => {

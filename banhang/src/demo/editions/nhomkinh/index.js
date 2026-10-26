@@ -6,6 +6,7 @@ export default {
   codePrefix: 'NK',
   shop: {
     name: 'Nhôm kính Tân Phát',
+    taxCode: '0316789012',
     phone: '0903 789 456',
     address: '68 Hồ Học Lãm, An Lạc, Bình Tân, TP.HCM',
   },
@@ -41,6 +42,7 @@ export default {
       name: 'Công ty TNHH Nội thất Minh Khang',
       phone: '028 3762 1122',
       address: 'Q.8, TP.HCM',
+      taxCode: '0312233445',
       profile: 'debtor',
     },
     {

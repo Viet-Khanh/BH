@@ -50,9 +50,7 @@ export const useSalesEditor = ({
           setDraftInvoice(null);
           setEditing(nextInvoice);
           editingRef.current = nextInvoice;
-          setInvoicePayments(
-            Array.isArray(data.payments) ? data.payments : []
-          );
+          setInvoicePayments(Array.isArray(data.payments) ? data.payments : []);
           invoicePaymentsRef.current = Array.isArray(data.payments)
             ? data.payments
             : [];
