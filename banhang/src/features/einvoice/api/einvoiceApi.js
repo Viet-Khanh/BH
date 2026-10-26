@@ -19,6 +19,12 @@ export const markEinvoicesExported = (invoiceIds, profile) =>
     body: { invoiceIds, profile },
   });
 
+export const markEinvoicesAdjusted = (invoiceIds, profile) =>
+  apiRequest('/einvoice/mark-adjusted', {
+    method: 'POST',
+    body: { invoiceIds, profile },
+  });
+
 export const unmarkEinvoices = (invoiceIds) =>
   apiRequest('/einvoice/unmark', { method: 'POST', body: { invoiceIds } });
 

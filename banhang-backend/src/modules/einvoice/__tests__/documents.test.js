@@ -64,6 +64,9 @@ describe('buildDocument', () => {
       ['10', 20000, 2000],
       ['8', 100000, 8000],
     ]);
+    expect(doc.lines.map((line) => line.unitPriceBeforeTax)).toEqual([
+      10000, 100000,
+    ]);
     expect(doc.totals).toEqual({
       beforeTax: 120000,
       tax: 10000,

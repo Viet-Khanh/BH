@@ -61,11 +61,13 @@ const buildColumns = (onChanged) => [
   },
 ];
 
-// Only invoices not yet exported can be selected; exported ones must be
-// unmarked first so a sale is never uploaded twice by accident.
+// Only rows of the export purpose's status can be selected (pending → export,
+// changed → adjust); exported ones must be unmarked first so a sale is never
+// uploaded twice by accident.
 const EinvoiceTable = ({
   items,
   loading,
+  selectableStatus,
   selectedIds,
   onSelect,
   onChanged,
@@ -87,7 +89,9 @@ const EinvoiceTable = ({
     rowSelection={{
       selectedRowKeys: selectedIds,
       onChange: onSelect,
-      getCheckboxProps: (item) => ({ disabled: item.status !== 'pending' }),
+      getCheckboxProps: (item) => ({
+        disabled: item.status !== selectableStatus,
+      }),
     }}
   />
 );

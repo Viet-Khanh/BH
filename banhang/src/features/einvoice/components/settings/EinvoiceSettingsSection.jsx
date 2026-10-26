@@ -4,14 +4,9 @@ import { useSettingsStore } from '../../../../store/settingsStore.js';
 import { TAX_METHOD_OPTIONS } from '../../domain/settingsDefaults.js';
 import { fromFormValues, toFormValues } from '../../domain/settingsForm.js';
 import { VAT_RATE_OPTIONS } from '../../domain/vatRates.js';
-import { PROFILES } from '../../profiles/index.js';
+import { profileOptions } from '../../profiles/index.js';
 import EinvoiceWorkflowFields from './EinvoiceWorkflowFields.jsx';
 import ReducedVatAlert from './ReducedVatAlert.jsx';
-
-const PROFILE_OPTIONS = PROFILES.map(({ id, name }) => ({
-  value: id,
-  label: name,
-}));
 
 // "Hoá đơn điện tử" section of the System page; owns its form.
 const EinvoiceSettingsSection = () => {
@@ -62,7 +57,13 @@ const EinvoiceSettingsSection = () => {
           </>
         )}
         <Form.Item label="Mẫu file mặc định" name="einvoiceProfile">
-          <Select options={PROFILE_OPTIONS} />
+          <Select options={profileOptions(settings, 'issue')} />
+        </Form.Item>
+        <Form.Item
+          label="Mẫu file điều chỉnh/thay thế"
+          name="einvoiceAdjustProfile"
+        >
+          <Select options={profileOptions(settings, 'adjust')} />
         </Form.Item>
         <EinvoiceWorkflowFields />
         <Button type="primary" onClick={save}>

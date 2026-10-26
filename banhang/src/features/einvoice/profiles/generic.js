@@ -1,52 +1,41 @@
-import dayjs from 'dayjs';
-import { formatVatRate } from '../domain/vatRates.js';
-
-const money = (value) =>
-  value === undefined || value === null ? '' : Math.round(Number(value));
-
 // "Chuẩn BanHang": readable, complete layout. One row per line; invoice
-// columns repeat on every row. Provider profiles follow the same contract.
+// columns repeat on every row.
+export const GENERIC_COLUMNS = [
+  { header: 'Mã HĐ (app)', field: 'appCode' },
+  { header: 'Ngày HĐ', field: 'date', format: 'dmy' },
+  { header: 'Tên người mua', field: 'buyerName' },
+  { header: 'Tên đơn vị', field: 'companyName' },
+  { header: 'MST người mua', field: 'buyerTaxCode' },
+  { header: 'Địa chỉ', field: 'buyerAddress' },
+  { header: 'Email', field: 'buyerEmail' },
+  { header: 'Hình thức TT', field: 'paymentMethod', format: 'code' },
+  { header: 'STT', field: 'lineIndex' },
+  { header: 'Mã hàng', field: 'itemCode' },
+  { header: 'Tên hàng', field: 'itemName' },
+  { header: 'ĐVT', field: 'unit' },
+  { header: 'Số lượng', field: 'quantity' },
+  { header: 'Đơn giá', field: 'unitPrice' },
+  {
+    header: 'Thành tiền chưa thuế',
+    field: 'amountBeforeTax',
+    onlyFor: 'deduction',
+  },
+  {
+    header: 'Thuế suất',
+    field: 'vatRate',
+    format: 'percent',
+    onlyFor: 'deduction',
+  },
+  { header: 'Tiền thuế', field: 'tax', onlyFor: 'deduction' },
+  { header: 'Thành tiền', field: 'amount' },
+  { header: 'Chiết khấu HĐ', field: 'discount' },
+  { header: 'Ghi chú', field: 'lineNote' },
+];
+
 export default {
   id: 'generic',
   name: 'Chuẩn BanHang (đủ trường, dễ đọc)',
+  purpose: 'issue',
   sheetName: 'HoaDon',
-  columns: [
-    { header: 'Mã HĐ (app)', value: (doc) => doc.code },
-    { header: 'Ngày HĐ', value: (doc) => dayjs(doc.date).format('DD/MM/YYYY') },
-    { header: 'Tên người mua', value: (doc) => doc.buyer.name },
-    { header: 'Tên đơn vị', value: (doc) => doc.buyer.companyName },
-    { header: 'MST người mua', value: (doc) => doc.buyer.taxCode },
-    { header: 'Địa chỉ', value: (doc) => doc.buyer.address },
-    { header: 'Email', value: (doc) => doc.buyer.email },
-    { header: 'Hình thức TT', value: (doc) => doc.paymentMethod },
-    { header: 'STT', value: (doc, line) => line.index },
-    { header: 'Mã hàng', value: (doc, line) => line.code },
-    { header: 'Tên hàng', value: (doc, line) => line.name },
-    { header: 'ĐVT', value: (doc, line) => line.unit },
-    { header: 'Số lượng', value: (doc, line) => line.quantity },
-    { header: 'Đơn giá', value: (doc, line) => line.unitPrice },
-    {
-      header: 'Thành tiền chưa thuế',
-      onlyFor: 'deduction',
-      value: (doc, line) => money(line.beforeTax),
-    },
-    {
-      header: 'Thuế suất',
-      onlyFor: 'deduction',
-      value: (doc, line) => formatVatRate(line.vatRate),
-    },
-    {
-      header: 'Tiền thuế',
-      onlyFor: 'deduction',
-      value: (doc, line) => money(line.tax),
-    },
-    { header: 'Thành tiền', value: (doc, line) => money(line.amount) },
-    {
-      header: 'Chiết khấu HĐ',
-      // Invoice-level discount: written once, on the first line.
-      value: (doc, line, lineIndex) =>
-        lineIndex === 0 && doc.discount ? money(doc.discount) : '',
-    },
-    { header: 'Ghi chú', value: (doc, line) => line.note },
-  ],
+  columns: GENERIC_COLUMNS,
 };

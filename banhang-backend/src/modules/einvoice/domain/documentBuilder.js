@@ -59,7 +59,17 @@ const withTax = (line, product, tax) => {
     rate,
     pricesIncludeVat: tax.pricesIncludeVat,
   });
-  return { ...line, vatRate: rate, beforeTax: split.beforeTax, tax: split.tax };
+  // Providers expect quantity × unit price = amount before tax.
+  const unitPriceBeforeTax = line.quantity
+    ? Math.round((split.beforeTax / line.quantity) * 100) / 100
+    : 0;
+  return {
+    ...line,
+    vatRate: rate,
+    beforeTax: split.beforeTax,
+    tax: split.tax,
+    unitPriceBeforeTax,
+  };
 };
 
 const sumBy = (lines, key) =>

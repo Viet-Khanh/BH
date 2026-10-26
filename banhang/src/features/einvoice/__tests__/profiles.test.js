@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { applyProfile } from '../domain/applyProfile.js';
-import { getProfile, PROFILES } from '../profiles/index.js';
+import {
+  applyProfile,
+  documentProblems,
+  profileProblems,
+} from '../domain/applyProfile.js';
+import { getField } from '../domain/fields/index.js';
+import {
+  allProfiles,
+  BUILT_IN_PROFILES,
+  getProfile,
+  listProfiles,
+} from '../profiles/index.js';
 
 const doc = (overrides = {}) => ({
   invoiceId: 'i1',
@@ -48,24 +58,36 @@ const doc = (overrides = {}) => ({
 });
 
 describe('profile contract', () => {
-  it.each(PROFILES)(
-    '$id declares named columns with value functions',
-    (profile) => {
-      expect(profile.name).toEqual(expect.any(String));
-      expect(profile.sheetName).toEqual(expect.any(String));
-      profile.columns.forEach((column) => {
-        expect(column.header).toEqual(expect.any(String));
-        expect(typeof column.value).toBe('function');
-        if (column.onlyFor)
-          expect(['direct', 'deduction']).toContain(column.onlyFor);
-      });
-    }
-  );
+  it.each(BUILT_IN_PROFILES)('$id is a valid data profile', (profile) => {
+    expect(profile.name).toEqual(expect.any(String));
+    expect(['issue', 'adjust']).toContain(profile.purpose);
+    profile.columns.forEach((column) => {
+      expect(column.header).toEqual(expect.any(String));
+      expect(getField(column.field), column.header).not.toBeNull();
+      if (column.format)
+        expect(getField(column.field).formats).toHaveProperty(column.format);
+      if (column.onlyFor)
+        expect(['direct', 'deduction']).toContain(column.onlyFor);
+    });
+  });
 
-  it('has unique ids and falls back to generic', () => {
-    const ids = PROFILES.map((profile) => profile.id);
+  it('has unique ids and falls back per purpose', () => {
+    const ids = allProfiles().map((profile) => profile.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(getProfile('nope').id).toBe('generic');
+    expect(getProfile('nope', {}, 'adjust').id).toBe('generic-adjust');
+  });
+
+  it('includes custom profiles from settings', () => {
+    const settings = {
+      einvoiceCustomProfiles: [
+        { id: 'c1', name: 'Của tôi', purpose: 'issue', columns: [] },
+      ],
+    };
+    expect(getProfile('c1', settings).name).toBe('Của tôi');
+    expect(listProfiles(settings, 'adjust').map((p) => p.id)).not.toContain(
+      'c1'
+    );
   });
 });
 
@@ -96,5 +118,58 @@ describe('applyProfile (generic)', () => {
     expect(rows[0]).not.toContain('Thuế suất');
     expect(rows[0]).not.toContain('Tiền thuế');
     expect(rows[0]).toContain('Thành tiền');
+  });
+});
+
+describe('applyProfile (data features)', () => {
+  const profile = {
+    id: 't',
+    name: 'Thử',
+    purpose: 'issue',
+    preamble: [['Tiêu đề'], []],
+    columns: [
+      { header: 'Nhóm', subHeader: 'group', field: 'invoiceSeq' },
+      { header: 'Ký hiệu', field: 'constant', constant: '1C26TAA' },
+      { header: 'MST', field: 'buyerTaxCode', firstLineOnly: true },
+      { header: 'TS', field: 'vatRate', format: 'viettel' },
+      { header: 'HTTT', field: 'paymentMethod', format: 'text' },
+      { header: 'Ngày', field: 'date', format: 'ymd' },
+      { header: 'Trống', field: 'empty' },
+    ],
+  };
+
+  it('writes preamble, sub-header, constants, formats and first-line fields', () => {
+    const { rows } = applyProfile(profile, [doc(), doc({ code: 'INV-2' })], {
+      taxMethod: 'deduction',
+    });
+    expect(rows.slice(0, 4)).toEqual([
+      ['Tiêu đề'],
+      [],
+      ['Nhóm', 'Ký hiệu', 'MST', 'TS', 'HTTT', 'Ngày', 'Trống'],
+      ['group', '', '', '', '', '', ''],
+    ]);
+    expect(rows[4]).toEqual([
+      1,
+      '1C26TAA',
+      '0312345678',
+      10,
+      'Chuyển khoản',
+      '2026-10-26',
+      '',
+    ]);
+    expect(rows[5].slice(0, 4)).toEqual([1, '1C26TAA', '', -2]);
+    expect(rows[6][0]).toBe(2);
+  });
+
+  it('reports columns the shop must fill and single-rate limits', () => {
+    const misa = getProfile('misa');
+    expect(profileProblems(misa)[0]).toMatch('Mã đơn vị lập hóa đơn');
+    expect(documentProblems(misa, doc())[0]).toMatch('một thuế suất');
+    expect(
+      profileProblems({
+        ...misa,
+        columns: misa.columns.map((column) => ({ ...column, constant: 'X' })),
+      })
+    ).toEqual([]);
   });
 });

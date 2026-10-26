@@ -1,12 +1,13 @@
 import { Button, Select, Space } from 'antd';
-import { PROFILES } from '../../profiles/index.js';
 
-const PROFILE_OPTIONS = PROFILES.map((profile) => ({
-  value: profile.id,
-  label: profile.name,
-}));
+const LABELS = {
+  issue: 'Xuất file',
+  adjust: 'Xuất file điều chỉnh/thay thế',
+};
 
 const EinvoiceExportBar = ({
+  purpose,
+  profileOptions,
   profileId,
   onProfileChange,
   selectedCount,
@@ -17,9 +18,9 @@ const EinvoiceExportBar = ({
   <Space wrap>
     <span>Mẫu file:</span>
     <Select
-      style={{ width: 280 }}
+      style={{ width: 300 }}
       value={profileId}
-      options={PROFILE_OPTIONS}
+      options={profileOptions}
       onChange={onProfileChange}
     />
     <Button
@@ -28,7 +29,7 @@ const EinvoiceExportBar = ({
       loading={exporting}
       onClick={onExport}
     >
-      Xuất file ({selectedCount} hoá đơn)
+      {LABELS[purpose]} ({selectedCount} hoá đơn)
     </Button>
   </Space>
 );
