@@ -36,6 +36,7 @@ export const listDocuments = async ({
   to,
   status = 'pending',
   search,
+  requestedOnly,
 }) => {
   requireRange({ from, to });
   if (!STATUSES.includes(status))
@@ -44,8 +45,10 @@ export const listDocuments = async ({
   const invoices = (await findRealSales({ from, to })).filter((invoice) =>
     matchesStatus(invoice, status)
   );
-  const items = (await buildItems(invoices, settings)).filter((item) =>
-    matchesSearch(item, search)
+  const onlyRequested = requestedOnly === true || requestedOnly === 'true';
+  const items = (await buildItems(invoices, settings)).filter(
+    (item) =>
+      matchesSearch(item, search) && (!onlyRequested || item.document.requested)
   );
   return { blocking: validateSettings(settings), items };
 };

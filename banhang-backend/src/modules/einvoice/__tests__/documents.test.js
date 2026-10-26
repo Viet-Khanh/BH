@@ -78,6 +78,36 @@ describe('buildDocument', () => {
     expect(doc.totals).toEqual({ beforeTax: 130000, tax: 0, total: 130000 });
   });
 
+  it('uses buyer data entered at the counter when an e-invoice is requested', () => {
+    const request = {
+      requested: true,
+      companyName: 'Công ty Bình Minh',
+      taxCode: '0109999999',
+      address: 'Hà Nội',
+      email: '',
+    };
+    const walkIn = { id: 'c2', name: 'Khách lẻ', email: 'le@x.vn' };
+    const doc = build({
+      invoice: { ...invoice, einvoiceRequest: request },
+      customer: walkIn,
+    });
+    expect(doc.requested).toBe(true);
+    expect(doc.buyer).toMatchObject({
+      companyName: 'Công ty Bình Minh',
+      taxCode: '0109999999',
+      address: 'Hà Nội',
+      email: 'le@x.vn',
+    });
+    const ignored = build({
+      invoice: {
+        ...invoice,
+        einvoiceRequest: { ...request, requested: false },
+      },
+      customer: walkIn,
+    });
+    expect(ignored.buyer.taxCode).toBe('');
+  });
+
   it('treats a customer without tax code as an individual buyer', () => {
     const doc = build({ customer: { id: 'c2', name: 'Khách lẻ' } });
     expect(doc.buyer).toMatchObject({ name: 'Khách lẻ', companyName: '' });

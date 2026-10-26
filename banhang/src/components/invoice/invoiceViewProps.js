@@ -23,6 +23,8 @@ export const buildInvoiceViewProps = ({
   setNote,
   printNote,
   setPrintNote,
+  einvoiceRequest,
+  setEinvoiceRequest,
   searchKeyword,
   setSearchKeyword,
   filteredQuick,
@@ -99,6 +101,8 @@ export const buildInvoiceViewProps = ({
     onNoteChange: setNote,
     printNote,
     onPrintNoteChange: setPrintNote,
+    einvoiceRequest,
+    onEinvoiceRequestChange: setEinvoiceRequest,
   };
 
   const searchProps = {

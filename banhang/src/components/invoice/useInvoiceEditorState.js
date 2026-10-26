@@ -71,6 +71,7 @@ const useInvoiceEditorState = ({
     totals: computed.totals,
     status: computed.status,
     note: draft.note,
+    einvoiceRequest: draft.einvoiceRequest,
   });
   const ticketActions = useInvoiceTicketActions({
     invoice,
@@ -141,6 +142,8 @@ const useInvoiceEditorState = ({
     setNote: draft.setNote,
     printNote: draft.printNote,
     setPrintNote: draft.setPrintNote,
+    einvoiceRequest: draft.einvoiceRequest,
+    setEinvoiceRequest: draft.setEinvoiceRequest,
     searchKeyword: productSelection.searchKeyword,
     setSearchKeyword: productSelection.setSearchKeyword,
     filteredQuick: productSelection.filteredQuick,

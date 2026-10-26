@@ -14,6 +14,7 @@ const StatusCell = ({ item }) => {
     <>
       <Tag color={option.color}>{option.label}</Tag>
       {item.deleted && <Tag color="red">Đã xoá</Tag>}
+      {item.document.requested && <Tag color="blue">Khách lấy HĐ</Tag>}
       {item.einvoice?.number && <div>Số: {item.einvoice.number}</div>}
     </>
   );

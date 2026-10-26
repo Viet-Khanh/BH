@@ -17,6 +17,11 @@ const cases = [
   ['line note', { ...base, items: [{ ...base.items[0], lineNote: 'x' }] }],
   ['date', { ...base, date: '2026-10-27T03:00:00.000Z' }],
   ['removed line', { ...base, items: [] }],
+  [
+    'counter buyer data',
+    { ...base, einvoiceRequest: { requested: true, taxCode: '0101' } },
+  ],
+  ['request not ticked', { ...base, einvoiceRequest: { requested: false } }],
 ];
 
 describe('hasContentChange (frontend copy)', () => {

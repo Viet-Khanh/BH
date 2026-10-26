@@ -152,6 +152,26 @@ describe('e-invoice API (in-browser backend)', () => {
     expect(summary.pendingEarlier).toBeGreaterThan(0);
   });
 
+  it('filters sales whose customer asked for an e-invoice', async () => {
+    const [sale] = (await documents('pending')).items;
+    const invoice = await call('GET', `/invoices/${sale.invoiceId}`);
+    await call('PUT', `/invoices/${sale.invoiceId}`, {
+      ...invoice,
+      einvoiceRequest: {
+        requested: true,
+        companyName: 'Công ty Bình Minh',
+        taxCode: '0109999999',
+        address: 'Hà Nội',
+      },
+    });
+    const { items } = await call(
+      'GET',
+      `/einvoice/documents?${RANGE}&status=all&requestedOnly=true`
+    );
+    expect(items.map((item) => item.invoiceId)).toEqual([sale.invoiceId]);
+    expect(items[0].document.buyer.taxCode).toBe('0109999999');
+  });
+
   it('rejects bad input with 400', async () => {
     const { status } = await dispatch({
       method: 'POST',

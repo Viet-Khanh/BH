@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { Button, DatePicker, Input, Select } from 'antd';
+import EinvoiceRequestControl from '../../features/einvoice/components/pos/EinvoiceRequestControl.jsx';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
 const { TextArea } = Input;
@@ -26,6 +27,8 @@ const InvoiceTopSection = ({
   onNoteChange,
   printNote,
   onPrintNoteChange,
+  einvoiceRequest,
+  onEinvoiceRequestChange,
   codeLabel = 'HĐ',
   recentLabel = 'F4 - HĐ gần đây',
   partnerLabel = 'Tên khách hàng',
@@ -119,6 +122,14 @@ const InvoiceTopSection = ({
         <span style={{ width: 150 }}>{partnerAddressLabel}:</span>
         <Input value={customer?.address || ''} readOnly />
       </div>
+      {onEinvoiceRequestChange && (
+        <EinvoiceRequestControl
+          request={einvoiceRequest}
+          customer={customer}
+          onChange={onEinvoiceRequestChange}
+          disabled={readOnly}
+        />
+      )}
       <div className="pos-info-row">
         <span style={{ width: 150 }}>{noteLabel}:</span>
         <Input

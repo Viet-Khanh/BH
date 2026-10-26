@@ -37,6 +37,15 @@ const InvoiceSchema = new mongoose.Schema(
     note: String,
     changeLog: [ChangeLogSchema],
     importBatchId: String,
+    // Buyer data for the e-invoice, taken at the counter (client-owned).
+    einvoiceRequest: {
+      requested: Boolean,
+      buyerName: String,
+      companyName: String,
+      taxCode: String,
+      address: String,
+      email: String,
+    },
     // Export state for manual e-invoice upload (modules/einvoice). Server-owned.
     einvoice: {
       exportedAt: String,

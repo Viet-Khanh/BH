@@ -11,6 +11,7 @@ export const buildInvoicePayload = ({
   totals,
   status,
   note,
+  einvoiceRequest,
 }) => {
   if (!items.length) {
     message.error('Vui lòng thêm hàng hóa.');
@@ -43,6 +44,7 @@ export const buildInvoicePayload = ({
     total: totals.total,
     paymentStatus: status,
     note,
+    ...(einvoiceRequest ? { einvoiceRequest } : {}),
   };
 };
 

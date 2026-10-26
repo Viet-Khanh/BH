@@ -1,4 +1,4 @@
-import { Button, DatePicker, Input, Select, Space } from 'antd';
+import { Button, Checkbox, DatePicker, Input, Select, Space } from 'antd';
 import { FILTER_OPTIONS } from '../../domain/statusLabels.js';
 
 const EinvoiceFilters = ({ filters, onChange, onReload, loading }) => (
@@ -22,6 +22,12 @@ const EinvoiceFilters = ({ filters, onChange, onReload, loading }) => (
       onSearch={(search) => onChange({ search })}
       style={{ width: 240 }}
     />
+    <Checkbox
+      checked={filters.requestedOnly}
+      onChange={(event) => onChange({ requestedOnly: event.target.checked })}
+    >
+      Chỉ hoá đơn khách lấy HĐ
+    </Checkbox>
     <Button onClick={onReload} loading={loading}>
       Tải lại
     </Button>

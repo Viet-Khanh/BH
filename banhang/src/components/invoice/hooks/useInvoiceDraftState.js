@@ -24,6 +24,10 @@ export const useInvoiceDraftState = ({
   const [items, setItems] = useState([]);
   const [note, setNote] = useState(invoice?.note || '');
   const [printNote, setPrintNote] = useState('');
+  // Buyer data for the e-invoice ("khách lấy HĐĐT"), see features/einvoice.
+  const [einvoiceRequest, setEinvoiceRequest] = useState(
+    invoice?.einvoiceRequest || null
+  );
   const [draftCode, setDraftCode] = useState(
     invoice?.code || generateCode('INV')
   );
@@ -37,6 +41,7 @@ export const useInvoiceDraftState = ({
       setDate(invoice.date || new Date().toISOString());
       setNote(invoice.note || '');
       setPrintNote('');
+      setEinvoiceRequest(invoice.einvoiceRequest || null);
       setDraftCode(invoice.code || generateCode('INV'));
       setItems(buildInvoiceItems(invoice));
       setHydratedInvoiceId(invoice.id || null);
@@ -51,6 +56,11 @@ export const useInvoiceDraftState = ({
     setItems([]);
     setHydratedInvoiceId(null);
   }, [defaultCustomerId, invoice]);
+
+  // A new ticket (new draft code) starts without e-invoice buyer data.
+  useEffect(() => {
+    if (!invoice) setEinvoiceRequest(null);
+  }, [draftCode, invoice]);
 
   useEffect(() => {
     if (!onCustomerChange || !customerId) return;
@@ -70,6 +80,8 @@ export const useInvoiceDraftState = ({
     setNote,
     printNote,
     setPrintNote,
+    einvoiceRequest,
+    setEinvoiceRequest,
     draftCode,
     setDraftCode,
   };

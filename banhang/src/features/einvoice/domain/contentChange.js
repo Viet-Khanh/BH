@@ -19,8 +19,23 @@ const normalize = (value) => {
   return typeof value === 'string' && Number.isFinite(number) ? number : value;
 };
 
+const REQUEST_FIELDS = [
+  'buyerName',
+  'companyName',
+  'taxCode',
+  'address',
+  'email',
+];
+
+// Counter buyer data is content too; "not requested" equals "no request".
+const requestOf = (request) =>
+  request?.requested
+    ? REQUEST_FIELDS.map((field) => String(request[field] || '').trim())
+    : null;
+
 const contentOf = (invoice = {}) => ({
   fields: CONTENT_FIELDS.map((field) => normalize(invoice[field])),
+  request: requestOf(invoice.einvoiceRequest),
   lines: (invoice.items || []).map((item) =>
     LINE_FIELDS.map((field) => normalize(item?.[field]))
   ),

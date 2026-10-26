@@ -38,6 +38,9 @@ export const validateDocument = (doc) => {
       )
     );
   }
+  if (doc.buyer.taxCode && !doc.buyer.companyName) {
+    issues.push(error('Người mua có mã số thuế nhưng thiếu tên đơn vị.'));
+  }
   if (doc.buyer.taxCode && !doc.buyer.address) {
     issues.push(warning('Khách có mã số thuế nhưng chưa có địa chỉ.'));
   }

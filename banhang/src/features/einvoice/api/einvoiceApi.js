@@ -1,8 +1,15 @@
 import { apiRequest } from '../../../db/repository.js';
 
-export const getEinvoiceDocuments = ({ from, to, status, search }) => {
+export const getEinvoiceDocuments = ({
+  from,
+  to,
+  status,
+  search,
+  requestedOnly,
+}) => {
   const params = new URLSearchParams({ from, to, status });
   if (search) params.set('search', search);
+  if (requestedOnly) params.set('requestedOnly', 'true');
   return apiRequest(`/einvoice/documents?${params.toString()}`);
 };
 

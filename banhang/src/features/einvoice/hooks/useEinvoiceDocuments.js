@@ -9,6 +9,7 @@ const initialFilters = () => ({
   range: [dayjs().startOf('day'), dayjs().endOf('day')],
   status: 'pending',
   search: '',
+  requestedOnly: false,
 });
 
 // Loads e-invoice documents for the current filters (local-day range → ISO).
@@ -26,6 +27,7 @@ export const useEinvoiceDocuments = () => {
         to: end.endOf('day').toISOString(),
         status: filters.status,
         search: filters.search.trim(),
+        requestedOnly: filters.requestedOnly,
       });
       setResult(data || EMPTY_RESULT);
     } catch (error) {

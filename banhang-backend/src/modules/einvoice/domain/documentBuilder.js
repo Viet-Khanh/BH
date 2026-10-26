@@ -18,15 +18,26 @@ const buildSeller = (settings) => ({
   phone: settings.shopPhone || '',
 });
 
+// Buyer data entered at the counter wins over the customer record (only when
+// the customer asked for an e-invoice).
+const requestValue = (request, field) =>
+  request?.requested ? String(request[field] || '').trim() : '';
+
 // A buyer with a tax code is an organisation; otherwise an individual.
-const buildBuyer = (customer = {}) => {
-  const isOrganisation = Boolean(customer.taxCode);
+const buildBuyer = (customer = {}, request = null) => {
+  const from = (field, fallback = '') =>
+    requestValue(request, field) || fallback;
+  const taxCode = from('taxCode', customer.taxCode || '');
+  const isOrganisation = Boolean(taxCode);
   return {
-    name: customer.buyerName || (isOrganisation ? '' : customer.name || ''),
-    companyName: isOrganisation ? customer.name || '' : '',
-    taxCode: customer.taxCode || '',
-    address: customer.address || '',
-    email: customer.email || '',
+    name: from(
+      'buyerName',
+      customer.buyerName || (isOrganisation ? '' : customer.name || '')
+    ),
+    companyName: isOrganisation ? from('companyName', customer.name || '') : '',
+    taxCode,
+    address: from('address', customer.address || ''),
+    email: from('email', customer.email || ''),
     phone: customer.phone || '',
   };
 };
@@ -75,7 +86,8 @@ export const buildDocument = ({
     date: invoice.date,
     taxMethod: tax.taxMethod,
     seller: buildSeller(settings),
-    buyer: buildBuyer(customer || {}),
+    buyer: buildBuyer(customer || {}, invoice.einvoiceRequest),
+    requested: Boolean(invoice.einvoiceRequest?.requested),
     paymentMethod: resolvePaymentMethod(payments),
     discount: Number(invoice.discountTotal || 0),
     lines,
