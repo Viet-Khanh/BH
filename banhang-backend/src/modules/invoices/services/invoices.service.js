@@ -28,10 +28,8 @@ import {
   buildItemUpdateStockDeltas,
   invertStockDeltas,
 } from '../../../services/stockSnapshot.service.js';
-import {
-  buildChangeFlagPatch,
-  stripEinvoiceFields,
-} from '../../einvoice/domain/contentChange.js';
+import { stripEinvoiceFields } from '../../einvoice/domain/contentChange.js';
+import { checkInvoiceChange } from '../../einvoice/services/einvoiceGuard.service.js';
 
 const applyInvoiceSnapshot = async ({ stockDeltas = [], debtDeltas = [] }) => {
   const stockResult = await applyStockDeltas(stockDeltas);
@@ -108,6 +106,8 @@ export const updateInvoiceItem = async (id, payload) => {
   }
 
   const nextInvoice = { ...(existing || {}), ...cleanPayload, id };
+  // Exported e-invoices: refused when locked, else flagged for adjustment.
+  const einvoicePatch = await checkInvoiceChange(existing, nextInvoice);
   const stockDeltas = existing
     ? buildItemUpdateStockDeltas(existing.items || [], nextInvoice.items || [])
     : buildInvoiceCreateStockDeltas(nextInvoice.items || []);
@@ -126,8 +126,6 @@ export const updateInvoiceItem = async (id, payload) => {
     debtDeltas,
   });
   try {
-    // Exported e-invoices whose content changes must be adjusted by the shop.
-    const einvoicePatch = buildChangeFlagPatch(existing, nextInvoice);
     return await upsertInvoice(id, { ...cleanPayload, ...einvoicePatch });
   } catch (error) {
     await rollbackInvoiceSnapshot(snapshotResult);
@@ -140,6 +138,7 @@ export const deleteInvoiceItem = async (id) => {
   const existing = await findInvoiceById(id);
   if (!existing) return null;
   if (existing.isDeleted) return existing;
+  const einvoicePatch = await checkInvoiceChange(existing, null);
 
   const payments = await findPayments({
     invoiceId: id,
@@ -161,11 +160,7 @@ export const deleteInvoiceItem = async (id) => {
   let invoiceDeleted = false;
   let paymentsDeleted = false;
   try {
-    const invoice = await softDeleteInvoice(
-      id,
-      deletedAt,
-      buildChangeFlagPatch(existing, null)
-    );
+    const invoice = await softDeleteInvoice(id, deletedAt, einvoicePatch);
     if (!invoice) throw new Error('Invoice not found');
     invoiceDeleted = true;
     await softDeletePaymentsByInvoiceId(id, deletedAt);

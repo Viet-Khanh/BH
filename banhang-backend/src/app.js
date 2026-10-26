@@ -98,9 +98,12 @@ export const createApp = (options = {}) => {
     })
   );
 
+  // Errors may carry an HTTP status (e.g. 409 for a locked e-invoice).
   app.use((err, req, res, _next) => {
-    console.error(err);
-    res.status(500).json({ message: err.message || 'Server error' });
+    if (!err.status) console.error(err);
+    res
+      .status(err.status || 500)
+      .json({ message: err.message || 'Server error' });
   });
 
   return app;

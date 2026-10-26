@@ -20,12 +20,12 @@ export const useSalesInvoicePersistence = ({
   const saveInvoice = useCallback(
     async (data) => {
       if (editing) {
-        if (!(await confirmEinvoiceEdit(editing))) return null;
         const nextInvoice = buildUpdatedInvoicePayload({
           editing,
           data,
           paid: sumPayments(invoicePayments),
         });
+        if (!(await confirmEinvoiceEdit(editing, nextInvoice))) return null;
         const saved = await updateInvoice(editing.id, nextInvoice);
         const next = saved || nextInvoice;
         setEditing(next);

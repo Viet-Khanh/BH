@@ -36,6 +36,24 @@ export const buildChangeFlagPatch = (before, after) =>
     ? { 'einvoice.changedAfterExport': true }
     : {};
 
+// Error for a change refused by the "lock exported invoices" setting (HTTP 409).
+export class EinvoiceLockedError extends Error {
+  constructor(message) {
+    super(message);
+    this.status = 409;
+  }
+}
+
+// Message when the lock setting forbids this change, else null.
+export const lockViolation = (before, after, settings = {}) => {
+  if (!settings.einvoiceLockExported || !isExported(before)) return null;
+  if (after === null)
+    return 'Hoá đơn đã xuất hoá đơn điện tử nên không xoá được (đang bật khoá). Vào Hoá đơn điện tử → "Bỏ đánh dấu" nếu thật sự cần.';
+  return hasContentChange(before, after)
+    ? 'Hoá đơn đã xuất hoá đơn điện tử nên không sửa được nội dung (đang bật khoá). Vào Hoá đơn điện tử → "Bỏ đánh dấu" nếu thật sự cần.'
+    : null;
+};
+
 // `einvoice` is server-owned: never accept it from client payloads.
 export const stripEinvoiceFields = (payload = {}) =>
   Object.fromEntries(

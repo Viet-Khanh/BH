@@ -59,6 +59,34 @@ describe('e-invoice API (in-browser backend)', () => {
     expect((await statusOf(first.invoiceId)).status).toBe('exported');
   });
 
+  it('refuses edits and deletes of exported invoices when locked', async () => {
+    await call('PUT', '/settings/main', { einvoiceLockExported: true });
+    try {
+      const invoice = await call('GET', `/invoices/${first.invoiceId}`);
+      const edit = await dispatch({
+        method: 'PUT',
+        path: `/api/invoices/${first.invoiceId}`,
+        body: { ...invoice, total: invoice.total + 1000 },
+      });
+      expect(edit.status).toBe(409);
+      const remove = await dispatch({
+        method: 'DELETE',
+        path: `/api/invoices/${first.invoiceId}`,
+      });
+      expect(remove.status).toBe(409);
+      await call('POST', '/payments', {
+        invoiceId: first.invoiceId,
+        paymentType: 'invoice_payment',
+        method: 'cash',
+        amount: 1000,
+        date: first.date,
+      });
+      expect((await statusOf(first.invoiceId)).status).toBe('exported');
+    } finally {
+      await call('PUT', '/settings/main', { einvoiceLockExported: false });
+    }
+  });
+
   it('flags content edits but not payment changes', async () => {
     const invoice = await call('GET', `/invoices/${first.invoiceId}`);
     const items = invoice.items.map((item, index) =>

@@ -36,7 +36,7 @@ export const update = async (req, res) => {
     const doc = await InvoiceService.updateInvoiceItem(req.params.id, req.body);
     res.json(doc);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.status || 400).json({ message: error.message });
   }
 };
 

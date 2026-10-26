@@ -32,9 +32,10 @@ export const dispatch = async ({ method = 'GET', path, body } = {}) => {
     if (!handled) return { status: 404, data: { message: 'Not found' } };
     return { status: res.statusCode, data: toWire(res.body) };
   } catch (error) {
-    console.error(error);
+    // Same as the backend error handler: errors may carry an HTTP status.
+    if (!error?.status) console.error(error);
     return {
-      status: 500,
+      status: error?.status || 500,
       data: { message: error?.message || 'Server error' },
     };
   }
