@@ -1,3 +1,5 @@
+import { isAfterReducedVat, REDUCED_RATE } from './reducedVat.js';
+
 const error = (message) => ({ level: 'error', message });
 const warning = (message) => ({ level: 'warning', message });
 
@@ -26,6 +28,16 @@ export const validateDocument = (doc) => {
   doc.lines.forEach((line) =>
     issues.push(...validateLine(line, doc.taxMethod))
   );
+  if (
+    isAfterReducedVat(doc.date) &&
+    doc.lines.some((line) => line.vatRate === REDUCED_RATE)
+  ) {
+    issues.push(
+      warning(
+        'Thuế suất 8% chỉ áp dụng đến 31/12/2026: kiểm tra lại thuế suất.'
+      )
+    );
+  }
   if (doc.buyer.taxCode && !doc.buyer.address) {
     issues.push(warning('Khách có mã số thuế nhưng chưa có địa chỉ.'));
   }

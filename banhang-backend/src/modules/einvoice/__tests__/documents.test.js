@@ -84,6 +84,15 @@ describe('buildDocument', () => {
 });
 
 describe('validation', () => {
+  it('warns about the 8% rate after 31/12/2026 (Vietnam time)', () => {
+    const at = (date) =>
+      validateDocument(build({ invoice: { ...invoice, date } })).map(
+        (issue) => issue.message
+      );
+    expect(at('2026-12-31T16:00:00.000Z').join()).not.toMatch('8%');
+    expect(at('2026-12-31T17:00:00.000Z').join()).toMatch('8%');
+  });
+
   it('blocks export without seller tax code', () => {
     expect(validateSettings({})[0].message).toMatch('mã số thuế người bán');
     expect(validateSettings(settings)).toEqual([]);

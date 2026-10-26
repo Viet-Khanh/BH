@@ -4,6 +4,7 @@ import { useSettingsStore } from '../../../store/settingsStore.js';
 import EinvoiceDetailDrawer from '../components/detail/EinvoiceDetailDrawer.jsx';
 import EinvoiceExportBar from '../components/list/EinvoiceExportBar.jsx';
 import EinvoiceFilters from '../components/list/EinvoiceFilters.jsx';
+import ReducedVatAlert from '../components/settings/ReducedVatAlert.jsx';
 import EinvoiceTable from '../components/list/EinvoiceTable.jsx';
 import { useEinvoiceDocuments } from '../hooks/useEinvoiceDocuments.js';
 import { useEinvoiceExport } from '../hooks/useEinvoiceExport.js';
@@ -40,6 +41,7 @@ const EinvoiceScreen = () => {
   return (
     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
       <Typography.Text type="secondary">{HELP}</Typography.Text>
+      <ReducedVatAlert settings={settings} />
       {documents.blocking.map((issue) => (
         <Alert
           key={issue.message}

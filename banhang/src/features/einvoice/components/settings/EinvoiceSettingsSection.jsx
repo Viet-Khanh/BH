@@ -7,6 +7,7 @@ import {
 } from '../../domain/settingsDefaults.js';
 import { VAT_RATE_OPTIONS } from '../../domain/vatRates.js';
 import { PROFILES } from '../../profiles/index.js';
+import ReducedVatAlert from './ReducedVatAlert.jsx';
 
 const FIELDS = Object.keys(EINVOICE_DEFAULT_SETTINGS);
 const PROFILE_OPTIONS = PROFILES.map(({ id, name }) => ({
@@ -38,6 +39,7 @@ const EinvoiceSettingsSection = () => {
   return (
     <>
       <div className="section-title">Hoá đơn điện tử</div>
+      <ReducedVatAlert settings={settings} />
       <Form form={form} layout="vertical" style={{ maxWidth: 640 }}>
         <Form.Item label="Loại hình" name="taxMethod">
           <Radio.Group options={TAX_METHOD_OPTIONS} />
