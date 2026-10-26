@@ -1,9 +1,10 @@
-import { Alert, Space, Typography } from 'antd';
+import { Alert, Button, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import EinvoiceDetailDrawer from '../components/detail/EinvoiceDetailDrawer.jsx';
 import EinvoiceExportBar from '../components/list/EinvoiceExportBar.jsx';
 import EinvoiceFilters from '../components/list/EinvoiceFilters.jsx';
 import EinvoiceTable from '../components/list/EinvoiceTable.jsx';
+import ResultImportModal from '../components/results/ResultImportModal.jsx';
 import ReducedVatAlert from '../components/settings/ReducedVatAlert.jsx';
 import { useEinvoiceDocuments } from '../hooks/useEinvoiceDocuments.js';
 import { useEinvoiceExport } from '../hooks/useEinvoiceExport.js';
@@ -25,6 +26,7 @@ const InvoicesTab = ({ settings }) => {
   const profiles = useExportProfiles(settings);
   const [selectedIds, setSelectedIds] = useState([]);
   const [detailItem, setDetailItem] = useState(null);
+  const [resultsOpen, setResultsOpen] = useState(false);
   const { exporting, exportItems } = useEinvoiceExport({
     settings,
     onExported: documents.reload,
@@ -52,12 +54,17 @@ const InvoicesTab = ({ settings }) => {
           message={issue.message}
         />
       ))}
-      <EinvoiceFilters
-        filters={documents.filters}
-        onChange={documents.updateFilters}
-        onReload={documents.reload}
-        loading={documents.loading}
-      />
+      <Space wrap style={{ justifyContent: 'space-between', width: '100%' }}>
+        <EinvoiceFilters
+          filters={documents.filters}
+          onChange={documents.updateFilters}
+          onReload={documents.reload}
+          loading={documents.loading}
+        />
+        <Button onClick={() => setResultsOpen(true)}>
+          Nhập kết quả từ nhà cung cấp
+        </Button>
+      </Space>
       <EinvoiceExportBar
         purpose={purpose}
         profileOptions={profiles.optionsFor(purpose)}
@@ -78,6 +85,11 @@ const InvoicesTab = ({ settings }) => {
         onSelect={setSelectedIds}
         onChanged={documents.reload}
         onOpen={setDetailItem}
+      />
+      <ResultImportModal
+        open={resultsOpen}
+        onClose={() => setResultsOpen(false)}
+        onApplied={documents.reload}
       />
       <EinvoiceDetailDrawer
         item={detailItem}

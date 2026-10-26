@@ -1,5 +1,6 @@
 import { EinvoiceInputError } from '../domain/status.js';
 import { listDocuments } from '../services/documents.service.js';
+import { importResults } from '../services/results.service.js';
 import { getSummary as buildSummary } from '../services/summary.service.js';
 import {
   markExported,
@@ -28,3 +29,5 @@ export const postUnmark = respond((req) => unmarkExported(req.body));
 export const putNumber = respond((req) =>
   setNumber(req.params.invoiceId, req.body)
 );
+
+export const postResults = respond((req) => importResults(req.body || {}));

@@ -39,3 +39,14 @@ export const getEinvoiceSummary = ({ since, todayStart }) =>
   apiRequest(
     `/einvoice/summary?${new URLSearchParams({ since, todayStart }).toString()}`
   );
+
+// rows: see domain/resultRows.js; dryRun only previews the matches.
+export const importEinvoiceResults = ({ rows, dryRun }) =>
+  apiRequest('/einvoice/results', {
+    method: 'POST',
+    body: {
+      rows,
+      dryRun,
+      utcOffsetMinutes: -new Date().getTimezoneOffset(),
+    },
+  });

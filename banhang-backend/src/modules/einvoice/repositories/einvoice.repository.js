@@ -19,6 +19,14 @@ export const findSalesInvoices = ({ from, to }) =>
     .sort({ date: 1 })
     .lean();
 
+export const findInvoicesByCodes = (codes) =>
+  codes.length
+    ? Invoice.find({
+        code: { $in: codes },
+        importBatchId: { $in: [null, ''] },
+      }).lean()
+    : [];
+
 export const findInvoicesByIds = (ids) =>
   ids.length ? Invoice.find({ id: { $in: ids } }).lean() : [];
 
