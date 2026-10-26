@@ -43,7 +43,14 @@ const InvoiceSchema = new mongoose.Schema(
       exportBatchId: String,
       profile: String,
       number: String,
+      series: String,
+      taxAuthorityCode: String,
+      lookupCode: String,
       changedAfterExport: Boolean,
+      // Document as exported (compared with the current sale when it changes).
+      snapshot: {},
+      // Adjustment/replacement exports: { at, kind, batchId, original* }.
+      adjustments: [{}],
     },
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,

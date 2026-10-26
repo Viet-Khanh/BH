@@ -1,12 +1,12 @@
 import { Button, Form, Input, message, Radio, Select, Switch } from 'antd';
 import { useEffect } from 'react';
-import { useSettingsStore } from '../../../store/settingsStore.js';
+import { useSettingsStore } from '../../../../store/settingsStore.js';
 import {
   EINVOICE_DEFAULT_SETTINGS,
   TAX_METHOD_OPTIONS,
-} from '../domain/settingsDefaults.js';
-import { VAT_RATE_OPTIONS } from '../domain/vatRates.js';
-import { PROFILES } from '../profiles/index.js';
+} from '../../domain/settingsDefaults.js';
+import { VAT_RATE_OPTIONS } from '../../domain/vatRates.js';
+import { PROFILES } from '../../profiles/index.js';
 
 const FIELDS = Object.keys(EINVOICE_DEFAULT_SETTINGS);
 const PROFILE_OPTIONS = PROFILES.map(({ id, name }) => ({

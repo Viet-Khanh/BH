@@ -70,7 +70,13 @@ describe('e-invoice API (in-browser backend)', () => {
       items,
       einvoice: { exportedAt: null },
     });
-    expect((await statusOf(first.invoiceId)).status).toBe('changed');
+    const changed = await statusOf(first.invoiceId);
+    expect(changed.status).toBe('changed');
+    expect(changed.einvoice.snapshot).toBeUndefined();
+    expect(changed.diff.lines[0]).toMatchObject({
+      type: 'changed',
+      fields: [{ field: 'note', after: 'sửa sau khi xuất' }],
+    });
 
     await call('PUT', `/invoices/${second.invoiceId}`, {
       paymentStatus: 'DA THU',
@@ -89,6 +95,7 @@ describe('e-invoice API (in-browser backend)', () => {
     await call('DELETE', `/invoices/${second.invoiceId}`);
     const item = await statusOf(second.invoiceId);
     expect(item).toMatchObject({ status: 'changed', deleted: true });
+    expect(item.diff.deleted).toBe(true);
   });
 
   it('stores provider numbers and unmarks', async () => {

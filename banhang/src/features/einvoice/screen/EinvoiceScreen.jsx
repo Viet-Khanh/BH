@@ -1,9 +1,10 @@
 import { Alert, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import { useSettingsStore } from '../../../store/settingsStore.js';
-import EinvoiceExportBar from '../components/EinvoiceExportBar.jsx';
-import EinvoiceFilters from '../components/EinvoiceFilters.jsx';
-import EinvoiceTable from '../components/EinvoiceTable.jsx';
+import EinvoiceDetailDrawer from '../components/detail/EinvoiceDetailDrawer.jsx';
+import EinvoiceExportBar from '../components/list/EinvoiceExportBar.jsx';
+import EinvoiceFilters from '../components/list/EinvoiceFilters.jsx';
+import EinvoiceTable from '../components/list/EinvoiceTable.jsx';
 import { useEinvoiceDocuments } from '../hooks/useEinvoiceDocuments.js';
 import { useEinvoiceExport } from '../hooks/useEinvoiceExport.js';
 import { DEFAULT_PROFILE_ID } from '../profiles/index.js';
@@ -16,6 +17,7 @@ const EinvoiceScreen = () => {
   const { settings, load: loadSettings } = useSettingsStore();
   const documents = useEinvoiceDocuments();
   const [selectedIds, setSelectedIds] = useState([]);
+  const [detailItem, setDetailItem] = useState(null);
   const [profileId, setProfileId] = useState(
     settings.einvoiceProfile || DEFAULT_PROFILE_ID
   );
@@ -66,6 +68,11 @@ const EinvoiceScreen = () => {
         selectedIds={selectedIds}
         onSelect={setSelectedIds}
         onChanged={documents.reload}
+        onOpen={setDetailItem}
+      />
+      <EinvoiceDetailDrawer
+        item={detailItem}
+        onClose={() => setDetailItem(null)}
       />
     </Space>
   );

@@ -1,7 +1,7 @@
 import { Table, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
-import { formatMoney } from '../../../utils/moneyFormat.js';
-import { getStatusOption } from '../domain/statusLabels.js';
+import { formatMoney } from '../../../../utils/moneyFormat.js';
+import { getStatusOption } from '../../domain/statusLabels.js';
 import EinvoiceRowActions from './EinvoiceRowActions.jsx';
 
 const ISSUE_TYPE = { error: 'danger', warning: 'warning' };
@@ -51,7 +51,12 @@ const buildColumns = (onChanged) => [
   },
   {
     title: '',
-    render: (item) => <EinvoiceRowActions item={item} onChanged={onChanged} />,
+    render: (item) => (
+      // Buttons must not also open the detail drawer.
+      <span onClick={(event) => event.stopPropagation()}>
+        <EinvoiceRowActions item={item} onChanged={onChanged} />
+      </span>
+    ),
   },
 ];
 
@@ -63,6 +68,7 @@ const EinvoiceTable = ({
   selectedIds,
   onSelect,
   onChanged,
+  onOpen,
 }) => (
   <Table
     rowKey="invoiceId"
@@ -71,6 +77,12 @@ const EinvoiceTable = ({
     dataSource={items}
     columns={buildColumns(onChanged)}
     pagination={{ pageSize: 50, hideOnSinglePage: true }}
+    onRow={(item) => ({
+      // Clicks on the selection checkbox only select the row.
+      onClick: (event) =>
+        event.target.closest?.('.ant-table-selection-column') || onOpen(item),
+      style: { cursor: 'pointer' },
+    })}
     rowSelection={{
       selectedRowKeys: selectedIds,
       onChange: onSelect,

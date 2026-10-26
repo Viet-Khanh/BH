@@ -1,6 +1,6 @@
 import { Checkbox, Col, Form, Input, InputNumber, Modal, Row } from 'antd';
-import CustomerTaxFields from '../../features/einvoice/components/CustomerTaxFields.jsx';
-import ProductTaxField from '../../features/einvoice/components/ProductTaxField.jsx';
+import CustomerTaxFields from '../../features/einvoice/components/catalog/CustomerTaxFields.jsx';
+import ProductTaxField from '../../features/einvoice/components/catalog/ProductTaxField.jsx';
 import Slot from '../../platform/Slot.jsx';
 import { SLOTS } from '../../platform/slots.js';
 import { useEdition } from '../../platform/useActiveModule.js';

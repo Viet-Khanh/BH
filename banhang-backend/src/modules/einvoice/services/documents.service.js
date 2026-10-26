@@ -1,46 +1,35 @@
-import { buildDocument } from '../domain/documentBuilder.js';
 import {
   EinvoiceInputError,
-  einvoiceStatus,
   STATUSES,
+  matchesStatus,
 } from '../domain/status.js';
-import { validateDocument, validateSettings } from '../domain/validation.js';
-import {
-  findCustomersByIds,
-  findMainSettings,
-  findPaymentsByInvoiceIds,
-  findProductsByIds,
-  findSalesInvoices,
-} from '../repositories/einvoice.repository.js';
+import { validateSettings } from '../domain/validation.js';
+import { findSalesInvoices } from '../repositories/einvoice.repository.js';
+import { buildItems, loadSettings } from './documentItems.js';
 
-// Builds e-invoice documents (+ validation) for the invoices of a date range.
-const unique = (values) => [...new Set(values.filter(Boolean))];
-const byId = (docs) => new Map(docs.map((doc) => [doc.id, doc]));
-const groupByInvoice = (payments) =>
-  payments.reduce((map, payment) => {
-    map.set(payment.invoiceId, [
-      ...(map.get(payment.invoiceId) || []),
-      payment,
-    ]);
-    return map;
-  }, new Map());
-
-const matchesSearch = (invoice, customer, search) => {
+// Lists e-invoice documents (+ validation, diff) for a date range.
+const matchesSearch = (item, search) => {
   const keyword = String(search || '')
     .trim()
     .toLowerCase();
   if (!keyword) return true;
-  return [invoice.code, customer?.name, customer?.taxCode].some((value) =>
-    String(value || '')
-      .toLowerCase()
-      .includes(keyword)
+  const { buyer } = item.document;
+  return [item.code, buyer.name, buyer.companyName, buyer.taxCode].some(
+    (value) =>
+      String(value || '')
+        .toLowerCase()
+        .includes(keyword)
   );
 };
 
-const requireRange = ({ from, to }) => {
+export const requireRange = ({ from, to }) => {
   if (!from || !to)
     throw new EinvoiceInputError('Thiếu khoảng ngày (from, to).');
 };
+
+// Opening-balance imports (importBatchId) are not real sales.
+export const findRealSales = async (range) =>
+  (await findSalesInvoices(range)).filter((invoice) => !invoice.importBatchId);
 
 export const listDocuments = async ({
   from,
@@ -51,49 +40,12 @@ export const listDocuments = async ({
   requireRange({ from, to });
   if (!STATUSES.includes(status))
     throw new EinvoiceInputError(`Trạng thái không hợp lệ: ${status}`);
-  const settings = (await findMainSettings()) || {};
-  // Opening-balance imports (importBatchId) are not real sales.
-  const invoices = (await findSalesInvoices({ from, to }))
-    .filter((invoice) => !invoice.importBatchId)
-    .filter(
-      (invoice) => status === 'all' || einvoiceStatus(invoice) === status
-    );
-  const [customers, products, payments] = await Promise.all([
-    findCustomersByIds(unique(invoices.map((invoice) => invoice.customerId))),
-    findProductsByIds(
-      unique(
-        invoices.flatMap((invoice) =>
-          (invoice.items || []).map((item) => item.productId)
-        )
-      )
-    ),
-    findPaymentsByInvoiceIds(invoices.map((invoice) => invoice.id)),
-  ]);
-  const customerById = byId(customers);
-  const productById = byId(products);
-  const paymentsByInvoice = groupByInvoice(payments);
-  const items = invoices
-    .filter((invoice) =>
-      matchesSearch(invoice, customerById.get(invoice.customerId), search)
-    )
-    .map((invoice) => {
-      const document = buildDocument({
-        invoice,
-        customer: customerById.get(invoice.customerId),
-        productById,
-        payments: paymentsByInvoice.get(invoice.id) || [],
-        settings,
-      });
-      return {
-        invoiceId: invoice.id,
-        code: invoice.code || '',
-        date: invoice.date,
-        status: einvoiceStatus(invoice),
-        deleted: Boolean(invoice.isDeleted),
-        einvoice: invoice.einvoice || null,
-        issues: validateDocument(document),
-        document,
-      };
-    });
+  const settings = await loadSettings();
+  const invoices = (await findRealSales({ from, to })).filter((invoice) =>
+    matchesStatus(invoice, status)
+  );
+  const items = (await buildItems(invoices, settings)).filter((item) =>
+    matchesSearch(item, search)
+  );
   return { blocking: validateSettings(settings), items };
 };

@@ -23,5 +23,5 @@ export const postMarkExported = respond((req) => markExported(req.body));
 export const postUnmark = respond((req) => unmarkExported(req.body));
 
 export const putNumber = respond((req) =>
-  setNumber(req.params.invoiceId, req.body?.number)
+  setNumber(req.params.invoiceId, req.body)
 );

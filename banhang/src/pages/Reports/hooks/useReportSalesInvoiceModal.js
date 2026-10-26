@@ -10,7 +10,7 @@ import {
   exportReportInvoiceItems,
   printReportInvoicePreview,
 } from '../reportInvoiceActions.js';
-import { einvoiceDeleteNotice } from '../../../features/einvoice/components/einvoiceGuards.js';
+import { einvoiceDeleteNotice } from '../../../features/einvoice/components/guards/einvoiceGuards.js';
 
 export const useReportSalesInvoiceModal = ({
   location,

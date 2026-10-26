@@ -1,6 +1,6 @@
 import { Button, Input, message, Modal, Space } from 'antd';
 import { useState } from 'react';
-import { setEinvoiceNumber, unmarkEinvoices } from '../api/einvoiceApi.js';
+import { setEinvoiceNumber, unmarkEinvoices } from '../../api/einvoiceApi.js';
 
 // Actions for an exported invoice: record the provider's number, or unmark it
 // (e.g. the upload failed) so it can be exported again.

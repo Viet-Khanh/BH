@@ -1,5 +1,5 @@
 import { Button, Select, Space } from 'antd';
-import { PROFILES } from '../profiles/index.js';
+import { PROFILES } from '../../profiles/index.js';
 
 const PROFILE_OPTIONS = PROFILES.map((profile) => ({
   value: profile.id,

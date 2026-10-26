@@ -1,6 +1,6 @@
 import { Form, Select } from 'antd';
-import { useSettingsStore } from '../../../store/settingsStore.js';
-import { VAT_RATE_OPTIONS } from '../domain/vatRates.js';
+import { useSettingsStore } from '../../../../store/settingsStore.js';
+import { VAT_RATE_OPTIONS } from '../../domain/vatRates.js';
 
 // VAT rate of a product; only meaningful for VAT invoices (company shops).
 const ProductTaxField = () => {

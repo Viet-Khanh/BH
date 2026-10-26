@@ -1,5 +1,5 @@
 import { Button, DatePicker, Input, Select, Space } from 'antd';
-import { STATUS_OPTIONS } from '../domain/statusLabels.js';
+import { FILTER_OPTIONS } from '../../domain/statusLabels.js';
 
 const EinvoiceFilters = ({ filters, onChange, onReload, loading }) => (
   <Space wrap>
@@ -10,9 +10,9 @@ const EinvoiceFilters = ({ filters, onChange, onReload, loading }) => (
       onChange={(range) => range && onChange({ range })}
     />
     <Select
-      style={{ width: 180 }}
+      style={{ width: 220 }}
       value={filters.status}
-      options={STATUS_OPTIONS}
+      options={FILTER_OPTIONS}
       onChange={(status) => onChange({ status })}
     />
     <Input.Search

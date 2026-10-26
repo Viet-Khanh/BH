@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { message } from 'antd';
 import { v4 as uuid } from 'uuid';
-import { confirmEinvoiceEdit } from '../../einvoice/components/einvoiceGuards.js';
+import { confirmEinvoiceEdit } from '../../einvoice/components/guards/einvoiceGuards.js';
 import { createInvoice, updateInvoice } from '../api/salesApi.js';
 import {
   buildCreatedInvoicePayload,
