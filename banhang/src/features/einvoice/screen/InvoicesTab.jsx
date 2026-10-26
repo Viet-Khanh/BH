@@ -34,9 +34,16 @@ const InvoicesTab = ({ settings }) => {
   const purpose = PURPOSE_BY_STATUS[documents.filters.status] || 'issue';
   const selectableStatus = purpose === 'adjust' ? 'changed' : 'pending';
 
+  // After a reload keep only rows that are still listed and selectable.
   useEffect(() => {
-    setSelectedIds([]);
-  }, [documents.items]);
+    setSelectedIds((ids) =>
+      ids.filter((id) =>
+        documents.items.some(
+          (item) => item.invoiceId === id && item.status === selectableStatus
+        )
+      )
+    );
+  }, [documents.items, selectableStatus]);
 
   const selectedItems = documents.items.filter((item) =>
     selectedIds.includes(item.invoiceId)
