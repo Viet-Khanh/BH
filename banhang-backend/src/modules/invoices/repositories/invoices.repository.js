@@ -19,10 +19,10 @@ export const upsertInvoice = async (id, payload) =>
     { new: true, upsert: true }
   ).lean();
 
-export const softDeleteInvoice = async (id, deletedAt) =>
+export const softDeleteInvoice = async (id, deletedAt, extraFields = {}) =>
   Invoice.findOneAndUpdate(
     { id },
-    { $set: { isDeleted: true, deletedAt } },
+    { $set: { ...extraFields, isDeleted: true, deletedAt } },
     { new: true }
   ).lean();
 

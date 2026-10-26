@@ -37,7 +37,7 @@ export const buildChangeFlagPatch = (before, after) =>
     : {};
 
 // `einvoice` is server-owned: never accept it from client payloads.
-export const stripEinvoiceFields = (payload = {}) => {
-  const { einvoice: _einvoice, ...rest } = payload;
-  return rest;
-};
+export const stripEinvoiceFields = (payload = {}) =>
+  Object.fromEntries(
+    Object.entries(payload).filter(([key]) => key !== 'einvoice')
+  );

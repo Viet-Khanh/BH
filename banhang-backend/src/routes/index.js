@@ -8,6 +8,7 @@ import Unit from '../models/Unit.js';
 import { createCrudRouter } from './crud.js';
 import dashboardRouter from './dashboard.js';
 import dataUpgradeRouter from './dataUpgrade.js';
+import einvoiceRouter from './einvoice.js';
 import invoicesRouter from './invoices.js';
 import openingImportRouter from './openingImport.js';
 import paymentsRouter from './payments.js';
@@ -36,6 +37,7 @@ const moduleRouters = [
   ['/api/purchases-tools', purchasesRouter],
   ['/api/products-tools', productToolsRouter],
   ['/api/opening-import', openingImportRouter],
+  ['/api/einvoice', einvoiceRouter],
 ];
 
 const mountModuleRouters = (app, modules) =>
