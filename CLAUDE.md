@@ -10,6 +10,7 @@ Retail sales software (sales, purchases, stock, customer/supplier debt, cashbook
 | `banhang/src/platform/` | Module system: core + edition + customer modules, slots, build-time selection |
 | `banhang/src/editions/` | Edition modules (nhomkinh default, vlxd, minimart, fashion, pharmacy) + `catalog.js` |
 | `banhang/src/customers/` | Customer modules (template: `example`) + `catalog.js` |
+| `banhang/src/features/einvoice/` + `banhang-backend/src/modules/einvoice/` | Manual e-invoice export (Excel per provider profile, export tracking) |
 | `banhang/src/demo/` | Browser demo mode: backend runs in the browser on localStorage (Vercel) |
 | `banhang-backend/` | Express + Mongoose API |
 | `packaging/`, `*.command`, `*.ps1`, `docker-compose.yml` | Local install / Docker / backup scripts |
@@ -21,6 +22,7 @@ Retail sales software (sales, purchases, stock, customer/supplier debt, cashbook
 - Module system (core/editions/customers, slots, builds): `banhang/src/platform/README.md`.
 - Editions: `banhang/src/editions/README.md`; customers: `banhang/src/customers/README.md`.
 - Windows installers per edition/customer: `packaging/windows/README.md`.
+- E-invoice export (tax rules, profiles, add a provider): `banhang/src/features/einvoice/README.md`.
 - Demo mode architecture, rules and recipes: `banhang/src/demo/README.md`.
 - Backend layout and demo-compatibility rules: `banhang-backend/README.md`.
 
