@@ -81,6 +81,7 @@ export const buildDefaultTemplate = (
   .summary-row:last-child { border-bottom: 0; }
   .invoice-note { margin-top: 4px; font-size: 13px; }
   .policy { text-align: center; font-size: 12px; margin-top: 8px; }
+  .einvoice-info { margin-top: 4px; font-size: 12px; }
   .signatures { display: flex; justify-content: space-between; margin-top: 2px; }
   .sign-col { width: 42%; text-align: center; }
   .sign-title { font-size: 15px; font-weight: 700; margin-top: 3px; }
@@ -140,6 +141,7 @@ export const buildDefaultTemplate = (
     </div>
   </div>
   <div class="invoice-note"><strong>Ghi chú:</strong> {{note}}</div>
+  {{einvoice.block}}
   <div class="policy">(Lưu ý: Khách hàng kiểm tra kỹ sau khi nhận hàng, mọi thắc mắc sau 2 ngày chúng tôi không giải quyết)</div>
   <div class="signatures">
     <div class="sign-col">

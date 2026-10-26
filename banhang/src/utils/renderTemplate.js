@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { buildEinvoicePrintFields } from '../features/einvoice/domain/printFields.js';
 import { escapeHtml } from './htmlEscape.js';
 import { formatMoney, formatRoundedMoney } from './moneyFormat.js';
 import { buildItemsHtml } from './printItems.js';
@@ -88,6 +89,7 @@ export const renderInvoiceTemplate = ({
     '{{shop.name}}': settings.shopName || '',
     '{{shop.phone}}': settings.shopPhone || '',
     '{{shop.address}}': settings.shopAddress || '',
+    ...buildEinvoicePrintFields(invoice, settings),
   };
 
   let html = template || '';

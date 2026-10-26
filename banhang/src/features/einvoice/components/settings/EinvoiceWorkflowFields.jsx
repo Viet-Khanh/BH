@@ -28,7 +28,7 @@ const EinvoiceWorkflowFields = () => (
     <Form.Item
       label="Trang tra cứu hoá đơn của nhà cung cấp"
       name="einvoiceLookupUrl"
-      extra="In trên phiếu cùng mã tra cứu, ví dụ https://tracuu.nhacungcap.vn"
+      extra="In trên phiếu cùng số HĐĐT và mã tra cứu: mẫu in dùng {{einvoice.block}} (hoặc {{einvoice.number}}, {{einvoice.series}}, {{einvoice.lookupCode}}, {{einvoice.lookupUrl}})."
     >
       <Input placeholder="https://" />
     </Form.Item>

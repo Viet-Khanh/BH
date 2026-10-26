@@ -1,24 +1,14 @@
-import { Button, Input, message, Modal, Space } from 'antd';
+import { Button, Modal, Space } from 'antd';
 import { useState } from 'react';
-import { setEinvoiceNumber, unmarkEinvoices } from '../../api/einvoiceApi.js';
+import { unmarkEinvoices } from '../../api/einvoiceApi.js';
+import IssuedNumberModal from './IssuedNumberModal.jsx';
 
 // Actions for an exported invoice: record the provider's number, or unmark it
 // (e.g. the upload failed) so it can be exported again.
 const EinvoiceRowActions = ({ item, onChanged }) => {
   const [numberOpen, setNumberOpen] = useState(false);
-  const [number, setNumber] = useState(item.einvoice?.number || '');
 
   if (item.status === 'pending') return null;
-
-  const saveNumber = async () => {
-    try {
-      await setEinvoiceNumber(item.invoiceId, { number });
-      setNumberOpen(false);
-      onChanged();
-    } catch (error) {
-      message.error(error.message);
-    }
-  };
 
   const unmark = () =>
     Modal.confirm({
@@ -41,20 +31,12 @@ const EinvoiceRowActions = ({ item, onChanged }) => {
       <Button size="small" onClick={unmark}>
         Bỏ đánh dấu
       </Button>
-      <Modal
+      <IssuedNumberModal
+        item={item}
         open={numberOpen}
-        title={`Số hoá đơn điện tử của ${item.code}`}
-        okText="Lưu"
-        cancelText="Huỷ"
-        onOk={saveNumber}
-        onCancel={() => setNumberOpen(false)}
-      >
-        <Input
-          value={number}
-          placeholder="Số hoá đơn trên trang nhà cung cấp"
-          onChange={(event) => setNumber(event.target.value)}
-        />
-      </Modal>
+        onClose={() => setNumberOpen(false)}
+        onSaved={onChanged}
+      />
     </Space>
   );
 };
