@@ -171,8 +171,20 @@ Shows revenue only (no tax-payable calculation).
 
 ## Provider presets
 
-Filled from the research step (public help pages / templates). Each preset records its
-source URL in a comment and is labelled for verification in the UI.
+From public help pages and templates (research 2026-10-26); each preset records `source`
+(`sample` = real template file, `docs` = official screenshots, `partial`) shown in the UI.
+
+- Viettel S-Invoice (`docs`): sheet "Thông tin hóa đơn", header row 9 + field-key row 10,
+  "Nhóm hóa đơn" groups lines (we use the app code), no date column, VAT KCT −2 / KKKNT −1,
+  invoice note carries the app code.
+- EasyInvoice (`sample`): ASCII headers (MaHD, NgayHoaDon…), MaHD groups lines, invoice fields
+  on the first row, VAT KCT −1 / KKKNT −2.
+- MISA meInvoice single-rate (`docs`): header row 9, "Số thứ tự hóa đơn" groups lines, rate and
+  invoice tax on the first row, "Mã đơn vị lập hóa đơn" filled by the shop; single-rate only.
+- M-Invoice (`partial`): "Số đơn hàng" groups lines, "Ký hiệu" filled by the shop.
+- VNPT, BKAV: no public template → profile from the shop's own template file.
+- No provider documents that a reference column comes back in its issued-invoice export, so
+  result matching falls back to day + total.
 
 ## Testing
 

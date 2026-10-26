@@ -18,6 +18,12 @@ Vercel demo (see `banhang/src/demo/README.md`), so a few rules below are mandato
 
 Request path: `router → controller (req/res) → service (rules) → repository/model`.
 
+`modules/einvoice/` adds a pure `domain/` folder (documents, tax, diff, adjustments, result
+matching, report) used by its services; the invoices module calls only
+`einvoice/services/einvoiceGuard.service.js` (lock + change flag). Errors may carry an HTTP
+`status` (e.g. 409), honoured by the app error handler and the demo dispatcher. Details:
+`banhang/src/features/einvoice/README.md`.
+
 ## Rules for browser-demo compatibility
 
 1. Only `models/*.js` may import `mongoose`. Services, repositories and utils import models.
