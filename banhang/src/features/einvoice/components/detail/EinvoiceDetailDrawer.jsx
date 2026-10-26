@@ -1,4 +1,5 @@
 import { Drawer, Typography } from 'antd';
+import AdjustmentHistory from './AdjustmentHistory.jsx';
 import DiffView from './DiffView.jsx';
 import DocumentView from './DocumentView.jsx';
 import IssuedInfo from './IssuedInfo.jsx';
@@ -27,6 +28,11 @@ const EinvoiceDetailDrawer = ({ item, onClose }) => (
         {item.status === 'changed' && (
           <Section title="Thay đổi sau khi xuất">
             <DiffView diff={item.diff} />
+          </Section>
+        )}
+        {item.einvoice?.adjustments?.length > 0 && (
+          <Section title="Đã xuất điều chỉnh/thay thế">
+            <AdjustmentHistory adjustments={item.einvoice.adjustments} />
           </Section>
         )}
         <Section title="Nội dung hiện tại">

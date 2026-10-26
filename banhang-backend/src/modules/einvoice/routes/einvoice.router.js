@@ -11,6 +11,10 @@ router.post(
   '/mark-exported',
   asyncHandler(EinvoiceController.postMarkExported)
 );
+router.post(
+  '/mark-adjusted',
+  asyncHandler(EinvoiceController.postMarkAdjusted)
+);
 router.post('/results', asyncHandler(EinvoiceController.postResults));
 router.post('/unmark', asyncHandler(EinvoiceController.postUnmark));
 router.put('/:invoiceId/number', asyncHandler(EinvoiceController.putNumber));

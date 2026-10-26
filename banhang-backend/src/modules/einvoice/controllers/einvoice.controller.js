@@ -1,5 +1,6 @@
 import { EinvoiceInputError } from '../domain/status.js';
 import { listDocuments } from '../services/documents.service.js';
+import { markAdjusted } from '../services/adjustments.service.js';
 import { importResults } from '../services/results.service.js';
 import { getSummary as buildSummary } from '../services/summary.service.js';
 import {
@@ -31,3 +32,5 @@ export const putNumber = respond((req) =>
 );
 
 export const postResults = respond((req) => importResults(req.body || {}));
+
+export const postMarkAdjusted = respond((req) => markAdjusted(req.body || {}));

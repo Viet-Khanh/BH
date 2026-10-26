@@ -48,7 +48,12 @@ const buildColumns = (onChanged) => [
   { title: 'Trạng thái', render: (item) => <StatusCell item={item} /> },
   {
     title: 'Cần kiểm tra',
-    render: (item) => <IssuesCell issues={item.issues} />,
+    // Changed sales: what blocks the adjustment file (e.g. no original number).
+    render: (item) => (
+      <IssuesCell
+        issues={item.adjustment ? item.adjustment.issues : item.issues}
+      />
+    ),
   },
   {
     title: '',

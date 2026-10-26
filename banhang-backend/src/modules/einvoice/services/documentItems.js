@@ -1,3 +1,4 @@
+import { buildAdjustment } from '../domain/adjustment.js';
 import { diffDocuments } from '../domain/documentDiff.js';
 import { buildDocument } from '../domain/documentBuilder.js';
 import { einvoiceStatus } from '../domain/status.js';
@@ -64,6 +65,8 @@ export const buildItems = async (invoices, settings) => {
     });
     const status = einvoiceStatus(invoice);
     const deleted = Boolean(invoice.isDeleted);
+    const issues = validateDocument(document);
+    const changed = status === 'changed';
     return {
       invoiceId: invoice.id,
       code: invoice.code || '',
@@ -71,12 +74,12 @@ export const buildItems = async (invoices, settings) => {
       status,
       deleted,
       einvoice: publicEinvoice(invoice.einvoice),
-      issues: validateDocument(document),
+      issues,
       document,
-      diff:
-        status === 'changed'
-          ? diffDocuments(invoice.einvoice?.snapshot, deleted ? null : document)
-          : null,
+      diff: changed
+        ? diffDocuments(invoice.einvoice?.snapshot, deleted ? null : document)
+        : null,
+      adjustment: changed ? buildAdjustment(invoice, document, issues) : null,
     };
   });
 };

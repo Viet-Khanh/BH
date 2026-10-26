@@ -82,4 +82,56 @@ describe('e-invoice assist API (in-browser backend)', () => {
       unnumberedBefore - matchedIds.length
     );
   });
+
+  const itemOf = async (invoiceId) =>
+    (await documents('all')).items.find((item) => item.invoiceId === invoiceId);
+
+  it('exports a replacement for an edited sale and keeps the history', async () => {
+    const [sale] = exported;
+    const invoice = await call('GET', `/invoices/${sale.invoiceId}`);
+    await call('PUT', `/invoices/${sale.invoiceId}`, {
+      ...invoice,
+      items: invoice.items.map((item, index) =>
+        index === 0 ? { ...item, lineNote: 'đổi quy cách' } : item
+      ),
+    });
+    const changed = await itemOf(sale.invoiceId);
+    expect(changed.adjustment).toMatchObject({ kind: 'replace', issues: [] });
+    expect(changed.adjustment.document.adjustment.originalNumber).toBe(
+      '0000101'
+    );
+
+    const result = await call('POST', '/einvoice/mark-adjusted', {
+      invoiceIds: [sale.invoiceId],
+      profile: 'generic-adjust',
+    });
+    expect(result.count).toBe(1);
+    const after = await itemOf(sale.invoiceId);
+    expect(after.status).toBe('exported');
+    expect(after.einvoice.number).toBeNull();
+    expect(after.einvoice.adjustments).toMatchObject([
+      { kind: 'replace', originalNumber: '0000101', originalSeries: '1C26TAA' },
+    ]);
+  });
+
+  it('exports an adjust-down for a deleted sale', async () => {
+    const sale = exported[2];
+    await call('PUT', `/einvoice/${sale.invoiceId}/number`, {
+      number: '0000109',
+    });
+    await call('DELETE', `/invoices/${sale.invoiceId}`);
+    const changed = await itemOf(sale.invoiceId);
+    expect(changed.adjustment.kind).toBe('reduce');
+    expect(changed.adjustment.document.lines.length).toBe(
+      sale.document.lines.length
+    );
+    await call('POST', '/einvoice/mark-adjusted', {
+      invoiceIds: [sale.invoiceId],
+    });
+    expect(await itemOf(sale.invoiceId)).toMatchObject({
+      status: 'exported',
+      deleted: true,
+      einvoice: { number: '0000109' },
+    });
+  });
 });
