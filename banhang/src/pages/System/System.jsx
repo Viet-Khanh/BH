@@ -14,6 +14,7 @@ import { seedDemo } from '../../db/seed.js';
 import TemplateEditor from '../../components/TemplateEditor.jsx';
 import DataUpgradePanel from '../../features/dataUpgrade/components/DataUpgradePanel.jsx';
 import EinvoiceSettingsSection from '../../features/einvoice/components/settings/EinvoiceSettingsSection.jsx';
+import PrintSettingsSection from '../../features/printing/components/PrintSettingsSection.jsx';
 import { consumeSystemAccess } from './systemAccess.js';
 import { getSystemPasswordFromSettings } from './systemPassword.js';
 import { useEditionFeature } from '../../platform/useActiveModule.js';
@@ -164,6 +165,7 @@ const System = () => {
       </Form>
 
       <EinvoiceSettingsSection />
+      <PrintSettingsSection />
 
       <div className="section-title">Mẫu hóa đơn</div>
       <TemplateEditor
