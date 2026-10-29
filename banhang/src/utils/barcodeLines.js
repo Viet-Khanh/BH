@@ -49,7 +49,9 @@ export const mergeScannedLine = (items = [], line, priceField) => {
 };
 
 export const switchLineUnit = (item, product, unitName, price, priceField) => {
-  const { unitName: _oldName, factor: _oldFactor, ...rest } = item;
+  const rest = { ...item };
+  delete rest.unitName;
+  delete rest.factor;
   const unit = findProductUnit(product, unitName);
   const selection = {
     value: unit ? unit.name : '',

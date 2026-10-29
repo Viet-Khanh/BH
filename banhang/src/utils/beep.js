@@ -6,6 +6,10 @@ export const playBeep = (kind = 'ok') => {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     context = context || new AudioCtx();
+    // Browsers start the context suspended until a user gesture; a scan is one.
+    if (context.state === 'suspended') {
+      Promise.resolve(context.resume()).catch(() => {});
+    }
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.frequency.value = kind === 'ok' ? 1200 : 300;
