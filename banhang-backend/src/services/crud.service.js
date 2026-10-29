@@ -6,7 +6,7 @@ import {
   buildQtyMapFromItems,
   invertStockDeltas,
 } from './stockSnapshot.service.js';
-import { normalizeProductUnits } from '../utils/productUnits.js';
+import { normalizeProductUnits, unitError } from '../utils/productUnits.js';
 
 export const sanitizePayload = (payload) => {
   if (!payload || typeof payload !== 'object') return {};
@@ -50,12 +50,19 @@ const prepareCreatePayload = (Model, payload) => {
   return payload;
 };
 
-// Cleans `units` in a product payload (only when present); throws a user message.
+// Cleans `units` in a product payload (only when present); throws a 400 error.
 const applyProductUnits = (payload, baseUnit) => {
   if (payload.units === undefined) return payload;
   const { units, error } = normalizeProductUnits(payload.units, baseUnit);
-  if (error) throw new Error(error);
+  if (error) throw unitError(error);
   return { ...payload, units };
+};
+
+// A new base unit must not clash with the units already stored on the product.
+const checkExistingUnits = (payload, existing) => {
+  if (payload.units !== undefined || payload.unit === undefined) return;
+  const { error } = normalizeProductUnits(existing.units, payload.unit);
+  if (error) throw unitError(error);
 };
 
 export const normalizeProductName = (value) =>
@@ -215,6 +222,7 @@ export const updateItem = async (Model, id, payload) => {
     if (!existing) {
       throw new Error('Không tìm thấy sản phẩm.');
     }
+    checkExistingUnits(cleanPayload, existing);
     cleanPayload = applyProductUnits(
       cleanPayload,
       cleanPayload.unit ?? existing.unit

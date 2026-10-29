@@ -14,7 +14,23 @@ describe('resolveItemUnits', () => {
   it('does not query products when no line has a unit', async () => {
     productModel.find.mockReset();
     const items = [{ productId: 'p1', qty: 1 }];
-    expect(await resolveItemUnits(items)).toBe(items);
+    expect(await resolveItemUnits(items)).toEqual(items);
+    expect(productModel.find).not.toHaveBeenCalled();
+  });
+
+  it('strips the factor of lines without a unit name', async () => {
+    productModel.find.mockReset();
+    expect(
+      await resolveItemUnits([
+        { productId: 'p1', qty: 1, unitName: '', factor: 24 },
+        { productId: 'p1', qty: 2, unitName: '  ', factor: 6 },
+        { productId: 'p1', qty: 3, factor: 12 },
+      ])
+    ).toEqual([
+      { productId: 'p1', qty: 1 },
+      { productId: 'p1', qty: 2 },
+      { productId: 'p1', qty: 3 },
+    ]);
     expect(productModel.find).not.toHaveBeenCalled();
   });
 
@@ -42,6 +58,9 @@ describe('resolveItemUnits', () => {
     mockProducts([{ id: 'p1', name: 'Coca', unit: 'lon', units: [] }]);
     await expect(
       resolveItemUnits([{ productId: 'p1', qty: 1, unitName: 'két' }])
-    ).rejects.toThrow('Đơn vị "két" không có trong hàng Coca.');
+    ).rejects.toMatchObject({
+      message: 'Đơn vị "két" không có trong hàng Coca.',
+      status: 400,
+    });
   });
 });

@@ -50,6 +50,18 @@ describe('normalizeProductUnits', () => {
     });
   });
 
+  it('rejects a row with a factor or price but no name', () => {
+    expect(
+      normalizeProductUnits([{ name: ' ', factor: 24 }], 'lon').error
+    ).toBe('Đơn vị quy đổi thiếu tên.');
+    expect(
+      normalizeProductUnits([{ name: '', sellPrice: 1000 }], 'lon').error
+    ).toBe('Đơn vị quy đổi thiếu tên.');
+    expect(
+      normalizeProductUnits([{ name: '', factor: '', sellPrice: '' }], 'lon')
+    ).toEqual({ units: [], error: null });
+  });
+
   it('returns [] for a missing list', () => {
     expect(normalizeProductUnits(undefined, 'lon')).toEqual({
       units: [],
@@ -58,9 +70,9 @@ describe('normalizeProductUnits', () => {
   });
 
   it('rejects invalid units', () => {
-    expect(normalizeProductUnits([{ name: 'lon', factor: 6 }], 'lon').error).toBe(
-      'Đơn vị quy đổi "lon" trùng đơn vị cơ bản.'
-    );
+    expect(
+      normalizeProductUnits([{ name: 'lon', factor: 6 }], 'lon').error
+    ).toBe('Đơn vị quy đổi "lon" trùng đơn vị cơ bản.');
     expect(
       normalizeProductUnits(
         [
@@ -70,14 +82,19 @@ describe('normalizeProductUnits', () => {
         'lon'
       ).error
     ).toBe('Đơn vị quy đổi "thùng" bị trùng.');
-    expect(normalizeProductUnits([{ name: 'thùng', factor: 1 }], 'lon').error).toBe(
-      'Hệ số quy đổi của "thùng" phải lớn hơn 1.'
-    );
     expect(
-      normalizeProductUnits([{ name: 'thùng', factor: 24, sellPrice: -1 }], 'lon')
-        .error
+      normalizeProductUnits([{ name: 'thùng', factor: 1 }], 'lon').error
+    ).toBe('Hệ số quy đổi của "thùng" phải lớn hơn 1.');
+    expect(
+      normalizeProductUnits(
+        [{ name: 'thùng', factor: 24, sellPrice: -1 }],
+        'lon'
+      ).error
     ).toBe('Giá bán của "thùng" phải >= 0.');
-    const six = Array.from({ length: 6 }, (_, i) => ({ name: `u${i}`, factor: i + 2 }));
+    const six = Array.from({ length: 6 }, (_, i) => ({
+      name: `u${i}`,
+      factor: i + 2,
+    }));
     expect(normalizeProductUnits(six, 'lon').error).toBe(
       'Tối đa 5 đơn vị quy đổi.'
     );
@@ -91,27 +108,79 @@ describe('resolveLineUnit', () => {
       qty: 2,
     });
     expect(
-      resolveLineUnit({ productId: 'p1', qty: 2, unitName: 'lon', factor: 1 }, product)
+      resolveLineUnit(
+        { productId: 'p1', qty: 2, unitName: 'lon', factor: 1 },
+        product
+      )
     ).toEqual({ productId: 'p1', qty: 2 });
   });
 
   it('keeps a snapshot factor and fills a missing one from the product', () => {
     expect(
-      resolveLineUnit({ productId: 'p1', qty: 1, unitName: 'thùng', factor: 20 }, product)
+      resolveLineUnit(
+        { productId: 'p1', qty: 1, unitName: 'thùng', factor: 20 },
+        product
+      )
     ).toEqual({ productId: 'p1', qty: 1, unitName: 'thùng', factor: 20 });
     expect(
       resolveLineUnit({ productId: 'p1', qty: 1, unitName: 'thùng' }, product)
     ).toEqual({ productId: 'p1', qty: 1, unitName: 'thùng', factor: 24 });
   });
 
-  it('rejects an unknown unit', () => {
+  it('rejects an unknown unit with HTTP status 400', () => {
     expect(() =>
       resolveLineUnit({ productId: 'p1', qty: 1, unitName: 'két' }, product)
     ).toThrow('Đơn vị "két" không có trong hàng Coca lon.');
+    try {
+      resolveLineUnit({ productId: 'p1', qty: 1, unitName: 'két' }, product);
+    } catch (error) {
+      expect(error.status).toBe(400);
+    }
   });
 
-  it('returns the item unchanged when the product is unknown', () => {
-    const item = { productId: 'x', qty: 1, unitName: 'thùng' };
-    expect(resolveLineUnit(item, null)).toBe(item);
+  it('keeps a snapshot factor when the base unit was renamed to the line unit', () => {
+    const renamed = { ...product, unit: 'lốc', units: [] };
+    expect(
+      resolveLineUnit(
+        { productId: 'p1', qty: 1, unitName: 'lốc', factor: 6 },
+        renamed
+      )
+    ).toEqual({ productId: 'p1', qty: 1, unitName: 'lốc', factor: 6 });
+    expect(
+      resolveLineUnit({ productId: 'p1', qty: 1, unitName: 'lốc' }, renamed)
+    ).toEqual({ productId: 'p1', qty: 1 });
+  });
+
+  it('strips unit fields from lines without a unit name', () => {
+    expect(
+      resolveLineUnit(
+        { productId: 'p1', qty: 1, unitName: ' ', factor: 24 },
+        product
+      )
+    ).toEqual({ productId: 'p1', qty: 1 });
+  });
+
+  it('keeps only a valid snapshot when the product is unknown', () => {
+    expect(
+      resolveLineUnit(
+        { productId: 'x', qty: 1, unitName: 'thùng', factor: 24 },
+        null
+      )
+    ).toEqual({ productId: 'x', qty: 1, unitName: 'thùng', factor: 24 });
+    expect(
+      resolveLineUnit({ productId: 'x', qty: 1, unitName: 'thùng' }, null)
+    ).toEqual({ productId: 'x', qty: 1 });
+    expect(
+      resolveLineUnit(
+        { productId: 'x', qty: 1, unitName: 'thùng', factor: 0 },
+        null
+      )
+    ).toEqual({ productId: 'x', qty: 1 });
+    expect(
+      resolveLineUnit(
+        { productId: 'x', qty: 1, unitName: '', factor: 24 },
+        undefined
+      )
+    ).toEqual({ productId: 'x', qty: 1 });
   });
 });

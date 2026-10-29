@@ -1,12 +1,19 @@
-import { describe, expect, it, vi } from 'vitest';
-import {
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const productModel = vi.hoisted(() => ({ find: vi.fn(), bulkWrite: vi.fn() }));
+const settingsModel = vi.hoisted(() => ({ findOne: vi.fn() }));
+vi.mock('../../models/Product.js', () => ({ default: productModel }));
+vi.mock('../../models/Settings.js', () => ({ default: settingsModel }));
+
+const {
   bulkCreateItems,
   createItem,
+  deleteItem,
   findDuplicateNamesInPayload,
   findExistingProductNameConflicts,
   normalizeProductName,
   updateItem,
-} from '../crud.service.js';
+} = await import('../crud.service.js');
 
 const createQuery = (value) => ({
   lean: vi.fn().mockResolvedValue(value),
@@ -155,6 +162,41 @@ describe('crud.service product units', () => {
     ).rejects.toThrow('Đơn vị quy đổi "lon" trùng đơn vị cơ bản.');
   });
 
+  it('rejects unit errors with HTTP status 400', async () => {
+    const ProductModel = createProductModel({ existing: null });
+    await expect(
+      createItem(ProductModel, {
+        name: 'Coca',
+        unit: 'lon',
+        units: [{ name: '', factor: 24 }],
+      })
+    ).rejects.toMatchObject({
+      message: 'Đơn vị quy đổi thiếu tên.',
+      status: 400,
+    });
+  });
+
+  it('validates the existing units when only the base unit changes', async () => {
+    const ProductModel = createProductModel({
+      existing: {
+        id: 'p1',
+        name: 'Coca',
+        unit: 'lon',
+        units: [{ name: 'thùng', factor: 24, sellPrice: null }],
+      },
+      updated: { id: 'p1' },
+    });
+    await expect(
+      updateItem(ProductModel, 'p1', { unit: 'Thùng' })
+    ).rejects.toThrow('Đơn vị quy đổi "thùng" trùng đơn vị cơ bản.');
+    await updateItem(ProductModel, 'p1', { unit: 'chai' });
+    expect(ProductModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { id: 'p1' },
+      { $set: { unit: 'chai', id: 'p1' } },
+      expect.any(Object)
+    );
+  });
+
   it('validates units against the new base unit when both change', async () => {
     const ProductModel = createProductModel({
       existing: { id: 'p1', name: 'Coca', unit: 'lon' },
@@ -173,5 +215,75 @@ describe('crud.service product units', () => {
       },
       expect.any(Object)
     );
+  });
+});
+
+describe('crud.service delete purchase with packaging units', () => {
+  const purchase = {
+    id: 'po1',
+    appliedToStock: true,
+    items: [
+      { productId: 'p1', qty: 2, unitName: 'thùng', factor: 24 },
+      { productId: 'p1', qty: 3 },
+    ],
+  };
+  const createPurchaseModel = () => ({
+    modelName: 'Purchase',
+    findOne: vi.fn().mockReturnValue(createQuery(purchase)),
+    findOneAndUpdate: vi.fn().mockReturnValue(createQuery({ id: 'po1' })),
+  });
+  const mockStock = (stock) =>
+    productModel.find.mockReturnValue(
+      createQuery([{ id: 'p1', name: 'Coca', stock }])
+    );
+
+  beforeEach(() => {
+    productModel.find.mockReset();
+    productModel.bulkWrite.mockReset().mockResolvedValue({});
+    settingsModel.findOne.mockReturnValue(createQuery({ dataVersion: 2 }));
+  });
+
+  it('reverts stock and opening stock in base units', async () => {
+    mockStock(100);
+    const PurchaseModel = createPurchaseModel();
+    await deleteItem(PurchaseModel, 'po1');
+    expect(productModel.bulkWrite).toHaveBeenNthCalledWith(
+      1,
+      [
+        {
+          updateOne: {
+            filter: { id: 'p1' },
+            update: {
+              $inc: { stock: -51 },
+              $set: { stockUpdatedAt: expect.any(String) },
+            },
+          },
+        },
+      ],
+      { ordered: true }
+    );
+    expect(productModel.bulkWrite).toHaveBeenNthCalledWith(
+      2,
+      [
+        {
+          updateOne: {
+            filter: { id: 'p1' },
+            update: { $inc: { openingStock: -51 } },
+          },
+        },
+      ],
+      { ordered: true }
+    );
+    expect(PurchaseModel.findOneAndUpdate).toHaveBeenCalled();
+  });
+
+  it('rejects when stock in base units would go negative', async () => {
+    mockStock(50);
+    const PurchaseModel = createPurchaseModel();
+    await expect(deleteItem(PurchaseModel, 'po1')).rejects.toThrow(
+      'Không đủ tồn kho cho sản phẩm Coca.'
+    );
+    expect(productModel.bulkWrite).not.toHaveBeenCalled();
+    expect(PurchaseModel.findOneAndUpdate).not.toHaveBeenCalled();
   });
 });
