@@ -69,6 +69,7 @@ const SettingsSchema = new mongoose.Schema(
     labelShowShopName: { type: Boolean, default: true },
     labelShowPrice: { type: Boolean, default: true },
     autoPrintLabelsOnPurchase: { type: Boolean, default: true },
+    purchasePrintSlip: { type: Boolean, default: true }, // F8 on purchases prints the slip
     stockDebtSnapshotAt: String,
     isDeleted: { type: Boolean, default: false },
     deletedAt: String,

@@ -35,6 +35,7 @@ describe('readPrintSettings', () => {
       labelShowShopName: false,
       labelShowPrice: false,
       autoPrintLabelsOnPurchase: false,
+      purchasePrintSlip: false,
     });
     expect(print).toEqual({
       printCopies: 1,
@@ -55,6 +56,7 @@ describe('readPrintSettings', () => {
       labelShowShopName: false,
       labelShowPrice: false,
       autoPrintLabelsOnPurchase: false,
+      purchasePrintSlip: false,
     });
   });
 
@@ -115,6 +117,7 @@ describe('readPrintSettings', () => {
       labelWidthMm: 'abc',
       labelHeightMm: null,
       labelShowPrice: undefined,
+      purchasePrintSlip: 'yes',
     });
     expect(print).toMatchObject({
       receiptPaper: 'auto',
@@ -124,6 +127,7 @@ describe('readPrintSettings', () => {
       labelWidthMm: 35,
       labelHeightMm: 22,
       labelShowPrice: true,
+      purchasePrintSlip: true,
     });
   });
 });

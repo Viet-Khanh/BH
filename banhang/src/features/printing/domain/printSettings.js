@@ -20,6 +20,7 @@ export const PRINT_DEFAULT_SETTINGS = {
   labelShowShopName: true,
   labelShowPrice: true,
   autoPrintLabelsOnPurchase: true,
+  purchasePrintSlip: true, // purchases F8 "Lưu và in": print the slip (A4)
 };
 
 export const RECEIPT_PAPERS = ['auto', '58mm', '80mm', 'custom'];
@@ -109,6 +110,10 @@ export const readPrintSettings = (settings = {}) => {
       source.autoPrintLabelsOnPurchase,
       defaults.autoPrintLabelsOnPurchase
     ),
+    purchasePrintSlip: readBoolean(
+      source.purchasePrintSlip,
+      defaults.purchasePrintSlip
+    ),
   };
 };
 
@@ -120,7 +125,7 @@ export const getLabelRowSize = (print) => ({
   heightMm: print.labelHeightMm,
 });
 
-// Open the label list after a new purchase: edition flag `labels` + the setting.
+// Open the label list after purchases F8: edition flag `labels` + the setting.
 export const shouldAutoPrintLabels = (settings, labelsEnabled) =>
   Boolean(labelsEnabled) &&
   readPrintSettings(settings).autoPrintLabelsOnPurchase;

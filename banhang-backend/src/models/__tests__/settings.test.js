@@ -30,6 +30,14 @@ describe('Settings model: roll receipt fields', () => {
     ]);
   });
 
+  it('prints the purchase slip and opens the label list on F8 by default', () => {
+    const doc = new Settings({ id: 'main' }).toObject();
+    expect(doc).toMatchObject({
+      purchasePrintSlip: true,
+      autoPrintLabelsOnPurchase: true,
+    });
+  });
+
   it('keeps a stored layout object as is', () => {
     const receiptLayout = {
       fontSizePx: 14,

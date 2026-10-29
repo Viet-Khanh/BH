@@ -60,6 +60,10 @@ export const LABEL_FORM_NAMES = [
   'labelOffsetYMm',
   'labelShowShopName',
   'labelShowPrice',
+];
+// Purchases F8 "Lưu và in": print the slip, open the label list (flag `labels`).
+export const PURCHASE_FORM_NAMES = [
+  'purchasePrintSlip',
   'autoPrintLabelsOnPurchase',
 ];
 

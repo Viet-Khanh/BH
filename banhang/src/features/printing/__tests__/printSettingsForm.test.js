@@ -7,6 +7,7 @@ import {
   DESIGNER_KEYS,
   DOCUMENT_FORM_NAMES,
   LABEL_FORM_NAMES,
+  PURCHASE_FORM_NAMES,
   RECEIPT_FORM_NAMES,
   LABEL_PRESET_OPTIONS,
   omitDesignerSettings,
@@ -187,11 +188,20 @@ describe('form field ownership', () => {
       ...RECEIPT_FORM_NAMES,
       ...DOCUMENT_FORM_NAMES,
       ...LABEL_FORM_NAMES,
+      ...PURCHASE_FORM_NAMES,
       ...DESIGNER_KEYS,
     ];
     expect(new Set(owned).size).toBe(owned.length);
     expect([...owned].sort()).toEqual(
       Object.keys(PRINT_DEFAULT_SETTINGS).sort()
     );
+  });
+
+  it('lets the purchase form own the F8 print options', () => {
+    expect(PURCHASE_FORM_NAMES).toEqual([
+      'purchasePrintSlip',
+      'autoPrintLabelsOnPurchase',
+    ]);
+    expect(LABEL_FORM_NAMES).not.toContain('autoPrintLabelsOnPurchase');
   });
 });

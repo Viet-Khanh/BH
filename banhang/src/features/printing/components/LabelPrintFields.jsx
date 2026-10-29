@@ -14,10 +14,6 @@ const NUMBER_FIELDS = [
 const SWITCH_FIELDS = [
   { name: 'labelShowShopName', label: 'In tên cửa hàng' },
   { name: 'labelShowPrice', label: 'In giá bán' },
-  {
-    name: 'autoPrintLabelsOnPurchase',
-    label: 'Mở danh sách in tem sau khi lưu phiếu nhập',
-  },
 ];
 
 // Label printer fields (System → In ấn → Tem, edition flag `labels`).
