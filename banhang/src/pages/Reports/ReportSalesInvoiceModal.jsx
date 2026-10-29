@@ -1,4 +1,5 @@
 import { Button, Modal } from 'antd';
+import SalesPrintButtons from '../../features/printing/components/SalesPrintButtons.jsx';
 import { formatMoney } from '../../utils/moneyFormat.js';
 import {
   DimensionCells,
@@ -125,14 +126,11 @@ const ReportSalesInvoiceModal = ({
                 TÍNH LẠI LỢI NHUẬN
               </Button>
             ) : null}
-            <Button
-              size="large"
-              type="primary"
-              className="btn-primary"
-              onClick={onPrint}
-            >
-              IN LẠI
-            </Button>
+            <SalesPrintButtons
+              primary
+              onPrint={onPrint}
+              labels={{ label: 'IN LẠI', a4Label: 'IN A4' }}
+            />
             <Button size="large" onClick={onExport}>
               Xuất File...
             </Button>

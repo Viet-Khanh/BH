@@ -225,8 +225,9 @@ export const useReportSalesInvoiceModal = ({
     handleDelete,
     handleEdit,
     handleExport,
-    handlePrint: () =>
+    handlePrint: (format) =>
       printReportSalesInvoice({
+        format,
         previewHtml,
         settings,
         invoice: selectedInvoice,

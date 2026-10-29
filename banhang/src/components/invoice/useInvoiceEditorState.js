@@ -150,7 +150,7 @@ const useInvoiceEditorState = ({
     handleQuickAdd: productSelection.handleQuickAdd,
     setSearchOpen: productSelection.setSearchOpen,
     handleAddProduct: productSelection.handleAddProduct,
-    handlePrint: preview.handlePrint,
+    handlePrint: preview.printFormat,
     products,
     updateItem: productSelection.updateItem,
     removeItem: productSelection.removeItem,

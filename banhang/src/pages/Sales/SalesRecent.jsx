@@ -9,6 +9,7 @@ import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
 import { apiRequest } from '../../db/repository.js';
 import { saveWorkbook } from '../../utils/excelExport.js';
 import { printSalesInvoice } from '../../features/printing/printSalesInvoice.js';
+import SalesPrintButtons from '../../features/printing/components/SalesPrintButtons.jsx';
 import { einvoiceDeleteNotice } from '../../features/einvoice/components/guards/einvoiceGuards.js';
 
 const SalesRecent = () => {
@@ -117,9 +118,10 @@ const SalesRecent = () => {
     settings,
   ]);
 
-  const handlePrint = async () => {
+  const handlePrint = async (format) => {
     if (!selectedInvoice) return;
     await printSalesInvoice({
+      format,
       settings,
       invoice: selectedInvoice,
       products: selectedProducts,
@@ -338,14 +340,11 @@ const SalesRecent = () => {
               <Button size="large" onClick={handleEdit}>
                 SỬA
               </Button>
-              <Button
-                size="large"
-                type="primary"
-                className="btn-primary"
-                onClick={handlePrint}
-              >
-                IN LẠI
-              </Button>
+              <SalesPrintButtons
+                primary
+                onPrint={handlePrint}
+                labels={{ label: 'IN LẠI', a4Label: 'IN A4' }}
+              />
               <Button size="large" onClick={handleExport}>
                 Xuất File...
               </Button>

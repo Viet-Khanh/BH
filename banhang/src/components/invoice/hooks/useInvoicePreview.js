@@ -50,14 +50,16 @@ export const useInvoicePreview = ({
 
   const previewHtml = useMemo(() => buildPreviewHtml(), [buildPreviewHtml]);
 
+  // `format`: 'default' (configured paper) | 'a4' (one-off A5/A4 template).
   const handlePrint = useCallback(
-    async (paymentsOverride) => {
+    async (paymentsOverride, format = 'default') => {
       if (!settings) return;
-      // The toolbar button passes its click event: use the current payments.
+      // Toolbar buttons pass no payments (or an event): use the current payments.
       const printPayments = Array.isArray(paymentsOverride)
         ? paymentsOverride
         : payments;
       await printSalesInvoice({
+        format,
         settings,
         invoice: printInvoice,
         items,
@@ -79,10 +81,17 @@ export const useInvoicePreview = ({
     ]
   );
 
+  // Toolbar buttons (SalesPrintButtons) print the current payments in `format`.
+  const printFormat = useCallback(
+    (format) => handlePrint(null, format),
+    [handlePrint]
+  );
+
   return {
     previewOpen,
     setPreviewOpen,
     previewHtml,
     handlePrint,
+    printFormat,
   };
 };

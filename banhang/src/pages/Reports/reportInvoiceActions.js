@@ -47,6 +47,7 @@ export const printReportInvoicePreview = async ({
 };
 
 export const printReportSalesInvoice = ({
+  format,
   previewHtml,
   settings,
   invoice,
@@ -55,6 +56,7 @@ export const printReportSalesInvoice = ({
   products,
 }) =>
   printSalesInvoice({
+    format,
     settings,
     invoice,
     products,

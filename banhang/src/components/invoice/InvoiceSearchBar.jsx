@@ -1,4 +1,5 @@
 import { Button, Input, Space } from 'antd';
+import SalesPrintButtons from '../../features/printing/components/SalesPrintButtons.jsx';
 
 const InvoiceSearchBar = ({
   searchKeyword,
@@ -32,9 +33,10 @@ const InvoiceSearchBar = ({
         {searchLabel}
       </Button>
       {showPrint && onPrint && (
-        <Button size="large" onClick={onPrint}>
-          {printLabel}
-        </Button>
+        <SalesPrintButtons
+          onPrint={onPrint}
+          labels={{ singleLabel: printLabel }}
+        />
       )}
       {/* <Button size="large" onClick={onShowTemplate}>
         Mẫu hóa đơn
