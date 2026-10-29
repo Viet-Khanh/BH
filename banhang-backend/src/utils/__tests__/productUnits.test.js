@@ -1,4 +1,3 @@
-// banhang-backend/src/utils/__tests__/productUnits.test.js
 import { describe, expect, it } from 'vitest';
 import {
   getBaseQty,

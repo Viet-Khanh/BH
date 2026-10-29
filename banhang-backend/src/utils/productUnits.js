@@ -1,4 +1,3 @@
-// banhang-backend/src/utils/productUnits.js
 // Packaging units (thùng, lốc…) over a product's base unit. Stock, cost and
 // profit are always computed in base units: base qty = qty × factor.
 export const MAX_PRODUCT_UNITS = 5;
