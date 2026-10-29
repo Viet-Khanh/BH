@@ -37,6 +37,14 @@ export const fromPrintFormValues = (values = {}) => {
   );
 };
 
+// Saved by the receipt designer, never by the printer forms (they may hold stale copies).
+export const DESIGNER_KEYS = ['receiptLayout', 'receiptLogo'];
+
+export const omitDesignerSettings = (settings = {}) =>
+  Object.fromEntries(
+    Object.entries(settings).filter(([key]) => !DESIGNER_KEYS.includes(key))
+  );
+
 const SIZE_FIELDS = ['labelWidthMm', 'labelHeightMm', 'labelColumns'];
 
 // Form patch keeping preset and sizes in step (Form onValuesChange), or null.

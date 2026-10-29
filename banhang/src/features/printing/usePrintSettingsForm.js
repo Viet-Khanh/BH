@@ -3,12 +3,14 @@ import { Form, message } from 'antd';
 import { useSettingsStore } from '../../store/settingsStore.js';
 import {
   fromPrintFormValues,
+  omitDesignerSettings,
   syncPresetFields,
   toPrintFormValues,
 } from './domain/printSettingsForm.js';
 
 // Form state shared by the receipt and label printer settings forms.
-// Saving writes every print setting: the stored values overlaid with this form.
+// Saving writes every print setting (stored values overlaid with this form) except
+// the designer's receiptLayout/receiptLogo, which the receipt designer saves itself.
 export const usePrintSettingsForm = ({ successMessage }) => {
   const settings = useSettingsStore((state) => state.settings);
   const update = useSettingsStore((state) => state.update);
@@ -27,12 +29,14 @@ export const usePrintSettingsForm = ({ successMessage }) => {
   };
 
   const readFormSettings = () =>
-    fromPrintFormValues({
-      ...toPrintFormValues(settings),
-      ...form.getFieldsValue(true),
-    });
+    omitDesignerSettings(
+      fromPrintFormValues({
+        ...toPrintFormValues(settings),
+        ...form.getFieldsValue(true),
+      })
+    );
 
-  // Test prints use the values on screen, saved or not.
+  // Test prints use the values on screen, saved or not (stored designer layout).
   const readPreviewSettings = () => ({ ...settings, ...readFormSettings() });
 
   const save = async () => {

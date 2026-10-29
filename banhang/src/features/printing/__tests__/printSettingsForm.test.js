@@ -4,7 +4,9 @@ import {
   CUSTOM_PRESET,
   fromPrintFormValues,
   getPresetValue,
+  DESIGNER_KEYS,
   LABEL_PRESET_OPTIONS,
+  omitDesignerSettings,
   RECEIPT_PAPER_OPTIONS,
   syncPresetFields,
   toPrintFormValues,
@@ -150,5 +152,14 @@ describe('toPrinterOptions', () => {
       { value: '', label: 'Máy in mặc định' },
       { value: 'XP-58', label: 'XP-58' },
     ]);
+  });
+});
+
+describe('omitDesignerSettings', () => {
+  it('drops the designer keys so printer forms never overwrite them', () => {
+    const settings = omitDesignerSettings(fromPrintFormValues({}));
+    DESIGNER_KEYS.forEach((key) => expect(settings).not.toHaveProperty(key));
+    expect(settings).toHaveProperty('receiptPaper', 'auto');
+    expect(settings).toHaveProperty('labelColumns', 2);
   });
 });
