@@ -90,3 +90,25 @@ describe('resolvePaymentMethod', () => {
     expect(resolvePaymentMethod([{ method: 'bank', amount: 0 }])).toBe('TM/CK');
   });
 });
+
+describe('mapLine with a packaging unit', () => {
+  it('uses the line unit so quantity × price = amount', () => {
+    expect(
+      mapLine(
+        {
+          qty: 2,
+          unitName: 'thùng',
+          factor: 24,
+          unitPrice: 220000,
+          lineTotal: 440000,
+        },
+        { name: 'Coca', unit: 'lon', code: 'C1' }
+      )
+    ).toMatchObject({
+      unit: 'thùng',
+      quantity: 2,
+      unitPrice: 220000,
+      amount: 440000,
+    });
+  });
+});

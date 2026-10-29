@@ -21,6 +21,10 @@ const cases = [
     'counter buyer data',
     { ...base, einvoiceRequest: { requested: true, taxCode: '0101' } },
   ],
+  [
+    'line unit',
+    { ...base, items: [{ ...base.items[0], unitName: 'thùng', factor: 24 }] },
+  ],
   ['request not ticked', { ...base, einvoiceRequest: { requested: false } }],
 ];
 
@@ -29,6 +33,15 @@ describe('hasContentChange (frontend copy)', () => {
     expect(hasContentChange(base, after)).toBe(
       backendHasContentChange(base, after)
     );
+  });
+
+  it('flags a unit change as content', () => {
+    expect(
+      hasContentChange(base, {
+        ...base,
+        items: [{ ...base.items[0], unitName: 'thùng', factor: 24 }],
+      })
+    ).toBe(true);
   });
 
   it('ignores payment-only changes', () => {

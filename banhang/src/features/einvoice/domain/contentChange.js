@@ -5,6 +5,8 @@ const CONTENT_FIELDS = ['customerId', 'date', 'total', 'discountTotal'];
 const LINE_FIELDS = [
   'productId',
   'qty',
+  'unitName',
+  'factor',
   'unitPrice',
   'lineTotal',
   'length',

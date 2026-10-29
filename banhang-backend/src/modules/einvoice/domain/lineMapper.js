@@ -12,7 +12,7 @@ const decimal = (value) => String(round3(value)).replace('.', ',');
 export const mapLine = (item = {}, product = null, index = 1) => {
   const qty = Number(item.qty || 0);
   const name = product?.name || item.name || 'Sản phẩm';
-  const unit = product?.unit || '';
+  const unit = item.unitName || product?.unit || '';
   const unitPrice = Number(item.unitPrice || 0);
   const base = {
     index,
