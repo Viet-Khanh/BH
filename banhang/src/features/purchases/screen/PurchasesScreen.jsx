@@ -153,6 +153,7 @@ const PurchasesScreen = () => {
         onPaymentNoteChange={payments.setPaymentNote}
         onCheckoutPrint={payments.checkout}
         onCheckout={payments.checkout}
+        focusTriggerAfterClose={false}
       />
       <InvoicePreviewModal
         open={preview.open}

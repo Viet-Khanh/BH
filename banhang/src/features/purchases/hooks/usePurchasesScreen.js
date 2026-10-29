@@ -23,9 +23,13 @@ export const usePurchasesScreen = () => {
   const { items: suppliers, load: loadSuppliers } = useSupplierStore();
   const { settings, load: loadSettings } = useSettingsStore();
   const catalog = usePurchasesCatalog();
-  const labels = usePurchaseLabels({ settings, products: catalog.products });
-  const draft = usePurchaseDraftState({ suppliers });
   const modals = usePurchaseModalState();
+  const labels = usePurchaseLabels({
+    settings,
+    products: catalog.products,
+    paymentModalOpen: modals.paymentModalOpen,
+  });
+  const draft = usePurchaseDraftState({ suppliers });
   const recent = usePurchaseRecentState();
   const payments = usePurchasePaymentRecords({
     editing: draft.editing,

@@ -29,8 +29,15 @@ const InvoicePaymentModal = ({
   onPaymentNoteChange,
   onCheckoutPrint,
   onCheckout,
+  focusTriggerAfterClose = true,
 }) => (
-  <Modal title={title} open={open} onCancel={onClose} footer={null}>
+  <Modal
+    title={title}
+    open={open}
+    onCancel={onClose}
+    footer={null}
+    focusTriggerAfterClose={focusTriggerAfterClose}
+  >
     <div className="pos-payment">
       <div className="pos-payment-row">
         <span>{partnerLabel}:</span>
