@@ -6,11 +6,14 @@ const pick = (source, names) =>
   Object.fromEntries(names.map((name) => [name, source?.[name]]));
 
 const defaultToValues = (settings, names) => pick(settings, names);
+const defaultFromValues = (values, names) => pick(values, names);
 
 // A small settings form: fields (children) + "Lưu"; saves only `names`.
+// `toValues`/`fromValues` (module-level functions) map settings ⇄ form values.
 const SettingsFormSection = ({
   names,
   toValues = defaultToValues,
+  fromValues = defaultFromValues,
   successMessage = 'Đã lưu cài đặt.',
   children,
 }) => {
@@ -28,7 +31,7 @@ const SettingsFormSection = ({
   const save = async () => {
     let values;
     try {
-      values = pick(await form.validateFields(), names);
+      values = pick(fromValues(await form.validateFields(), names), names);
     } catch {
       return; // field errors are shown by the form
     }
