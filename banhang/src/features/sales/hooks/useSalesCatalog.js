@@ -19,9 +19,9 @@ export const useSalesCatalog = () => {
         limit: 30,
       });
 
-      if (Array.isArray(data)) {
-        mergeCatalogProducts(data);
-      }
+      if (!Array.isArray(data)) return [];
+      mergeCatalogProducts(data);
+      return data;
     },
     [mergeCatalogProducts]
   );

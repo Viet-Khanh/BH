@@ -1,16 +1,19 @@
 import { useCallback, useMemo } from 'react';
+import { quickAddByCode } from '../../../features/barcode/quickAddByCode.js';
 import {
   hasSearchMatch,
   normalizeSearchText,
 } from '../../../utils/searchText.js';
 
-// Search-bar quick add: top matches for the keyword, Enter adds the first one.
+// Search-bar quick add: Enter adds an exact barcode/code match (when addByCode is
+// given), else opens the first of the top matches for the keyword.
 export const useInvoiceQuickAdd = ({
   activeProducts,
   searchKeyword,
   setSearchKeyword,
   setSearchOpen,
   openAddModal,
+  addByCode,
 }) => {
   const filteredQuick = useMemo(() => {
     const keyword = normalizeSearchText(searchKeyword);
@@ -20,7 +23,11 @@ export const useInvoiceQuickAdd = ({
       .slice(0, 5);
   }, [activeProducts, searchKeyword]);
 
-  const handleQuickAdd = useCallback(() => {
+  const handleQuickAdd = useCallback(async () => {
+    if (await quickAddByCode(addByCode, searchKeyword)) {
+      setSearchKeyword('');
+      return;
+    }
     if (!filteredQuick.length) {
       setSearchOpen(true);
       return;
@@ -28,7 +35,14 @@ export const useInvoiceQuickAdd = ({
 
     openAddModal(filteredQuick[0]);
     setSearchKeyword('');
-  }, [filteredQuick, openAddModal, setSearchKeyword, setSearchOpen]);
+  }, [
+    addByCode,
+    filteredQuick,
+    openAddModal,
+    searchKeyword,
+    setSearchKeyword,
+    setSearchOpen,
+  ]);
 
   return { filteredQuick, handleQuickAdd };
 };

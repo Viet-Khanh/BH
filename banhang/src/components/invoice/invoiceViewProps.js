@@ -1,3 +1,5 @@
+const SCAN_PLACEHOLDER = 'Quét hoặc gõ mã vạch / tên hàng...';
+
 export const buildInvoiceViewProps = ({
   onCancel,
   onShowDebt,
@@ -59,6 +61,7 @@ export const buildInvoiceViewProps = ({
   pendingPreviousPrice,
   applyPendingPreviousPrice,
   unitSelection,
+  barcode,
   setPendingQty,
   setPendingPrice,
   setPendingLength,
@@ -115,6 +118,8 @@ export const buildInvoiceViewProps = ({
     onShowTemplate: () => onShowTemplate?.(),
     filteredQuick,
     onQuickSelect: handleAddProduct,
+    showInput: Boolean(barcode?.enabled),
+    inputPlaceholder: barcode?.enabled ? SCAN_PLACEHOLDER : undefined,
   };
 
   const itemsTableProps = {
@@ -122,6 +127,7 @@ export const buildInvoiceViewProps = ({
     products,
     onUpdateItem: updateItem,
     onRemoveItem: removeItem,
+    onChangeUnit: barcode?.changeItemUnit,
   };
 
   const paymentsSectionProps = {

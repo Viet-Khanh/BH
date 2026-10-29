@@ -64,9 +64,10 @@ export const useSalesScreen = () => {
   const searchProducts = useCallback(
     async (keyword = '') => {
       try {
-        await catalog.searchProducts(keyword);
+        return await catalog.searchProducts(keyword);
       } catch (error) {
         message.error('Không thể tải danh sách sản phẩm.');
+        return [];
       }
     },
     [catalog.searchProducts]

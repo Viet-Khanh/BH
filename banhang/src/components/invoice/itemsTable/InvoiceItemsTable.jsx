@@ -10,6 +10,7 @@ const InvoiceItemsTable = ({
   products,
   onUpdateItem,
   onRemoveItem,
+  onChangeUnit,
   showDimensions,
   priceField = 'unitPrice',
   priceLabel = 'Đơn giá',
@@ -64,6 +65,7 @@ const InvoiceItemsTable = ({
                 priceMin={priceMin}
                 editing={editing}
                 onRemove={onRemove}
+                onChangeUnit={onChangeUnit}
               />
             );
           })}

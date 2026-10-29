@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { getLineAmount } from '../../../utils/lineMeasure.js';
 import { getUnitSellPrice } from '../../../utils/productUnits.js';
 import { createConfirmAddHandler } from '../invoiceItemHandlers.js';
@@ -8,7 +8,9 @@ import {
   createPendingProductChangeHandler,
 } from '../invoiceProductHandlers.js';
 import { usePendingUnit } from '../productModal/usePendingUnit.js';
+import { useInvoiceBarcode } from './useInvoiceBarcode.js';
 import { useInvoiceQuickAdd } from './useInvoiceQuickAdd.js';
+import { useInvoiceSearchEffects } from './useInvoiceSearchEffects.js';
 
 export const useInvoiceProductSelection = ({
   items,
@@ -42,28 +44,14 @@ export const useInvoiceProductSelection = ({
     setPendingPrice,
   });
 
-  useEffect(() => {
-    if (!onSearchProducts) return;
-    const keyword = searchKeyword.trim();
-    if (!keyword) return;
-
-    const timer = setTimeout(() => {
-      onSearchProducts(keyword);
-    }, 250);
-
-    return () => clearTimeout(timer);
-  }, [onSearchProducts, searchKeyword]);
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key !== 'F2') return;
-      event.preventDefault();
-      setSearchOpen(true);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  useInvoiceSearchEffects({ searchKeyword, onSearchProducts, setSearchOpen });
+  const barcode = useInvoiceBarcode({
+    items,
+    setItems,
+    activeProducts,
+    onSearchProducts,
+    getUnitPrice,
+  });
 
   const openAddModal = createOpenAddModal({
     setPendingProduct,
@@ -144,6 +132,7 @@ export const useInvoiceProductSelection = ({
     setSearchKeyword,
     setSearchOpen,
     openAddModal,
+    addByCode: barcode.addByCode,
   });
 
   const confirmAdd = createConfirmAddHandler({
@@ -193,5 +182,6 @@ export const useInvoiceProductSelection = ({
     handleQuickAdd,
     handleConfirmAdd,
     unitSelection: pendingUnit.selection,
+    barcode,
   };
 };
