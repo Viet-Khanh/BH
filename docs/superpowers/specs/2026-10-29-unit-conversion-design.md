@@ -1,6 +1,6 @@
 # Unit Conversion (thùng / lốc / chai) — Design
 
-Date: 2026-10-29 · Status: draft · Branch: `feat/minimart-units-barcode`
+Date: 2026-10-29 · Status: implemented · Branch: `feat/minimart-units-barcode`
 
 ## Goal
 

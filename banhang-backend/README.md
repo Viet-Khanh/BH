@@ -24,6 +24,16 @@ matching, report) used by its services; the invoices module calls only
 `status` (e.g. 409), honoured by the app error handler and the demo dispatcher. Details:
 `banhang/src/features/einvoice/README.md`.
 
+## Quantities and packaging units
+
+Products may have packaging units (`Product.units = [{ name, factor, sellPrice }]`, e.g.
+thùng = 24 lon). A sale/purchase line in a packaging unit carries `unitName` + `factor`; a
+base-unit line carries neither. Stock, `avgCost`, `costPriceSnapshot` and profit are always in
+the base unit: use `getBaseQty(item)` from `utils/productUnits.js`, never `item.qty` directly.
+`item.qty` × `unitPrice` stays the line amount. Lines are normalized on save
+(`resolveLineUnit`, `services/itemUnits.service.js`); unit errors carry `status: 400`.
+Spec: `docs/superpowers/specs/2026-10-29-unit-conversion-design.md`.
+
 ## Rules for browser-demo compatibility
 
 1. Only `models/*.js` may import `mongoose`. Services, repositories and utils import models.
