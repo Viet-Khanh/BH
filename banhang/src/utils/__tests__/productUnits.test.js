@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { getBaseQty as backendGetBaseQty } from '@backend/utils/productUnits.js';
 import {
+  MAX_PRODUCT_UNITS as BACKEND_MAX_PRODUCT_UNITS,
+  getBaseQty as backendGetBaseQty,
+} from '@backend/utils/productUnits.js';
+import {
+  MAX_PRODUCT_UNITS,
   findProductUnit,
   formatStockByUnits,
+  formatStockLine,
   formatUnitsSummary,
   getBaseQty,
   getItemUnitName,
@@ -69,5 +74,24 @@ describe('productUnits (frontend)', () => {
     expect(getItemUnitName({ unitName: 'thùng' }, product)).toBe('thùng');
     expect(getItemUnitName({}, product)).toBe('lon');
     expect(getItemUnitName({}, null)).toBe('');
+  });
+
+  it('shares the unit limit with the backend', () => {
+    expect(MAX_PRODUCT_UNITS).toBe(BACKEND_MAX_PRODUCT_UNITS);
+  });
+
+  it('formats the stock line: number only without units', () => {
+    expect(formatStockLine({ unit: 'm2', stock: 12 })).toBe('Tồn kho: 12');
+    expect(formatStockLine({ unit: 'm2', openingStock: 4 })).toBe('Tồn kho: 4');
+    expect(formatStockLine(null)).toBe('Tồn kho: 0');
+    expect(formatStockLine({ unit: 'cái', stock: 3, units: [] })).toBe(
+      'Tồn kho: 3'
+    );
+  });
+
+  it('formats the stock line with the units breakdown', () => {
+    expect(formatStockLine(product)).toBe('Tồn kho: 51 lon (2 thùng 3 lon)');
+    expect(formatStockLine({ ...product, stock: 3 })).toBe('Tồn kho: 3 lon');
+    expect(formatStockLine({ ...product, stock: 0 })).toBe('Tồn kho: 0 lon');
   });
 });

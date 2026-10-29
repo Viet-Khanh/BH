@@ -22,7 +22,10 @@ const CatalogFormModal = ({
   confirmLoading = false,
 }) => {
   const { labels } = useEdition();
-  const showUnits = useEditionFeature('units');
+  // Units are off when dimensions (m2 lines) are on.
+  const units = useEditionFeature('units');
+  const dimensions = useEditionFeature('dimensions');
+  const showUnits = units && !dimensions;
   return (
     <Modal
       title={editing ? 'Sửa dữ liệu' : 'Tạo mới'}

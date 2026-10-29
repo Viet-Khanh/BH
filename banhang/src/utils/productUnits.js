@@ -1,5 +1,7 @@
 // Packaging units (thùng, lốc…) over a product's base unit. Mirrors the
 // quantity rule of banhang-backend/src/utils/productUnits.js (parity test).
+export const MAX_PRODUCT_UNITS = 5;
+
 const unitsOf = (product) =>
   Array.isArray(product?.units) ? product.units : [];
 
@@ -44,9 +46,12 @@ export const getUnitCostPrice = (product, unitName) => {
 
 const round3 = (value) => Math.round(value * 1000) / 1000;
 
+const stockOf = (product) =>
+  Number(product?.stock ?? product?.openingStock ?? 0);
+
 // "2 thùng 3 lon": largest unit first, zero parts skipped.
 export const formatStockByUnits = (product) => {
-  const stock = Number(product?.stock ?? product?.openingStock ?? 0);
+  const stock = stockOf(product);
   const baseUnit = product?.unit || '';
   const units = [...unitsOf(product)].sort((a, b) => b.factor - a.factor);
   if (!units.length || stock <= 0) return `${stock} ${baseUnit}`.trim();
@@ -70,3 +75,14 @@ export const formatUnitsSummary = (product) => {
 
 export const getItemUnitName = (item, product) =>
   item?.unitName || product?.unit || '';
+
+// "Tồn kho: 12" without units; "Tồn kho: 51 lon (2 thùng 3 lon)" with them.
+export const formatStockLine = (product) => {
+  const stock = stockOf(product);
+  if (!unitsOf(product).length) return `Tồn kho: ${stock}`;
+  const base = `${stock} ${product?.unit || ''}`.trim();
+  const byUnits = formatStockByUnits(product);
+  return byUnits === base
+    ? `Tồn kho: ${base}`
+    : `Tồn kho: ${base} (${byUnits})`;
+};

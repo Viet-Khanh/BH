@@ -1,4 +1,5 @@
 import { Button, Form, Input, InputNumber, Space } from 'antd';
+import { MAX_PRODUCT_UNITS } from '../../utils/productUnits.js';
 import { formatNumberInput, parseNumberInput } from './catalogUtils.js';
 
 // Packaging units (thùng, lốc…) of a product; the backend validates the list.
@@ -17,7 +18,15 @@ const ProductUnitsField = () => (
               </Form.Item>
               <Form.Item
                 name={[name, 'factor']}
-                rules={[{ required: true, message: 'Nhập hệ số' }]}
+                rules={[
+                  { required: true, message: 'Nhập hệ số' },
+                  {
+                    validator: (_, value) =>
+                      value === null || value === undefined || value > 1
+                        ? Promise.resolve()
+                        : Promise.reject(new Error('Hệ số phải lớn hơn 1')),
+                  },
+                ]}
               >
                 <InputNumber min={1} placeholder="= bao nhiêu ĐVT" />
               </Form.Item>
@@ -33,7 +42,7 @@ const ProductUnitsField = () => (
               <Button onClick={() => remove(name)}>Xóa</Button>
             </Space>
           ))}
-          {fields.length < 5 && (
+          {fields.length < MAX_PRODUCT_UNITS && (
             <Button type="dashed" onClick={() => add()}>
               + Thêm đơn vị quy đổi
             </Button>

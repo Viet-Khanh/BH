@@ -5,7 +5,7 @@ import {
   formatNumberInput,
   parseNumberInput,
 } from '../../../utils/numberInput.js';
-import { formatStockByUnits } from '../../../utils/productUnits.js';
+import { formatStockLine } from '../../../utils/productUnits.js';
 import UnitPicker from './UnitPicker.jsx';
 
 const inputStyle = { width: '50%' };
@@ -63,7 +63,7 @@ const ProductInfoPanel = ({
       <div>
         <strong>{pendingProduct?.name || 'Chưa chọn sản phẩm'}</strong>
         <div>{pendingProduct?.code || ''}</div>
-        <div>Tồn kho: {formatStockByUnits(pendingProduct)}</div>
+        <div>{formatStockLine(pendingProduct)}</div>
       </div>
       <UnitPicker product={pendingProduct} selection={unitSelection} />
       <LabeledNumber
