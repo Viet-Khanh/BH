@@ -118,3 +118,44 @@ describe('DemoModel', () => {
     ).toThrow('DemoModel: unsupported option session');
   });
 });
+
+describe('DemoModel barcode queries', () => {
+  const ScanProduct = createModel(
+    'ScanProduct',
+    new Schema({
+      id: { type: String, required: true, unique: true },
+      name: String,
+      barcode: String,
+      units: [
+        new Schema(
+          { name: String, factor: Number, barcode: String },
+          { _id: false }
+        ),
+      ],
+    })
+  );
+
+  beforeEach(async () => {
+    configureStorage(createMemoryStorage());
+    setActiveNamespace('test');
+    await ScanProduct.insertMany([
+      { id: 'p1', name: 'Coca', barcode: 'A1' },
+      {
+        id: 'p2',
+        name: 'Bia',
+        units: [{ name: 'thùng', factor: 24, barcode: 'B2' }],
+      },
+    ]);
+  });
+
+  it('matches unit barcodes by dotted path with $in and RegExp', async () => {
+    const byIn = await ScanProduct.find({
+      'units.barcode': { $in: ['B2'] },
+    }).lean();
+    expect(byIn.map((doc) => doc.id)).toEqual(['p2']);
+    const byRegex = await ScanProduct.find({
+      $or: [{ barcode: /B2/i }, { 'units.barcode': /B2/i }],
+    }).lean();
+    expect(byRegex.map((doc) => doc.id)).toEqual(['p2']);
+  });
+});

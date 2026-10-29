@@ -12,7 +12,8 @@ import {
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const buildProductSearchFilter = (search) => {
+// Name/code/group/unit/spec plus product and packaging-unit barcodes.
+export const buildProductSearchFilter = (search) => {
   const trimmed = String(search || '').trim();
   if (!trimmed) return {};
   const terms = trimmed.split(/\s+/).filter(Boolean);
@@ -23,6 +24,8 @@ const buildProductSearchFilter = (search) => {
     { group: regex },
     { unit: regex },
     { spec: regex },
+    { barcode: regex },
+    { 'units.barcode': regex },
   ];
   return {
     $and: terms.map((term) => {
