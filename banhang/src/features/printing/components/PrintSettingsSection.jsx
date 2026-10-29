@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Button, Divider, Form, message, Radio } from 'antd';
+import { Button, Divider, Form, message, Radio, Tooltip } from 'antd';
 import { useEditionFeature } from '../../../platform/useActiveModule.js';
 import { useSettingsStore } from '../../../store/settingsStore.js';
 import {
@@ -20,8 +20,13 @@ const PrintSettingsSection = () => {
   const { printers, canChoose } = usePrinters();
   const [form] = Form.useForm();
 
+  const paper = Form.useWatch('receiptPaper', form);
+
+  // Load settings on first render and when the form has no unsaved edits.
   useEffect(() => {
-    form.setFieldsValue(toPrintFormValues(settings));
+    if (!form.isFieldsTouched()) {
+      form.setFieldsValue(toPrintFormValues(settings));
+    }
   }, [form, settings]);
 
   const handleValuesChange = (changed, all) => {
@@ -38,8 +43,15 @@ const PrintSettingsSection = () => {
 
   const save = async () => {
     await form.validateFields();
-    await update(readFormSettings());
-    message.success('Đã lưu cài đặt máy in & tem.');
+    try {
+      const values = readFormSettings();
+      await update(values);
+      form.resetFields(); // clears "touched"
+      form.setFieldsValue(toPrintFormValues({ ...settings, ...values }));
+      message.success('Đã lưu cài đặt máy in & tem.');
+    } catch (error) {
+      message.error(error.message || 'Không lưu được cài đặt máy in.');
+    }
   };
 
   // Test prints use the values on screen, saved or not.
@@ -70,7 +82,15 @@ const PrintSettingsSection = () => {
           <Radio.Group options={RECEIPT_PAPER_OPTIONS} />
         </Form.Item>
         <Form.Item>
-          <Button onClick={testReceipt}>In thử</Button>
+          <Tooltip
+            title={
+              paper === '58mm' ? '' : 'Chọn khổ 58mm để in thử hoá đơn cuộn.'
+            }
+          >
+            <Button onClick={testReceipt} disabled={paper !== '58mm'}>
+              In thử
+            </Button>
+          </Tooltip>
         </Form.Item>
         {labelsEnabled && (
           <LabelPrintFields
