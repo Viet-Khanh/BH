@@ -3,7 +3,11 @@ import CustomerTaxFields from '../../features/einvoice/components/catalog/Custom
 import ProductTaxField from '../../features/einvoice/components/catalog/ProductTaxField.jsx';
 import Slot from '../../platform/Slot.jsx';
 import { SLOTS } from '../../platform/slots.js';
-import { useEdition } from '../../platform/useActiveModule.js';
+import {
+  useEdition,
+  useEditionFeature,
+} from '../../platform/useActiveModule.js';
+import ProductUnitsField from './ProductUnitsField.jsx';
 import { formatNumberInput, parseNumberInput } from './catalogUtils.js';
 
 const CatalogFormModal = ({
@@ -18,6 +22,7 @@ const CatalogFormModal = ({
   confirmLoading = false,
 }) => {
   const { labels } = useEdition();
+  const showUnits = useEditionFeature('units');
   return (
     <Modal
       title={editing ? 'Sửa dữ liệu' : 'Tạo mới'}
@@ -57,6 +62,7 @@ const CatalogFormModal = ({
               </Form.Item>
             </Col>
           </Row>
+          {showUnits && <ProductUnitsField />}
           <Row gutter={16}>
             <Col xs={24} md={12}>
               <Form.Item label={labels.group} name="group">

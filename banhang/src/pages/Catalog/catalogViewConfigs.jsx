@@ -1,4 +1,5 @@
 import { Button } from 'antd';
+import { formatUnitsSummary } from '../../utils/productUnits.js';
 import { formatMoney } from '../../utils/moneyFormat.js';
 
 export const getColumns = ({
@@ -24,7 +25,11 @@ export const getColumns = ({
       { title: 'STT', render: (_, __, index) => index + 1, width: 60 },
       { title: 'Mã hàng', dataIndex: 'code' },
       { title: 'Tên hàng', dataIndex: 'name' },
-      { title: 'ĐVT', dataIndex: 'unit' },
+      {
+        title: 'ĐVT',
+        dataIndex: 'unit',
+        render: (_, record) => formatUnitsSummary(record),
+      },
       {
         title: 'Đơn giá lẻ',
         dataIndex: 'sellPriceDefault',
