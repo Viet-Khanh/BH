@@ -1,5 +1,15 @@
 import mongoose from 'mongoose';
 
+// Packaging units over the base `unit` (see utils/productUnits.js).
+const ProductUnitSchema = new mongoose.Schema(
+  {
+    name: String,
+    factor: Number,
+    sellPrice: Number,
+  },
+  { _id: false }
+);
+
 const ProductSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
@@ -7,6 +17,7 @@ const ProductSchema = new mongoose.Schema(
     code: String,
     name: String,
     unit: String,
+    units: { type: [ProductUnitSchema], default: [] },
     spec: String,
     avgCost: Number,
     sellPriceDefault: Number,

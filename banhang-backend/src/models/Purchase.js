@@ -4,6 +4,9 @@ const PurchaseItemSchema = new mongoose.Schema(
   {
     productId: String,
     qty: Number,
+    // Set only for lines in a packaging unit; base qty = qty × factor.
+    unitName: String,
+    factor: Number,
     unitCost: Number,
     lineTotal: Number,
     lineNote: String,

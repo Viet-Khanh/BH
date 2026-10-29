@@ -4,6 +4,9 @@ const InvoiceItemSchema = new mongoose.Schema(
   {
     productId: String,
     qty: Number,
+    // Set only for lines in a packaging unit; base qty = qty × factor.
+    unitName: String,
+    factor: Number,
     unitPrice: Number,
     lineTotal: Number,
     costPriceSnapshot: Number,
