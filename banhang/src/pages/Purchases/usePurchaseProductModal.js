@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
 import { getPurchaseLineTotal } from '../../features/purchases/domain/purchasesDomain.js';
+import { usePendingUnit } from '../../components/invoice/productModal/usePendingUnit.js';
 import { readDimensions } from '../../utils/lineMeasure.js';
+import { getUnitCostPrice } from '../../utils/productUnits.js';
 import { hasSearchMatch, normalizeSearchText } from '../../utils/searchText.js';
 
 const usePurchaseProductModal = ({
@@ -17,6 +19,12 @@ const usePurchaseProductModal = ({
   const [pendingPrice, setPendingPrice] = useState(0);
   const [pendingLength, setPendingLength] = useState(null);
   const [pendingWidth, setPendingWidth] = useState(null);
+  const pendingUnit = usePendingUnit({
+    pendingProduct,
+    getUnitPrice: getUnitCostPrice,
+    setPendingPrice,
+  });
+  const setPendingUnitName = pendingUnit.setUnitName;
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -41,6 +49,7 @@ const usePurchaseProductModal = ({
   const openAddModal = (product) => {
     if (!product) return;
     setPendingProduct(product);
+    setPendingUnitName('');
     setPendingQty(1);
     setPendingPrice(Number(product.avgCost || 0));
     setPendingLength(null);
@@ -58,6 +67,7 @@ const usePurchaseProductModal = ({
     const product = activeProducts.find((item) => item.id === productId);
     if (!product) return;
     setPendingProduct(product);
+    setPendingUnitName('');
     setPendingQty(1);
     setPendingPrice(Number(product.avgCost || 0));
     setPendingLength(null);
@@ -106,6 +116,12 @@ const usePurchaseProductModal = ({
         lineNote: '',
         length: dimensions.length,
         width: dimensions.width,
+        ...(pendingUnit.selection.value
+          ? {
+              unitName: pendingUnit.selection.value,
+              factor: pendingUnit.selection.factor,
+            }
+          : {}),
       },
     ]);
 
@@ -127,7 +143,8 @@ const usePurchaseProductModal = ({
     setPendingPrice(0);
     setPendingLength(null);
     setPendingWidth(null);
-  }, []);
+    setPendingUnitName('');
+  }, [setPendingUnitName]);
 
   return {
     searchOpen,
@@ -149,6 +166,7 @@ const usePurchaseProductModal = ({
     filteredQuick,
     handleQuickAdd,
     resetSearchState,
+    unitSelection: pendingUnit.selection,
   };
 };
 

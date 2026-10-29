@@ -1,5 +1,4 @@
 import { Button } from 'antd';
-import { useMemo } from 'react';
 import InvoiceHeader from '../../../components/invoice/InvoiceHeader.jsx';
 import InvoiceItemsTable from '../../../components/invoice/itemsTable/InvoiceItemsTable.jsx';
 import Slot from '../../../platform/Slot.jsx';
@@ -13,8 +12,7 @@ import InvoiceTopSection from '../../../components/invoice/InvoiceTopSection.jsx
 import SupplierDebtPaymentModal from '../../../components/SupplierDebtPaymentModal.jsx';
 import PurchaseDetailModal from '../../../pages/Purchases/PurchaseDetailModal.jsx';
 import PurchaseRecentModal from '../../../pages/Purchases/PurchaseRecentModal.jsx';
-import { renderInvoiceTemplate } from '../../../utils/renderTemplate.js';
-import { buildPurchasePreviewInvoice } from '../domain/purchasesDomain.js';
+import { usePurchasePreviewHtml } from '../hooks/usePurchasePreviewHtml.js';
 import { usePurchasesScreen } from '../hooks/usePurchasesScreen.js';
 
 const PurchasesScreen = () => {
@@ -30,35 +28,7 @@ const PurchasesScreen = () => {
     actions,
   } = usePurchasesScreen();
 
-  const previewHtml = useMemo(() => {
-    if (!data.settings) return '';
-    return renderInvoiceTemplate({
-      template: data.settings.invoiceTemplateHtml,
-      invoice: buildPurchasePreviewInvoice({
-        code: draft.draftCode,
-        date: draft.date,
-        note: draft.note,
-        total: draft.totals,
-        supplierDebt: draft.supplierDebt,
-        items: draft.items,
-      }),
-      customer: draft.supplier || { name: 'Nhà cung cấp' },
-      payments: payments.list,
-      products: data.products,
-      settings: data.settings,
-    });
-  }, [
-    data.products,
-    data.settings,
-    draft.date,
-    draft.draftCode,
-    draft.items,
-    draft.note,
-    draft.supplier,
-    draft.supplierDebt,
-    draft.totals,
-    payments.list,
-  ]);
+  const previewHtml = usePurchasePreviewHtml({ data, draft, payments });
 
   return (
     <div className="page-card pos-shell">
@@ -151,6 +121,7 @@ const PurchasesScreen = () => {
         onChangePrice={productSelection.setPendingPrice}
         onChangeLength={productSelection.setPendingLength}
         onChangeWidth={productSelection.setPendingWidth}
+        unitSelection={productSelection.unitSelection}
         onConfirmAdd={productSelection.handleConfirmAdd}
         priceMin={undefined}
       />
