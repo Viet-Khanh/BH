@@ -8,6 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Electron's smallest custom page side, in microns.
 const MIN_PAGE_MICRONS = 353;
 
+// The main process stays self-contained: no imports from src/.
 const toMicrons = (mm) => Math.round(Number(mm) * 1000);
 
 // Named size ('A5', …) or custom { widthMm, heightMm } → { width, height } microns.

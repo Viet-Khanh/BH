@@ -4,7 +4,6 @@ import {
   injectPageSizeCss,
   normalizeMmPageSize,
   normalizePageSize,
-  toMicrons,
 } from '../printPageSize.js';
 
 describe('normalizePageSize', () => {
@@ -22,12 +21,6 @@ describe('normalizePageSize', () => {
 });
 
 describe('mm page sizes', () => {
-  it('converts mm to microns', () => {
-    expect(toMicrons(58)).toBe(58000);
-    expect(toMicrons(22.5)).toBe(22500);
-    expect(toMicrons(0.0004)).toBe(0);
-  });
-
   it('normalizes a { widthMm, heightMm } size', () => {
     expect(normalizeMmPageSize({ widthMm: 72, heightMm: 22 })).toEqual({
       widthMm: 72,

@@ -32,8 +32,6 @@ export const normalizeMmPageSize = (value) => {
   return widthMm && heightMm ? { widthMm, heightMm } : null;
 };
 
-export const toMicrons = (mm) => Math.round(mm * 1000);
-
 export const buildPageSizeCss = ({ widthMm, heightMm }) =>
   `@page { size: ${widthMm}mm ${heightMm}mm; margin: 0 }`;
 

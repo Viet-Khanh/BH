@@ -61,8 +61,9 @@ describe('readPrintSettings', () => {
       labelColumns: 4,
       labelGapMm: 20,
       labelOffsetXMm: -10,
-      labelOffsetYMm: 20,
+      labelOffsetYMm: 10,
     });
+    expect(readPrintSettings({ labelGapMm: -3 }).labelGapMm).toBe(0);
     expect(readPrintSettings({ labelColumns: 0 }).labelColumns).toBe(1);
     expect(readPrintSettings({ labelColumns: 2.6 }).labelColumns).toBe(3);
   });

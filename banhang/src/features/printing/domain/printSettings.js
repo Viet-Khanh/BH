@@ -44,9 +44,9 @@ const NUMBER_RANGES = {
   labelWidthMm: [10, 120],
   labelHeightMm: [10, 120],
   labelColumns: [1, 4],
-  labelGapMm: [-10, 20],
-  labelOffsetXMm: [-10, 20],
-  labelOffsetYMm: [-10, 20],
+  labelGapMm: [0, 20],
+  labelOffsetXMm: [-10, 10],
+  labelOffsetYMm: [-10, 10],
 };
 
 const readNumber = (value, fallback, [min, max]) => {
