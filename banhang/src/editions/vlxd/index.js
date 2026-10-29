@@ -10,7 +10,12 @@ export default defineEdition({
     defaultShopName: 'Cửa hàng vật liệu xây dựng',
     invoiceTagline:
       'SẮT THÉP - XI MĂNG - GẠCH - CÁT ĐÁ - TÔN - ỐNG NHỰA - ĐIỆN NƯỚC',
-    features: { dimensions: true, sampleData: false, units: false },
+    features: {
+      dimensions: true,
+      sampleData: false,
+      units: false,
+      barcode: false,
+    },
     labels: { group: 'Nhóm hàng', spec: 'Quy cách' },
   },
 });

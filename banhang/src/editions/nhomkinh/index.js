@@ -10,7 +10,12 @@ export default defineEdition({
     defaultShopName: 'Cửa hàng nhôm kính',
     invoiceTagline:
       'CHUYÊN NHÔM - XINGFA - PMA - SHALUMI - KÍNH - TRẦN THẢ - ALU CÁC LOẠI',
-    features: { dimensions: true, sampleData: true, units: false },
+    features: {
+      dimensions: true,
+      sampleData: true,
+      units: false,
+      barcode: false,
+    },
     labels: { group: 'Nhóm hàng', spec: 'Quy cách' },
   },
 });

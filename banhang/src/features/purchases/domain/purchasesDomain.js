@@ -2,6 +2,7 @@ import {
   getLineAmount,
   normalizeDimension,
 } from '../../../utils/lineMeasure.js';
+import { buildLineUnitFields } from '../../../utils/productUnits.js';
 
 export const buildPurchaseItems = (purchase) =>
   (purchase?.items || []).map((item) => ({
@@ -11,6 +12,23 @@ export const buildPurchaseItems = (purchase) =>
 
 export const getPurchaseLineTotal = (item = {}) =>
   getLineAmount(item, 'unitCost');
+
+export const buildPurchaseLine = ({
+  product,
+  qty,
+  unitCost,
+  dimensions = {},
+  unit,
+}) => ({
+  productId: product.id,
+  qty,
+  unitCost,
+  lineTotal: getPurchaseLineTotal({ qty, unitCost, ...dimensions }),
+  lineNote: '',
+  length: dimensions.length ?? null,
+  width: dimensions.width ?? null,
+  ...buildLineUnitFields(unit),
+});
 
 export const mergeProducts = (current = [], incoming = []) => {
   const productMap = new Map();

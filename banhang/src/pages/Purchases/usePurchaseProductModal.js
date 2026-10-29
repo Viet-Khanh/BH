@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
-import { getPurchaseLineTotal } from '../../features/purchases/domain/purchasesDomain.js';
+import { buildPurchaseLine } from '../../features/purchases/domain/purchasesDomain.js';
 import { usePendingUnit } from '../../components/invoice/productModal/usePendingUnit.js';
 import { readDimensions } from '../../utils/lineMeasure.js';
-import {
-  buildLineUnitFields,
-  getUnitCostPrice,
-} from '../../utils/productUnits.js';
+import { getUnitCostPrice } from '../../utils/productUnits.js';
 import { hasSearchMatch, normalizeSearchText } from '../../utils/searchText.js';
 
 const usePurchaseProductModal = ({
@@ -107,21 +104,14 @@ const usePurchaseProductModal = ({
       return false;
     }
 
-    const lineTotal = getPurchaseLineTotal({ qty, unitCost, ...dimensions });
-
-    setItems((prev) => [
-      ...prev,
-      {
-        productId: pendingProduct.id,
-        qty,
-        unitCost,
-        lineTotal,
-        lineNote: '',
-        length: dimensions.length,
-        width: dimensions.width,
-        ...buildLineUnitFields(pendingUnit.selection),
-      },
-    ]);
+    const line = buildPurchaseLine({
+      product: pendingProduct,
+      qty,
+      unitCost,
+      dimensions,
+      unit: pendingUnit.selection,
+    });
+    setItems((prev) => [...prev, line]);
 
     if (closeAfter) {
       setSearchOpen(false);

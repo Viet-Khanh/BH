@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createConfirmAddHandler } from '../invoiceItemHandlers.js';
+import {
+  buildSaleLine,
+  createConfirmAddHandler,
+} from '../invoiceItemHandlers.js';
 
 const run = (pendingUnit) => {
   let items = [];
@@ -40,5 +43,25 @@ describe('createConfirmAddHandler', () => {
     expect(line).not.toHaveProperty('unitName');
     expect(line).not.toHaveProperty('factor');
     expect(run(undefined)).not.toHaveProperty('unitName');
+  });
+});
+
+describe('buildSaleLine', () => {
+  it('builds a carton line with the unit snapshot', () => {
+    expect(
+      buildSaleLine({
+        product: { id: 'p1', avgCost: 8000 },
+        qty: 2,
+        unitPrice: 220000,
+        unit: { value: 'thùng', factor: 24 },
+      })
+    ).toMatchObject({
+      productId: 'p1',
+      lineTotal: 440000,
+      unitName: 'thùng',
+      factor: 24,
+      length: null,
+      width: null,
+    });
   });
 });

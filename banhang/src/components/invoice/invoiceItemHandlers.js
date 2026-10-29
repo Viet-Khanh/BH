@@ -2,6 +2,25 @@ import { message } from 'antd';
 import { getLineAmount, readDimensions } from '../../utils/lineMeasure.js';
 import { buildLineUnitFields } from '../../utils/productUnits.js';
 
+export const buildSaleLine = ({
+  product,
+  qty,
+  unitPrice,
+  dimensions = {},
+  unit,
+}) => ({
+  productId: product.id,
+  qty,
+  unitPrice,
+  lineTotal: getLineAmount({ qty, unitPrice, ...dimensions }),
+  costPriceSnapshot: Number(product.avgCost || 0),
+  excludeFromProfitSnapshot: Boolean(product.excludeFromProfit),
+  lineNote: '',
+  length: dimensions.length ?? null,
+  width: dimensions.width ?? null,
+  ...buildLineUnitFields(unit),
+});
+
 export const createConfirmAddHandler =
   ({
     pendingProduct,
@@ -31,18 +50,13 @@ export const createConfirmAddHandler =
       return false;
     }
 
-    const newItem = {
-      productId: pendingProduct.id,
+    const newItem = buildSaleLine({
+      product: pendingProduct,
       qty,
       unitPrice,
-      lineTotal: getLineAmount({ qty, unitPrice, ...dimensions }),
-      costPriceSnapshot: Number(pendingProduct.avgCost || 0),
-      excludeFromProfitSnapshot: Boolean(pendingProduct.excludeFromProfit),
-      lineNote: '',
-      length: dimensions.length,
-      width: dimensions.width,
-      ...buildLineUnitFields(pendingUnit),
-    };
+      dimensions,
+      unit: pendingUnit,
+    });
     setItems((prev) => [...prev, newItem]);
     if (closeAfter) {
       setSearchOpen(false);
