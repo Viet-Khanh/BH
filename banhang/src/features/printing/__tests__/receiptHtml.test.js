@@ -1,46 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildReceipt58Html } from '../receipt58.js';
+import { build, invoice } from './receiptFixture.js';
 
-const products = [
-  { id: 'p1', name: 'Bia Hà Nội', unit: 'lon' },
-  { id: 'p2', name: 'Mì <Hảo Hảo>', unit: 'gói' },
-];
-
-const settings = {
-  shopName: 'Tạp hoá Minh An',
-  shopPhone: '0901 234 567',
-  shopAddress: '12 Lê Lợi',
-};
-
-const items = [
-  {
-    productId: 'p1',
-    unitName: 'thùng',
-    qty: 2,
-    unitPrice: 220000,
-    lineTotal: 440000,
-  },
-  { productId: 'p2', qty: 3, unitPrice: 5000, lineTotal: 15000 },
-];
-
-const invoice = {
-  code: 'HD0001',
-  date: '2026-10-29T08:05:00',
-  total: 455000,
-};
-
-const build = (overrides = {}) =>
-  buildReceipt58Html({
-    invoice,
-    items,
-    products,
-    customer: { name: 'Khách lẻ' },
-    payments: [{ amount: 500000 }],
-    settings,
-    ...overrides,
-  });
-
-describe('buildReceipt58Html', () => {
+describe('buildReceiptHtml', () => {
   it('prints shop, code, date and a full document for 58 mm paper', () => {
     const html = build();
     expect(html).toMatch(/^<!doctype html>/i);

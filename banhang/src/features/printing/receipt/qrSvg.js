@@ -24,12 +24,20 @@ const buildPath = (qr) => {
   return parts.join('');
 };
 
-// Square SVG of `sizeMm` (quiet zone included); '' without text.
-export const renderQrSvg = (text, { sizeMm = 30 } = {}) => {
+// With `dotsPerMm` (thermal printer) the size shrinks so a module = whole dots.
+const fitSize = (sizeMm, side, dotsPerMm) => {
+  if (!(dotsPerMm > 0)) return sizeMm;
+  const dots = Math.max(1, Math.floor((sizeMm * dotsPerMm) / side));
+  return Math.round(((side * dots) / dotsPerMm) * 1000) / 1000;
+};
+
+// Square SVG of about `sizeMm` (quiet zone included); '' without text.
+export const renderQrSvg = (text, { sizeMm = 30, dotsPerMm = 0 } = {}) => {
   if (!text) return '';
   const qr = qrcode(0, 'M');
   qr.addData(String(text), 'Byte');
   qr.make();
   const side = qr.getModuleCount() + 2 * QUIET_ZONE;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${sizeMm}mm" height="${sizeMm}mm" viewBox="0 0 ${side} ${side}" shape-rendering="crispEdges"><rect width="${side}" height="${side}" fill="#fff"/><path d="${buildPath(qr)}" fill="#000"/></svg>`;
+  const size = fitSize(sizeMm, side, dotsPerMm);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}mm" height="${size}mm" viewBox="0 0 ${side} ${side}" shape-rendering="crispEdges"><rect width="${side}" height="${side}" fill="#fff"/><path d="${buildPath(qr)}" fill="#000"/></svg>`;
 };

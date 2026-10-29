@@ -10,6 +10,7 @@ const ReceiptPrintSettings = ({ printers, canChoose }) => {
   const { form, handleValuesChange, readPreviewSettings, save } =
     usePrintSettingsForm({ successMessage: 'Đã lưu cài đặt in hoá đơn.' });
   const paper = Form.useWatch('receiptPaper', form);
+  const isRoll = Boolean(paper) && paper !== 'auto';
 
   return (
     <Form
@@ -31,14 +32,10 @@ const ReceiptPrintSettings = ({ printers, canChoose }) => {
         <InputNumber min={1} max={10} precision={0} style={{ width: 120 }} />
       </Form.Item>
       <Form.Item>
-        <Tooltip
-          title={
-            paper === '58mm' ? '' : 'Chọn khổ 58mm để in thử hoá đơn cuộn.'
-          }
-        >
+        <Tooltip title={isRoll ? '' : 'Chọn khổ giấy cuộn để in thử hoá đơn.'}>
           <Button
             onClick={() => printSampleReceipt(readPreviewSettings())}
-            disabled={paper !== '58mm'}
+            disabled={!isRoll}
           >
             In thử
           </Button>

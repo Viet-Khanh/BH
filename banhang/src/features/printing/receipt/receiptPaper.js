@@ -19,5 +19,3 @@ export const getReceiptPaper = (settings) => {
     printableMm: preset.widthMm - 2 * preset.marginMm,
   };
 };
-
-export const isRollPaper = (settings) => getReceiptPaper(settings).roll;

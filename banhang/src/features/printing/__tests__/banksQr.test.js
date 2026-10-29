@@ -38,3 +38,13 @@ describe('renderQrSvg', () => {
     expect(renderQrSvg('', { sizeMm: 30 })).toBe('');
   });
 });
+
+describe('renderQrSvg with printer dots', () => {
+  it('shrinks the size so each module is a whole number of dots', () => {
+    const svg = renderQrSvg('HD0001', { sizeMm: 30, dotsPerMm: 8 });
+    const side = Number(svg.match(/viewBox="0 0 (\d+)/)[1]);
+    const sizeMm = Number(svg.match(/width="([\d.]+)mm"/)[1]);
+    expect(sizeMm).toBeLessThanOrEqual(30);
+    expect(Number.isInteger((sizeMm * 8) / side)).toBe(true);
+  });
+});
