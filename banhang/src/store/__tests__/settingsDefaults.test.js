@@ -14,5 +14,8 @@ it('derives shop name and template from the current edition', () => {
     id: 'main',
     printCopies: 1,
     dataVersion: 2,
+    bankBin: '',
+    bankAccountNo: '',
+    bankAccountName: '',
   });
 });

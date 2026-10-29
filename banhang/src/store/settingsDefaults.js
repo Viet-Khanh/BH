@@ -9,6 +9,10 @@ export const getDefaultSettings = () => ({
   shopName: getEditionConfig().defaultShopName,
   shopPhone: '0900 000 000',
   shopAddress: '123 Đường ABC, Quận 1',
+  // Shop bank account for the VietQR block of the roll receipt
+  bankBin: '',
+  bankAccountNo: '',
+  bankAccountName: '',
   allowNegativeStock: false,
   autoUpdateAvgCostOnPurchase: true,
   showSensitiveInfo: false,

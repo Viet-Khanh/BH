@@ -1,8 +1,14 @@
 // Printer and label settings (merged into store/settingsDefaults.js).
+import { normalizeReceiptLayout } from '../receipt/receiptLayout.js';
+
 export const PRINT_DEFAULT_SETTINGS = {
   printCopies: 1,
   receiptPaper: 'auto',
   receiptPrinterName: '',
+  receiptWidthMm: 58,
+  receiptMarginMm: 5,
+  receiptLayout: normalizeReceiptLayout(),
+  receiptLogo: '',
   labelPrinterName: '',
   labelWidthMm: 35,
   labelHeightMm: 22,
@@ -15,7 +21,7 @@ export const PRINT_DEFAULT_SETTINGS = {
   autoPrintLabelsOnPurchase: true,
 };
 
-export const RECEIPT_PAPERS = ['auto', '58mm'];
+export const RECEIPT_PAPERS = ['auto', '58mm', '80mm', 'custom'];
 
 export const LABEL_PRESETS = [
   {
@@ -43,6 +49,8 @@ export const LABEL_PRESETS = [
 
 const NUMBER_RANGES = {
   printCopies: [1, 10],
+  receiptWidthMm: [40, 112],
+  receiptMarginMm: [0, 10],
   labelWidthMm: [10, 120],
   labelHeightMm: [10, 120],
   labelColumns: [1, 4],
@@ -59,6 +67,12 @@ const readNumber = (value, fallback, [min, max]) => {
 };
 
 const readText = (value) => (typeof value === 'string' ? value.trim() : '');
+
+// Only an embedded image (PNG data URL from the designer) may become the logo.
+const readLogo = (value) =>
+  typeof value === 'string' && /^data:image\/[a-z+.-]+;base64,/i.test(value)
+    ? value
+    : '';
 
 const readBoolean = (value, fallback) =>
   typeof value === 'boolean' ? value : fallback;
@@ -80,6 +94,8 @@ export const readPrintSettings = (settings = {}) => {
       ? source.receiptPaper
       : defaults.receiptPaper,
     receiptPrinterName: readText(source.receiptPrinterName),
+    receiptLayout: normalizeReceiptLayout(source.receiptLayout),
+    receiptLogo: readLogo(source.receiptLogo),
     labelPrinterName: readText(source.labelPrinterName),
     ...numbers,
     labelShowShopName: readBoolean(

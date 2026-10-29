@@ -75,5 +75,7 @@ export const toPrinterOptions = (printers, current = '') => {
 
 export const RECEIPT_PAPER_OPTIONS = [
   { value: 'auto', label: 'Tự động A5/A4' },
-  { value: '58mm', label: 'Giấy cuộn 58 mm' },
+  { value: '58mm', label: 'Cuộn 58mm' },
+  { value: '80mm', label: 'Cuộn 80mm' },
+  { value: 'custom', label: 'Tùy chỉnh' },
 ];

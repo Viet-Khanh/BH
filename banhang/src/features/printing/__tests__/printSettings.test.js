@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_RECEIPT_LAYOUT } from '../receipt/receiptLayout.js';
 import {
   getLabelRowSize,
   LABEL_PRESETS,
@@ -19,6 +20,10 @@ describe('readPrintSettings', () => {
     const print = readPrintSettings({
       receiptPaper: '58mm',
       receiptPrinterName: '  XP-58  ',
+      receiptWidthMm: 76,
+      receiptMarginMm: 3,
+      receiptLayout: { fontSizePx: 14 },
+      receiptLogo: 'data:image/png;base64,AAAA',
       labelPrinterName: ' Xprinter 365B ',
       labelWidthMm: 40,
       labelHeightMm: 30,
@@ -34,6 +39,10 @@ describe('readPrintSettings', () => {
       printCopies: 1,
       receiptPaper: '58mm',
       receiptPrinterName: 'XP-58',
+      receiptWidthMm: 76,
+      receiptMarginMm: 3,
+      receiptLayout: { ...DEFAULT_RECEIPT_LAYOUT, fontSizePx: 14 },
+      receiptLogo: 'data:image/png;base64,AAAA',
       labelPrinterName: 'Xprinter 365B',
       labelWidthMm: 40,
       labelHeightMm: 30,
@@ -65,6 +74,10 @@ describe('readPrintSettings', () => {
       labelOffsetYMm: 10,
     });
     expect(readPrintSettings({ labelGapMm: -3 }).labelGapMm).toBe(0);
+    expect(readPrintSettings({ receiptWidthMm: 20 }).receiptWidthMm).toBe(40);
+    expect(readPrintSettings({ receiptWidthMm: 200 }).receiptWidthMm).toBe(112);
+    expect(readPrintSettings({ receiptMarginMm: -1 }).receiptMarginMm).toBe(0);
+    expect(readPrintSettings({ receiptMarginMm: 30 }).receiptMarginMm).toBe(10);
     expect(readPrintSettings({ labelColumns: 0 }).labelColumns).toBe(1);
     expect(readPrintSettings({ labelColumns: 2.6 }).labelColumns).toBe(3);
   });
@@ -76,9 +89,26 @@ describe('readPrintSettings', () => {
     expect(readPrintSettings({ printCopies: 50 }).printCopies).toBe(10);
   });
 
+  it('accepts every roll paper', () => {
+    ['auto', '58mm', '80mm', 'custom'].forEach((paper) =>
+      expect(readPrintSettings({ receiptPaper: paper }).receiptPaper).toBe(
+        paper
+      )
+    );
+  });
+
+  it('keeps only image data URLs as the receipt logo', () => {
+    expect(
+      readPrintSettings({ receiptLogo: 'https://x.test/a.png' }).receiptLogo
+    ).toBe('');
+    expect(readPrintSettings({ receiptLogo: 42 }).receiptLogo).toBe('');
+  });
+
   it('falls back to defaults for invalid values', () => {
     const print = readPrintSettings({
       receiptPaper: 'A7',
+      receiptWidthMm: 'wide',
+      receiptLayout: 'x',
       receiptPrinterName: null,
       labelWidthMm: 'abc',
       labelHeightMm: null,
@@ -87,6 +117,8 @@ describe('readPrintSettings', () => {
     expect(print).toMatchObject({
       receiptPaper: 'auto',
       receiptPrinterName: '',
+      receiptWidthMm: 58,
+      receiptLayout: DEFAULT_RECEIPT_LAYOUT,
       labelWidthMm: 35,
       labelHeightMm: 22,
       labelShowPrice: true,

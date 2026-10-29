@@ -5,6 +5,7 @@ import {
   fromPrintFormValues,
   getPresetValue,
   LABEL_PRESET_OPTIONS,
+  RECEIPT_PAPER_OPTIONS,
   syncPresetFields,
   toPrintFormValues,
   toPrinterOptions,
@@ -79,6 +80,15 @@ describe('fromPrintFormValues', () => {
       autoPrintLabelsOnPurchase: false,
     });
   });
+});
+
+it('lists the receipt papers', () => {
+  expect(RECEIPT_PAPER_OPTIONS).toEqual([
+    { value: 'auto', label: 'Tự động A5/A4' },
+    { value: '58mm', label: 'Cuộn 58mm' },
+    { value: '80mm', label: 'Cuộn 80mm' },
+    { value: 'custom', label: 'Tùy chỉnh' },
+  ]);
 });
 
 it('lists the presets plus "Tùy chỉnh"', () => {

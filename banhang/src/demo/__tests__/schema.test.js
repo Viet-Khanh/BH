@@ -54,4 +54,16 @@ describe('Schema', () => {
     );
     expect(OrderSchema.uniqueKeys).toEqual(['id']);
   });
+
+  it('keeps plain object fields (type: Object) as is, with fresh defaults', () => {
+    const Settings = new Schema({
+      layout: { type: Object, default: () => ({ blocks: [{ key: 'a' }] }) },
+    });
+    const layout = { fontSizePx: 14, blocks: [{ key: 'qr', on: true }] };
+    expect(Settings.cast({ layout }).layout).toEqual(layout);
+    const first = Settings.applyDefaults({});
+    const second = Settings.applyDefaults({});
+    expect(first.layout).toEqual({ blocks: [{ key: 'a' }] });
+    expect(first.layout).not.toBe(second.layout);
+  });
 });
