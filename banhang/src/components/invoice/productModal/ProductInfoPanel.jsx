@@ -5,6 +5,8 @@ import {
   formatNumberInput,
   parseNumberInput,
 } from '../../../utils/numberInput.js';
+import { formatStockByUnits } from '../../../utils/productUnits.js';
+import UnitPicker from './UnitPicker.jsx';
 
 const inputStyle = { width: '50%' };
 
@@ -45,6 +47,7 @@ const ProductInfoPanel = ({
   previousPrice,
   priceMin,
   showDimensions,
+  unitSelection,
   qtyInputRef,
   onChangeQty,
   onChangePrice,
@@ -60,11 +63,9 @@ const ProductInfoPanel = ({
       <div>
         <strong>{pendingProduct?.name || 'Chưa chọn sản phẩm'}</strong>
         <div>{pendingProduct?.code || ''}</div>
-        <div>
-          Tồn kho:{' '}
-          {Number(pendingProduct?.stock ?? pendingProduct?.openingStock ?? 0)}
-        </div>
+        <div>Tồn kho: {formatStockByUnits(pendingProduct)}</div>
       </div>
+      <UnitPicker product={pendingProduct} selection={unitSelection} />
       <LabeledNumber
         label="Số lượng"
         value={pendingQty}

@@ -177,6 +177,7 @@ const useInvoiceEditorState = ({
     handlePendingProductChange: productSelection.handlePendingProductChange,
     pendingPreviousPrice: productSelection.pendingPreviousPrice,
     applyPendingPreviousPrice: productSelection.applyPendingPreviousPrice,
+    unitSelection: productSelection.unitSelection,
     setPendingQty: productSelection.setPendingQty,
     setPendingPrice: productSelection.setPendingPrice,
     setPendingLength: productSelection.setPendingLength,

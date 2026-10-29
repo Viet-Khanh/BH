@@ -7,6 +7,7 @@ export const createOpenAddModal =
     setPendingWidth,
     setSearchOpen,
     getProductPrice,
+    setPendingUnitName,
   }) =>
   (product) => {
     if (!product) return;
@@ -15,6 +16,7 @@ export const createOpenAddModal =
         ? getProductPrice(product)
         : Number(product.sellPriceDefault || 0);
     setPendingProduct(product);
+    setPendingUnitName?.('');
     setPendingQty(0);
     setPendingPrice(nextPrice);
     setPendingLength(null);
@@ -38,6 +40,7 @@ export const createPendingProductChangeHandler =
     setPendingLength,
     setPendingWidth,
     getProductPrice,
+    setPendingUnitName,
   }) =>
   (productId) => {
     const product = activeProducts.find((item) => item.id === productId);
@@ -47,6 +50,7 @@ export const createPendingProductChangeHandler =
         ? getProductPrice(product)
         : Number(product.sellPriceDefault || 0);
     setPendingProduct(product);
+    setPendingUnitName?.('');
     setPendingQty(0);
     setPendingPrice(nextPrice);
     setPendingLength(null);

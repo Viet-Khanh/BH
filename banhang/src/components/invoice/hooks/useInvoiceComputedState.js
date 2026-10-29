@@ -3,8 +3,9 @@ import { getPaymentStatus } from '../invoiceUtils.js';
 
 const DEFAULT_CUSTOMER_PRICE_KEY = '__default__';
 
-const buildProductPriceKey = (customerId, productId) =>
-  `${customerId || DEFAULT_CUSTOMER_PRICE_KEY}::${productId}`;
+// Base unit keeps the historical key; packaging units get a ::unit suffix.
+const buildProductPriceKey = (customerId, productId, unitName = '') =>
+  `${customerId || DEFAULT_CUSTOMER_PRICE_KEY}::${productId}${unitName ? `::${unitName}` : ''}`;
 
 export const useInvoiceComputedState = ({
   customerId,
@@ -121,7 +122,8 @@ export const useInvoiceComputedState = ({
 
         const priceKey = buildProductPriceKey(
           currentInvoice.customerId,
-          productId
+          productId,
+          invoiceItem.unitName
         );
         const previous = latestByKey[priceKey];
 
@@ -150,10 +152,12 @@ export const useInvoiceComputedState = ({
   }, [invoice?.id, invoices]);
 
   const getPreviousProductPrice = useCallback(
-    (productId, nextCustomerId = customerId) => {
+    (productId, nextCustomerId = customerId, unitName = '') => {
       if (!productId) return null;
       const previousPrice = Number(
-        previousInvoicePrices[buildProductPriceKey(nextCustomerId, productId)]
+        previousInvoicePrices[
+          buildProductPriceKey(nextCustomerId, productId, unitName)
+        ]
       );
       return Number.isFinite(previousPrice) ? previousPrice : null;
     },

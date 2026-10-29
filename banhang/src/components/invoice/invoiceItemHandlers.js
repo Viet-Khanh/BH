@@ -8,6 +8,7 @@ export const createConfirmAddHandler =
     pendingPrice,
     pendingLength,
     pendingWidth,
+    pendingUnit,
     setItems,
     setSearchOpen,
     setPendingQty,
@@ -39,6 +40,9 @@ export const createConfirmAddHandler =
       lineNote: '',
       length: dimensions.length,
       width: dimensions.width,
+      ...(pendingUnit?.value
+        ? { unitName: pendingUnit.value, factor: pendingUnit.factor }
+        : {}),
     };
     setItems((prev) => [...prev, newItem]);
     if (closeAfter) {

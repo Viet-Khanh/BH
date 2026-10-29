@@ -34,6 +34,7 @@ const InvoiceProductModal = ({
   onChangeLength,
   onChangeWidth,
   onApplyPreviousPrice,
+  unitSelection,
   onConfirmAdd,
   onCreateProduct,
   onProductCreated,
@@ -42,6 +43,7 @@ const InvoiceProductModal = ({
   priceMin = 0,
 }) => {
   const editionDimensions = useEditionFeature('dimensions');
+  const unitsEnabled = useEditionFeature('units');
   const { searchKeyword, setSearchKeyword } = useDebouncedProductSearch({
     open,
     onSearchProducts,
@@ -114,6 +116,7 @@ const InvoiceProductModal = ({
           previousPrice={previousPrice}
           priceMin={priceMin}
           showDimensions={showDimensions ?? editionDimensions}
+          unitSelection={unitsEnabled ? unitSelection : undefined}
           qtyInputRef={qtyInputRef}
           onChangeQty={onChangeQty}
           onChangePrice={onChangePrice}

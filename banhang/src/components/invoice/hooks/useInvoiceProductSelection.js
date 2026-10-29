@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  hasSearchMatch,
-  normalizeSearchText,
-} from '../../../utils/searchText.js';
 import { getLineAmount } from '../../../utils/lineMeasure.js';
+import { getUnitSellPrice } from '../../../utils/productUnits.js';
 import { createConfirmAddHandler } from '../invoiceItemHandlers.js';
 import {
   createAddProductHandler,
   createOpenAddModal,
   createPendingProductChangeHandler,
 } from '../invoiceProductHandlers.js';
+import { usePendingUnit } from '../productModal/usePendingUnit.js';
+import { useInvoiceQuickAdd } from './useInvoiceQuickAdd.js';
 
 export const useInvoiceProductSelection = ({
   items,
@@ -27,6 +26,21 @@ export const useInvoiceProductSelection = ({
   const [pendingPrice, setPendingPrice] = useState(0);
   const [pendingLength, setPendingLength] = useState(null);
   const [pendingWidth, setPendingWidth] = useState(null);
+
+  const getUnitPrice = useCallback(
+    (product, unitName) => {
+      if (unitName) return getUnitSellPrice(product, unitName);
+      return typeof getProductPrice === 'function'
+        ? getProductPrice(product)
+        : Number(product.sellPriceDefault || 0);
+    },
+    [getProductPrice]
+  );
+  const pendingUnit = usePendingUnit({
+    pendingProduct,
+    getUnitPrice,
+    setPendingPrice,
+  });
 
   useEffect(() => {
     if (!onSearchProducts) return;
@@ -59,6 +73,7 @@ export const useInvoiceProductSelection = ({
     setPendingWidth,
     setSearchOpen,
     getProductPrice,
+    setPendingUnitName: pendingUnit.setUnitName,
   });
 
   const handleProductCreated = useCallback(
@@ -81,6 +96,7 @@ export const useInvoiceProductSelection = ({
     setPendingLength,
     setPendingWidth,
     getProductPrice,
+    setPendingUnitName: pendingUnit.setUnitName,
   });
 
   const handlePendingPriceChange = useCallback((value) => {
@@ -100,9 +116,13 @@ export const useInvoiceProductSelection = ({
 
   const pendingPreviousPrice = useMemo(() => {
     if (!pendingProduct?.id) return null;
-    const previousPrice = getPreviousProductPrice(pendingProduct.id);
+    const previousPrice = getPreviousProductPrice(
+      pendingProduct.id,
+      undefined,
+      pendingUnit.selection.value
+    );
     return Number.isFinite(previousPrice) ? Number(previousPrice) : null;
-  }, [getPreviousProductPrice, pendingProduct]);
+  }, [getPreviousProductPrice, pendingProduct, pendingUnit.selection.value]);
 
   const applyPendingPreviousPrice = useCallback(() => {
     if (!Number.isFinite(pendingPreviousPrice)) return;
@@ -118,23 +138,13 @@ export const useInvoiceProductSelection = ({
     [items, setItems]
   );
 
-  const filteredQuick = useMemo(() => {
-    const keyword = normalizeSearchText(searchKeyword);
-    if (!keyword) return [];
-    return activeProducts
-      .filter((item) => hasSearchMatch(item, keyword))
-      .slice(0, 5);
-  }, [activeProducts, searchKeyword]);
-
-  const handleQuickAdd = useCallback(() => {
-    if (!filteredQuick.length) {
-      setSearchOpen(true);
-      return;
-    }
-
-    openAddModal(filteredQuick[0]);
-    setSearchKeyword('');
-  }, [filteredQuick, openAddModal]);
+  const { filteredQuick, handleQuickAdd } = useInvoiceQuickAdd({
+    activeProducts,
+    searchKeyword,
+    setSearchKeyword,
+    setSearchOpen,
+    openAddModal,
+  });
 
   const confirmAdd = createConfirmAddHandler({
     pendingProduct,
@@ -142,6 +152,7 @@ export const useInvoiceProductSelection = ({
     pendingPrice,
     pendingLength,
     pendingWidth,
+    pendingUnit: pendingUnit.selection,
     setItems,
     setSearchOpen,
     setPendingQty,
@@ -181,5 +192,6 @@ export const useInvoiceProductSelection = ({
     filteredQuick,
     handleQuickAdd,
     handleConfirmAdd,
+    unitSelection: pendingUnit.selection,
   };
 };
