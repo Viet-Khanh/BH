@@ -1,13 +1,15 @@
 # Printing (`features/printing`)
 
-Receipt printer (58 mm roll) and label printer for shops that run everything on one machine.
-Configured in System → "In ấn" (sub-headings "Hoá đơn" and "Tem"); values live in backend `Settings`. Label UI is gated by
-the edition flag `labels` (minimart). Spec: `docs/superpowers/specs/2026-10-29-printing-labels-design.md`.
+Receipt printer (58 mm / 80 mm / custom roll) and label printer for shops that run everything on
+one machine. Configured in System → "In ấn" (sub-headings "Hoá đơn" and "Tem"); values live in
+backend `Settings`. Label UI is gated by the edition flag `labels` (minimart). Specs:
+`docs/superpowers/specs/2026-10-29-printing-labels-design.md`,
+`docs/superpowers/specs/2026-10-30-receipt-designer-design.md` (roll receipt designer).
 
 ## Flow
 
 ```
-sales print / reprint ─► printSalesInvoice ─► receiptPaper '58mm'? buildReceipt58Html : normal template
+sales print / reprint ─► printSalesInvoice ─► roll paper? loadReceiptAssets → buildReceiptHtml : normal template
 purchase created ─► (payment modal closed) ─► LabelPrintModal ─► printLabels ─► labelHtml + JsBarcode
                                                       ▲
             purchase detail "In tem" / catalog "In tem" ┘
@@ -15,6 +17,33 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
      ─► Electron `print-html` (temp file, silent, chosen printer; missing printer → default + warning)
      └► web: browser print dialog
 ```
+
+## Roll receipt
+
+- Paper (`receipt/receiptPaper.js`): `receiptPaper` = `auto` (A5/A4 template), `58mm` (58 mm,
+  margins 5 → 48 mm printable), `80mm` (80 / 4 → 72 mm) or `custom` (`receiptWidthMm` 40–112,
+  `receiptMarginMm` 0–10). Every roll paper prints `buildReceiptHtml` on `receiptPrinterName`
+  with `autoHeightWidthMm` = paper width (height measured from the content).
+- Layout (`Settings.receiptLayout`, `receipt/receiptLayout.js`):
+  `{ fontSizePx, blocks: [{ key, on, text?, style? }] }` (font 9–16 px); order = print order. `normalizeReceiptLayout` drops unknown
+  keys, appends missing ones with their default state and keeps `items`/`totals` on. Pure
+  editors (`moveBlock`, `toggleBlock`, `setBlockText`, `setItemsStyle`, `setFontSize`) feed
+  the designer.
+- Blocks (`receipt/blocks/*.js`, `(ctx) → html`, all text escaped): logo, shop, title, meta
+  (code + date), customer (hidden for walk-in), items (`twoLine` | `compact`), totals (total,
+  old debt + "Tổng thanh toán", paid, "Còn nợ" / "Tiền thối"), note, qr, barcode, footer. `ctx`
+  is built once (`receiptContext.js`). A dashed line separates consecutive blocks of different
+  zones (head = logo + shop, info = title + meta + customer).
+- Amount due = total + old debt − paid (`receiptAmounts.js`).
+- VietQR (`vietqr.js`, `banks.js`, `qrSvg.js`): NAPAS 247 transfer payload (EMVCo TLV + CRC16
+  CCITT-FALSE) with the amount due and the invoice code as note, from the shop bank fields
+  `bankBin`, `bankAccountNo`, `bankAccountName`. Shown only when the block is on, BIN/account are
+  set and something is due. Rendered locally with `qrcode-generator` (modules snapped to
+  printer dots).
+- Invoice barcode: Code128 of `invoice.code` via the lazy JsBarcode loader (needs a DOM).
+- Async boundary: `receiptAssets.loadReceiptAssets(data)` → `{ qrSvg, barcodeSvg }` (a failing
+  asset is skipped); `buildReceiptHtml(data, assets)` and `buildSalesPrintJob` stay pure/sync.
+- Logo: `Settings.receiptLogo`, an image data URL (anything else is ignored).
 
 ## Label rules
 
@@ -35,8 +64,13 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
 | `domain/printSettings.js`                                                             | Defaults, presets, clamping, label row page size, auto-print decision                     |
 | `domain/printSettingsForm.js`                                                         | Settings form ⇄ settings mapping, printer options                                         |
 | `domain/printSamples.js`, `samplePrints.js`                                           | "In thử" samples                                                                          |
-| `receipt58.js`                                                                        | 58 mm receipt HTML (line units, old debt, change/debt)                                    |
-| `printSalesInvoice.js`                                                                | Chooses receipt vs normal template for every sales print                                  |
+| `receipt/receiptPaper.js`, `receipt/receiptLayout.js`                                 | Roll paper geometry; layout defaults, normalization, designer editors                     |
+| `receipt/receiptHtml.js`, `receipt/receiptStyles.js`, `receipt/receiptContext.js`     | Roll receipt document: blocks in layout order, CSS, shared render context                 |
+| `receipt/blocks/*.js`                                                                 | One renderer per block (`index.js` = key → renderer + zone)                               |
+| `receipt/receiptAmounts.js`                                                           | Total, old debt, paid, amount due                                                         |
+| `receipt/vietqr.js`, `receipt/banks.js`, `receipt/qrSvg.js`                           | VietQR payload + CRC, bank BIN list, QR → SVG                                             |
+| `receipt/receiptAssets.js`                                                            | Async: QR / barcode SVG strings before printing                                           |
+| `printSalesInvoice.js`                                                                | Roll receipt vs normal template for every sales print                                     |
 | `labels/buildLabelJobs.js`, `labels/labelRows.js`                                     | Purchase/product → label rows; row edits                                                  |
 | `labels/barcodeLayout.js`, `labels/barcodeSvg.js`                                     | Module/quiet-zone math; lazy JsBarcode rendering                                          |
 | `labels/labelHtml.js`, `labels/printLabels.js`                                        | Label sheet HTML (one page = one row of labels) and printing                              |
@@ -50,14 +84,15 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
 
 - Builders are pure and tested (`__tests__/`); React/Electron glue stays thin (no DOM tests here).
 - `electron/main.js` is self-contained: it never imports from `src/`.
-- JsBarcode is loaded only when labels are printed (`await import('jsbarcode')`).
+- JsBarcode is loaded only when labels or a receipt barcode are printed
+  (`await import('jsbarcode')`); `qrSvg.js` (qrcode-generator) only when a VietQR is printed.
 
 ## Shop setup checklist
 
 1. Install both printer drivers on Windows.
 2. Label printer driver: paper size = one row of labels (e.g. 72 × 22 mm for 35 × 22 two-up),
    run the gap/label calibration once.
-3. Receipt printer driver: 58 mm roll; enable "open cash drawer after print" if a drawer is
+3. Receipt printer driver: the roll width (58 or 80 mm); enable "open cash drawer after print" if a drawer is
    connected (the app cannot send drawer commands).
 4. System → "In ấn": pick both printers, label size, then "In thử" / "In thử tem" and
    adjust the X/Y offsets.
