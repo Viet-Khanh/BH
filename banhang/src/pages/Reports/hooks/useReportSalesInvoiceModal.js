@@ -8,7 +8,7 @@ import {
 import { renderInvoiceTemplate } from '../../../utils/renderTemplate.js';
 import {
   exportReportInvoiceItems,
-  printReportInvoicePreview,
+  printReportSalesInvoice,
 } from '../reportInvoiceActions.js';
 import { einvoiceDeleteNotice } from '../../../features/einvoice/components/guards/einvoiceGuards.js';
 
@@ -226,10 +226,13 @@ export const useReportSalesInvoiceModal = ({
     handleEdit,
     handleExport,
     handlePrint: () =>
-      printReportInvoicePreview({
+      printReportSalesInvoice({
         previewHtml,
         settings,
-        copies: 1,
+        invoice: selectedInvoice,
+        customer: selectedCustomer,
+        payments: selectedPayments,
+        products: selectedProducts,
       }),
     handleRefreshProfit,
     openInvoice: setSelectedInvoiceId,

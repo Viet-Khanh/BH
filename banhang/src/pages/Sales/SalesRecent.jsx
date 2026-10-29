@@ -8,7 +8,7 @@ import { formatMoney } from '../../utils/moneyFormat.js';
 import { renderInvoiceTemplate } from '../../utils/renderTemplate.js';
 import { apiRequest } from '../../db/repository.js';
 import { saveWorkbook } from '../../utils/excelExport.js';
-import { printHtml } from '../../utils/printUtils.js';
+import { printSalesInvoice } from '../../features/printing/printSalesInvoice.js';
 import { einvoiceDeleteNotice } from '../../features/einvoice/components/guards/einvoiceGuards.js';
 
 const SalesRecent = () => {
@@ -118,8 +118,16 @@ const SalesRecent = () => {
   ]);
 
   const handlePrint = async () => {
-    if (!previewHtml) return;
-    await printHtml(previewHtml, { copies: 1, autoPageSize: true });
+    if (!selectedInvoice) return;
+    await printSalesInvoice({
+      settings,
+      invoice: selectedInvoice,
+      products: selectedProducts,
+      customer: selectedCustomer,
+      payments: selectedPayments,
+      buildHtml: () => previewHtml,
+      copies: 1,
+    });
   };
 
   const handleExport = async () => {

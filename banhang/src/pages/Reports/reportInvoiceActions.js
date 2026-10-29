@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { saveWorkbook } from '../../utils/excelExport.js';
 import { printHtml } from '../../utils/printUtils.js';
+import { printSalesInvoice } from '../../features/printing/printSalesInvoice.js';
 
 export const exportReportInvoiceItems = async ({
   items = [],
@@ -41,3 +42,21 @@ export const printReportInvoicePreview = async ({
   );
   await printHtml(previewHtml, { copies: printCopies, autoPageSize: true });
 };
+
+export const printReportSalesInvoice = ({
+  previewHtml,
+  settings,
+  invoice,
+  customer,
+  payments,
+  products,
+}) =>
+  printSalesInvoice({
+    settings,
+    invoice,
+    products,
+    customer,
+    payments,
+    buildHtml: () => previewHtml,
+    copies: 1,
+  });

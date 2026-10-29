@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { renderInvoiceTemplate } from '../../../utils/renderTemplate.js';
-import { printHtml } from '../../../utils/printUtils.js';
-import { buildReceipt58Html } from '../../../features/printing/receipt58.js';
+import { printSalesInvoice } from '../../../features/printing/printSalesInvoice.js';
 
 const getPrintCopies = (settings) =>
   Math.max(1, Math.round(Number(settings?.printCopies || 1)));
@@ -58,26 +57,16 @@ export const useInvoicePreview = ({
       const printPayments = Array.isArray(paymentsOverride)
         ? paymentsOverride
         : payments;
-      const copies = getPrintCopies(settings);
-      if (settings.receiptPaper === '58mm') {
-        const html = buildReceipt58Html({
-          invoice: printInvoice,
-          items,
-          products,
-          customer,
-          payments: printPayments,
-          settings,
-        });
-        await printHtml(html, {
-          copies,
-          deviceName: settings.receiptPrinterName,
-          autoHeightWidthMm: 58,
-        });
-        return;
-      }
-      const html = buildPreviewHtml(printPayments);
-      if (!html) return;
-      await printHtml(html, { copies, autoPageSize: true });
+      await printSalesInvoice({
+        settings,
+        invoice: printInvoice,
+        items,
+        products,
+        customer,
+        payments: printPayments,
+        buildHtml: () => buildPreviewHtml(printPayments),
+        copies: getPrintCopies(settings),
+      });
     },
     [
       buildPreviewHtml,
