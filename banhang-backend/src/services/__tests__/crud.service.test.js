@@ -218,6 +218,64 @@ describe('crud.service product units', () => {
   });
 });
 
+describe('crud.service product barcodes', () => {
+  const bia = { id: 'p9', name: 'Bia', barcode: 'A1' };
+
+  it('trims the barcode and rejects one used by another product on create', async () => {
+    const ProductModel = createProductModel({ existing: null });
+    const created = await createItem(ProductModel, {
+      name: 'Coca',
+      barcode: ' 893 ',
+    });
+    expect(created.barcode).toBe('893');
+    expect(created.id).toBeTruthy();
+    const Taken = createProductModel({
+      existing: null,
+      duplicateProducts: [bia],
+    });
+    await expect(
+      createItem(Taken, { name: 'Coca', barcode: 'A1' })
+    ).rejects.toMatchObject({
+      message: 'Mã vạch A1 đã dùng cho hàng Bia.',
+      status: 400,
+    });
+    expect(Taken.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a barcode repeated inside a bulk payload', async () => {
+    const ProductModel = createProductModel({ existing: null });
+    await expect(
+      bulkCreateItems(ProductModel, [
+        { name: 'Coca', barcode: 'A1' },
+        {
+          name: 'Pepsi',
+          units: [{ name: 'thùng', factor: 24, barcode: 'A1' }],
+        },
+      ])
+    ).rejects.toThrow('Mã vạch A1 đã dùng cho hàng Coca.');
+    expect(ProductModel.insertMany).not.toHaveBeenCalled();
+  });
+
+  it('keeps a cleared barcode and checks unit barcodes on update', async () => {
+    const ProductModel = createProductModel({
+      existing: { id: 'p1', name: 'Coca', unit: 'lon', barcode: 'OLD' },
+      duplicateProducts: [bia],
+      updated: { id: 'p1' },
+    });
+    await updateItem(ProductModel, 'p1', { barcode: '  ' });
+    expect(ProductModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { id: 'p1' },
+      { $set: { barcode: '', id: 'p1' } },
+      expect.any(Object)
+    );
+    await expect(
+      updateItem(ProductModel, 'p1', {
+        units: [{ name: 'thùng', factor: 24, barcode: 'A1' }],
+      })
+    ).rejects.toThrow('Mã vạch A1 đã dùng cho hàng Bia.');
+  });
+});
+
 describe('crud.service delete purchase with packaging units', () => {
   const purchase = {
     id: 'po1',

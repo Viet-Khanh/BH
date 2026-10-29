@@ -6,6 +6,7 @@ const ProductUnitSchema = new mongoose.Schema(
     name: String,
     factor: Number,
     sellPrice: Number,
+    barcode: String,
   },
   { _id: false }
 );
@@ -15,6 +16,7 @@ const ProductSchema = new mongoose.Schema(
     id: { type: String, required: true, unique: true },
     group: String,
     code: String,
+    barcode: String,
     name: String,
     unit: String,
     units: { type: [ProductUnitSchema], default: [] },

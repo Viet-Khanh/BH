@@ -27,7 +27,10 @@ export const unitError = (message) =>
   Object.assign(new Error(message), { status: 400 });
 
 const isEmptyUnitRow = (unit) =>
-  isBlank(unit?.name) && isBlank(unit?.factor) && isBlank(unit?.sellPrice);
+  isBlank(unit?.name) &&
+  isBlank(unit?.factor) &&
+  isBlank(unit?.sellPrice) &&
+  isBlank(unit?.barcode);
 
 const findUnitError = (units, baseUnit) => {
   if (units.length > MAX_PRODUCT_UNITS) {
@@ -57,11 +60,15 @@ const findUnitError = (units, baseUnit) => {
 export const normalizeProductUnits = (rawUnits, baseUnit) => {
   const units = (Array.isArray(rawUnits) ? rawUnits : [])
     .filter((unit) => !isEmptyUnitRow(unit))
-    .map((unit) => ({
-      name: String(unit.name ?? '').trim(),
-      factor: Number(unit.factor),
-      sellPrice: toPrice(unit.sellPrice),
-    }));
+    .map((unit) => {
+      const barcode = String(unit.barcode ?? '').trim();
+      return {
+        name: String(unit.name ?? '').trim(),
+        factor: Number(unit.factor),
+        sellPrice: toPrice(unit.sellPrice),
+        ...(barcode ? { barcode } : {}),
+      };
+    });
   return { units, error: findUnitError(units, baseUnit) };
 };
 

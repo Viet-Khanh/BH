@@ -184,3 +184,26 @@ describe('resolveLineUnit', () => {
     ).toEqual({ productId: 'x', qty: 1 });
   });
 });
+
+describe('normalizeProductUnits barcodes', () => {
+  it('trims unit barcodes and drops empty ones', () => {
+    expect(
+      normalizeProductUnits(
+        [
+          { name: 'thùng', factor: 24, barcode: ' 8934588012345 ' },
+          { name: 'lốc', factor: 6, barcode: '' },
+        ],
+        'lon'
+      ).units
+    ).toEqual([
+      { name: 'thùng', factor: 24, sellPrice: null, barcode: '8934588012345' },
+      { name: 'lốc', factor: 6, sellPrice: null },
+    ]);
+  });
+
+  it('rejects a unit row with only a barcode', () => {
+    expect(normalizeProductUnits([{ barcode: '123456' }], 'lon').error).toBe(
+      'Đơn vị quy đổi thiếu tên.'
+    );
+  });
+});

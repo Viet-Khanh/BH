@@ -7,6 +7,10 @@ import {
   invertStockDeltas,
 } from './stockSnapshot.service.js';
 import { normalizeProductUnits, unitError } from '../utils/productUnits.js';
+import {
+  assertBarcodesAvailable,
+  normalizeProductBarcode,
+} from './productBarcodes.service.js';
 
 export const sanitizePayload = (payload) => {
   if (!payload || typeof payload !== 'object') return {};
@@ -164,16 +168,18 @@ export const getItemById = async (Model, id) => {
 
 export const createItem = async (Model, payload) => {
   let cleanPayload = ensureActive(sanitizePayload(payload));
+  if (!cleanPayload.id) cleanPayload.id = uuid();
   if (Model.modelName === 'Product') {
     cleanPayload = applyProductUnits(cleanPayload, cleanPayload.unit);
+    cleanPayload = normalizeProductBarcode(cleanPayload);
     const duplicateNames = await findExistingProductNameConflicts(Model, [
       cleanPayload,
     ]);
     if (duplicateNames.length) {
       throw new Error(formatDuplicateProductMessage(duplicateNames));
     }
+    await assertBarcodesAvailable(Model, [cleanPayload]);
   }
-  if (!cleanPayload.id) cleanPayload.id = uuid();
   cleanPayload = prepareCreatePayload(Model, cleanPayload);
   return await Model.create(cleanPayload);
 };
@@ -185,7 +191,9 @@ export const bulkCreateItems = async (Model, items) => {
   });
 
   if (Model.modelName === 'Product') {
-    payload = payload.map((item) => applyProductUnits(item, item.unit));
+    payload = payload.map((item) =>
+      normalizeProductBarcode(applyProductUnits(item, item.unit))
+    );
     const duplicateNamesInPayload = findDuplicateNamesInPayload(payload);
     if (duplicateNamesInPayload.length) {
       throw new Error(formatDuplicateProductMessage(duplicateNamesInPayload));
@@ -206,6 +214,8 @@ export const bulkCreateItems = async (Model, items) => {
         return existingConflicts.map((item) => item.existing);
       }
     }
+    // After skipping existing names: a re-imported product is not a conflict.
+    await assertBarcodesAvailable(Model, payload);
   }
 
   payload = payload.map((item) => prepareCreatePayload(Model, item));
@@ -227,6 +237,10 @@ export const updateItem = async (Model, id, payload) => {
       cleanPayload,
       cleanPayload.unit ?? existing.unit
     );
+    // Keep a cleared barcode ('') so `$set` overwrites the old one.
+    if (cleanPayload.barcode !== undefined) {
+      cleanPayload.barcode = String(cleanPayload.barcode ?? '').trim();
+    }
     const duplicateNames = await findExistingProductNameConflicts(
       Model,
       [cleanPayload],
@@ -234,6 +248,19 @@ export const updateItem = async (Model, id, payload) => {
     );
     if (duplicateNames.length) {
       throw new Error(formatDuplicateProductMessage(duplicateNames));
+    }
+    if (
+      cleanPayload.barcode !== undefined ||
+      cleanPayload.units !== undefined
+    ) {
+      await assertBarcodesAvailable(Model, [
+        {
+          id,
+          name: cleanPayload.name ?? existing.name,
+          barcode: cleanPayload.barcode ?? existing.barcode,
+          units: cleanPayload.units ?? existing.units,
+        },
+      ]);
     }
     if (
       cleanPayload.openingStock !== undefined &&
