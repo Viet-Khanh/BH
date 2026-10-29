@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Button, Form, InputNumber } from 'antd';
+import { RECEIPT_FORM_NAMES } from '../domain/printSettingsForm.js';
 import { usePrintSettingsForm } from '../usePrintSettingsForm.js';
 import PrinterSelectItem from './PrinterSelectItem.jsx';
 import ReceiptPaperFields from './ReceiptPaperFields.jsx';
@@ -15,7 +16,10 @@ const withoutUndefined = (values) =>
 // `printers`/`canChoose` come from usePrinters() in the parent (read once).
 const ReceiptPrintSettings = ({ printers, canChoose }) => {
   const { form, handleValuesChange, readPreviewSettings, save } =
-    usePrintSettingsForm({ successMessage: 'Đã lưu cài đặt in hoá đơn.' });
+    usePrintSettingsForm({
+      successMessage: 'Đã lưu cài đặt in hoá đơn.',
+      names: RECEIPT_FORM_NAMES,
+    });
   const watch = { form, preserve: true };
   const receiptPaper = Form.useWatch('receiptPaper', watch);
   const receiptWidthMm = Form.useWatch('receiptWidthMm', watch);

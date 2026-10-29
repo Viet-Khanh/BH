@@ -10,9 +10,9 @@ import {
 } from './domain/printSettingsForm.js';
 
 // Form state shared by the receipt, A4 and label printer settings forms.
-// Saving writes every print setting (stored values overlaid with this form) except
-// the designer's receiptLayout/receiptLogo, which the receipt designer saves itself;
-// with `names` it writes only those settings.
+// Each printer form passes `names` (domain/printSettingsForm.js) and saves only those
+// settings, so forms never write back each other's stale values. Without `names` it
+// writes every print setting except the designer keys.
 export const usePrintSettingsForm = ({ successMessage, names }) => {
   const settings = useSettingsStore((state) => state.settings);
   const update = useSettingsStore((state) => state.update);

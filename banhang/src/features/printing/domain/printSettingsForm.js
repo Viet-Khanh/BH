@@ -40,6 +40,29 @@ export const fromPrintFormValues = (values = {}) => {
 // Saved by the receipt designer, never by the printer forms (they may hold stale copies).
 export const DESIGNER_KEYS = ['receiptLayout', 'receiptLogo'];
 
+// Settings each printer form owns and saves (so one form never writes back
+// another form's stale values).
+export const RECEIPT_FORM_NAMES = [
+  'printCopies',
+  'receiptPaper',
+  'receiptPrinterName',
+  'receiptWidthMm',
+  'receiptMarginMm',
+];
+export const DOCUMENT_FORM_NAMES = ['documentPrinterName'];
+export const LABEL_FORM_NAMES = [
+  'labelPrinterName',
+  'labelWidthMm',
+  'labelHeightMm',
+  'labelColumns',
+  'labelGapMm',
+  'labelOffsetXMm',
+  'labelOffsetYMm',
+  'labelShowShopName',
+  'labelShowPrice',
+  'autoPrintLabelsOnPurchase',
+];
+
 export const omitDesignerSettings = (settings = {}) =>
   Object.fromEntries(
     Object.entries(settings).filter(([key]) => !DESIGNER_KEYS.includes(key))

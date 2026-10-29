@@ -6,9 +6,9 @@ const NUMBER_FIELDS = [
   { name: 'labelWidthMm', label: 'Rộng tem (mm)', min: 10, max: 120 },
   { name: 'labelHeightMm', label: 'Cao tem (mm)', min: 10, max: 120 },
   { name: 'labelColumns', label: 'Số tem mỗi hàng', min: 1, max: 4 },
-  { name: 'labelGapMm', label: 'Khe giữa 2 tem (mm)', min: -10, max: 20 },
-  { name: 'labelOffsetXMm', label: 'Lệch ngang (mm)', min: -10, max: 20 },
-  { name: 'labelOffsetYMm', label: 'Lệch dọc (mm)', min: -10, max: 20 },
+  { name: 'labelGapMm', label: 'Khe giữa 2 tem (mm)', min: 0, max: 20 },
+  { name: 'labelOffsetXMm', label: 'Lệch ngang (mm)', min: -10, max: 10 },
+  { name: 'labelOffsetYMm', label: 'Lệch dọc (mm)', min: -10, max: 10 },
 ];
 
 const SWITCH_FIELDS = [

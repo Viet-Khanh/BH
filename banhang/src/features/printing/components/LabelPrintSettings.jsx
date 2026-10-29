@@ -1,4 +1,5 @@
 import { Button, Form } from 'antd';
+import { LABEL_FORM_NAMES } from '../domain/printSettingsForm.js';
 import { printSampleLabels } from '../samplePrints.js';
 import { usePrintSettingsForm } from '../usePrintSettingsForm.js';
 import LabelPrintFields from './LabelPrintFields.jsx';
@@ -7,7 +8,10 @@ import LabelPrintFields from './LabelPrintFields.jsx';
 // `printers`/`canChoose` come from usePrinters() in the parent (read once).
 const LabelPrintSettings = ({ printers, canChoose }) => {
   const { form, handleValuesChange, readPreviewSettings, save } =
-    usePrintSettingsForm({ successMessage: 'Đã lưu cài đặt tem.' });
+    usePrintSettingsForm({
+      successMessage: 'Đã lưu cài đặt tem.',
+      names: LABEL_FORM_NAMES,
+    });
 
   return (
     <Form

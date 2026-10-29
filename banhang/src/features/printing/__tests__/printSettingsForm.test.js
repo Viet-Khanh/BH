@@ -5,6 +5,9 @@ import {
   fromPrintFormValues,
   getPresetValue,
   DESIGNER_KEYS,
+  DOCUMENT_FORM_NAMES,
+  LABEL_FORM_NAMES,
+  RECEIPT_FORM_NAMES,
   LABEL_PRESET_OPTIONS,
   omitDesignerSettings,
   pickSettings,
@@ -175,5 +178,20 @@ describe('pickSettings', () => {
 
   it('keeps everything without names', () => {
     expect(pickSettings({ a: 1 })).toEqual({ a: 1 });
+  });
+});
+
+describe('form field ownership', () => {
+  it('splits every print setting between the forms exactly once', () => {
+    const owned = [
+      ...RECEIPT_FORM_NAMES,
+      ...DOCUMENT_FORM_NAMES,
+      ...LABEL_FORM_NAMES,
+      ...DESIGNER_KEYS,
+    ];
+    expect(new Set(owned).size).toBe(owned.length);
+    expect([...owned].sort()).toEqual(
+      Object.keys(PRINT_DEFAULT_SETTINGS).sort()
+    );
   });
 });
