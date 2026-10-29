@@ -12,6 +12,7 @@ import einvoiceRouter from './einvoice.js';
 import invoicesRouter from './invoices.js';
 import openingImportRouter from './openingImport.js';
 import paymentsRouter from './payments.js';
+import productCodesRouter from './productCodes.js';
 import productToolsRouter from './productTools.js';
 import purchasesRouter from './purchases.js';
 import reportRouter from './reports.js';
@@ -26,6 +27,9 @@ export const crudModels = {
   settings: Settings,
   units: Unit,
 };
+
+// Routers sharing a CRUD path; mounted first so `/:id` does not capture them.
+const preCrudRouters = [['/api/products', productCodesRouter]];
 
 const moduleRouters = [
   ['/api/invoices', invoicesRouter],
@@ -48,6 +52,7 @@ const mountModuleRouters = (app, modules) =>
 // Shared by the Express server (app.js) and the browser demo (banhang/src/demo).
 // `modules`: edition/customer backend modules (src/platform/loadBackendModules.js).
 export const mountApiRoutes = (app, { modules = [] } = {}) => {
+  preCrudRouters.forEach(([path, router]) => app.use(path, router));
   Object.entries(crudModels).forEach(([key, model]) => {
     app.use(`/api/${key}`, createCrudRouter(model));
   });

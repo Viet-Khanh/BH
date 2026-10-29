@@ -276,6 +276,75 @@ describe('crud.service product barcodes', () => {
   });
 });
 
+describe('crud.service product codes', () => {
+  const bia = { id: 'p9', name: 'Bia', code: 'CL3', barcode: '893' };
+
+  it('rejects a code used by another active product on create', async () => {
+    const ProductModel = createProductModel({
+      existing: null,
+      duplicateProducts: [bia],
+    });
+    await expect(
+      createItem(ProductModel, { name: 'Coca', code: ' cl3 ' })
+    ).rejects.toMatchObject({
+      message: 'Mã hàng cl3 đã dùng cho hàng Bia.',
+      status: 400,
+    });
+    await expect(
+      createItem(ProductModel, { name: 'Coca', code: '893' })
+    ).rejects.toThrow('Mã hàng 893 đã dùng cho hàng Bia.');
+    await expect(
+      createItem(ProductModel, { name: 'Coca', barcode: 'CL3' })
+    ).rejects.toThrow('Mã vạch CL3 trùng mã hàng của Bia.');
+    expect(ProductModel.create).not.toHaveBeenCalled();
+    const created = await createItem(ProductModel, { name: 'Coca', code: '' });
+    expect(created.name).toBe('Coca');
+  });
+
+  it('checks the code on update only when it changes', async () => {
+    const ProductModel = createProductModel({
+      existing: { id: 'p1', name: 'Coca', code: 'CL3' },
+      duplicateProducts: [bia],
+      updated: { id: 'p1' },
+    });
+    await updateItem(ProductModel, 'p1', { code: 'CL3', sellPriceDefault: 5 });
+    expect(ProductModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+    await expect(
+      updateItem(ProductModel, 'p1', { code: '893' })
+    ).rejects.toThrow('Mã hàng 893 đã dùng cho hàng Bia.');
+    await expect(
+      updateItem(ProductModel, 'p1', { barcode: 'cl3' })
+    ).rejects.toThrow('Mã vạch cl3 trùng mã hàng của Bia.');
+    expect(ProductModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects codes repeated in a bulk import or used by existing products', async () => {
+    const ProductModel = createProductModel({ duplicateProducts: [bia] });
+    await expect(
+      bulkCreateItems(ProductModel, [
+        { name: 'Coca', code: 'SP1' },
+        { name: 'Pepsi', code: 'sp1' },
+      ])
+    ).rejects.toThrow('Mã hàng sp1 đã dùng cho hàng Coca.');
+    await expect(
+      bulkCreateItems(ProductModel, [{ name: 'Coca', code: 'CL3' }])
+    ).rejects.toThrow('Mã hàng CL3 đã dùng cho hàng Bia.');
+    expect(ProductModel.insertMany).not.toHaveBeenCalled();
+  });
+
+  it('does not check codes of rows skipped because the name exists', async () => {
+    const ProductModel = createProductModel({ duplicateProducts: [bia] });
+    await bulkCreateItems(ProductModel, [
+      { name: 'Bia', code: 'CL3' },
+      { name: 'Coca', code: 'SP1' },
+    ]);
+    expect(ProductModel.insertMany).toHaveBeenCalledWith(
+      [expect.objectContaining({ name: 'Coca', code: 'SP1' })],
+      { ordered: false }
+    );
+  });
+});
+
 describe('crud.service delete purchase with packaging units', () => {
   const purchase = {
     id: 'po1',

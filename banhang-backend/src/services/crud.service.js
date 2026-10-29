@@ -11,6 +11,11 @@ import {
   assertBarcodesAvailable,
   normalizeProductBarcode,
 } from './productBarcodes.service.js';
+import {
+  assertCodesAvailable,
+  buildUpdateCodeCheck,
+  normalizeProductCode,
+} from './productCodes.service.js';
 
 export const sanitizePayload = (payload) => {
   if (!payload || typeof payload !== 'object') return {};
@@ -171,7 +176,7 @@ export const createItem = async (Model, payload) => {
   if (!cleanPayload.id) cleanPayload.id = uuid();
   if (Model.modelName === 'Product') {
     cleanPayload = applyProductUnits(cleanPayload, cleanPayload.unit);
-    cleanPayload = normalizeProductBarcode(cleanPayload);
+    cleanPayload = normalizeProductCode(normalizeProductBarcode(cleanPayload));
     const duplicateNames = await findExistingProductNameConflicts(Model, [
       cleanPayload,
     ]);
@@ -179,6 +184,7 @@ export const createItem = async (Model, payload) => {
       throw new Error(formatDuplicateProductMessage(duplicateNames));
     }
     await assertBarcodesAvailable(Model, [cleanPayload]);
+    await assertCodesAvailable(Model, [cleanPayload]);
   }
   cleanPayload = prepareCreatePayload(Model, cleanPayload);
   return await Model.create(cleanPayload);
@@ -192,7 +198,9 @@ export const bulkCreateItems = async (Model, items) => {
 
   if (Model.modelName === 'Product') {
     payload = payload.map((item) =>
-      normalizeProductBarcode(applyProductUnits(item, item.unit))
+      normalizeProductCode(
+        normalizeProductBarcode(applyProductUnits(item, item.unit))
+      )
     );
     const duplicateNamesInPayload = findDuplicateNamesInPayload(payload);
     if (duplicateNamesInPayload.length) {
@@ -216,6 +224,7 @@ export const bulkCreateItems = async (Model, items) => {
     }
     // After skipping existing names: a re-imported product is not a conflict.
     await assertBarcodesAvailable(Model, payload);
+    await assertCodesAvailable(Model, payload);
   }
 
   payload = payload.map((item) => prepareCreatePayload(Model, item));
@@ -241,6 +250,7 @@ export const updateItem = async (Model, id, payload) => {
     if (cleanPayload.barcode !== undefined) {
       cleanPayload.barcode = String(cleanPayload.barcode ?? '').trim();
     }
+    cleanPayload = normalizeProductCode(cleanPayload);
     const duplicateNames = await findExistingProductNameConflicts(
       Model,
       [cleanPayload],
@@ -262,6 +272,9 @@ export const updateItem = async (Model, id, payload) => {
         },
       ]);
     }
+    await assertCodesAvailable(Model, [
+      buildUpdateCodeCheck(id, cleanPayload, existing),
+    ]);
     if (
       cleanPayload.openingStock !== undefined &&
       cleanPayload.stock === undefined

@@ -34,6 +34,16 @@ the base unit: use `getBaseQty(item)` from `utils/productUnits.js`, never `item.
 (`resolveLineUnit`, `services/itemUnits.service.js`); unit errors carry `status: 400`.
 Spec: `docs/superpowers/specs/2026-10-29-unit-conversion-design.md`.
 
+## Product codes and barcodes
+
+Product codes are unique among active products (trimmed, case-insensitive), and a code may not
+equal another active product's barcode / unit barcode (scanning falls back to `code`). Checked
+on create, bulk create and when an update changes the code (`services/productCodes.service.js`,
+next to `productBarcodes.service.js`); errors carry `status: 400`.
+`GET /api/products/next-code?prefix=SP&digits=6` → `{ code }` returns the next sequential code
+over all products, deleted included (`utils/productCodes.js`); it is mounted before the CRUD
+router in `routes/index.js`. Spec: `docs/superpowers/specs/2026-10-30-product-codes-and-auto-paper-design.md`.
+
 ## Rules for browser-demo compatibility
 
 1. Only `models/*.js` may import `mongoose`. Services, repositories and utils import models.
