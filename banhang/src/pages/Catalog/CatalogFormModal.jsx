@@ -26,6 +26,7 @@ const CatalogFormModal = ({
   const units = useEditionFeature('units');
   const dimensions = useEditionFeature('dimensions');
   const showUnits = units && !dimensions;
+  const showBarcode = useEditionFeature('barcode');
   return (
     <Modal
       title={editing ? 'Sửa dữ liệu' : 'Tạo mới'}
@@ -39,7 +40,7 @@ const CatalogFormModal = ({
       {activeKey === 'products' && (
         <Form form={form} layout="vertical">
           <Row gutter={16}>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={showBarcode ? 8 : 12}>
               <Form.Item
                 label="Tên hàng"
                 name="name"
@@ -48,7 +49,7 @@ const CatalogFormModal = ({
                 <Input onChange={onNameChange} />
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={showBarcode ? 8 : 12}>
               <Form.Item
                 label="Mã hàng"
                 name="code"
@@ -57,6 +58,16 @@ const CatalogFormModal = ({
                 <Input onChange={onCodeChange} />
               </Form.Item>
             </Col>
+            {showBarcode && (
+              <Col xs={24} md={8}>
+                <Form.Item label="Mã vạch" name="barcode">
+                  <Input
+                    placeholder="Quét hoặc nhập mã vạch"
+                    onPressEnter={(event) => event.preventDefault()}
+                  />
+                </Form.Item>
+              </Col>
+            )}
           </Row>
           <Row gutter={16}>
             <Col xs={24} md={24}>
@@ -65,7 +76,7 @@ const CatalogFormModal = ({
               </Form.Item>
             </Col>
           </Row>
-          {showUnits && <ProductUnitsField />}
+          {showUnits && <ProductUnitsField showBarcode={showBarcode} />}
           <Row gutter={16}>
             <Col xs={24} md={12}>
               <Form.Item label={labels.group} name="group">

@@ -3,7 +3,7 @@ import { MAX_PRODUCT_UNITS } from '../../utils/productUnits.js';
 import { formatNumberInput, parseNumberInput } from './catalogUtils.js';
 
 // Packaging units (thùng, lốc…) of a product; the backend validates the list.
-const ProductUnitsField = () => (
+const ProductUnitsField = ({ showBarcode = false }) => (
   <Form.Item label="Đơn vị quy đổi (tùy chọn)">
     <Form.List name="units">
       {(fields, { add, remove }) => (
@@ -39,6 +39,15 @@ const ProductUnitsField = () => (
                   parser={parseNumberInput}
                 />
               </Form.Item>
+              {showBarcode && (
+                <Form.Item name={[name, 'barcode']}>
+                  <Input
+                    placeholder="Mã vạch"
+                    style={{ width: 160 }}
+                    onPressEnter={(event) => event.preventDefault()}
+                  />
+                </Form.Item>
+              )}
               <Button onClick={() => remove(name)}>Xóa</Button>
             </Space>
           ))}
