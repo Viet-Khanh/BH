@@ -61,6 +61,7 @@ describe('reportHelpers profit exclusion', () => {
 
     expect(items[0]).toMatchObject({
       lineTotal: 100,
+      costUnit: 60,
       costTotal: 60,
       profit: 40,
     });
@@ -130,6 +131,7 @@ describe('packaging-unit lines', () => {
       qty: 2,
       baseUnit: 'lon',
       baseQty: 48,
+      costUnit: 192000,
       costTotal: 384000,
     });
   });

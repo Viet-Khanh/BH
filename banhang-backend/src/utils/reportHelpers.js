@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { getBaseQty } from './productUnits.js';
+import { getBaseQty, getItemFactor } from './productUnits.js';
 
 export const toStartOfDay = (value) => dayjs(value).startOf('day');
 export const toEndOfDay = (value) => dayjs(value).endOf('day');
@@ -404,7 +404,10 @@ export const buildInvoiceItems = (invoice, productMap = {}) =>
     const qty = Number(item.qty || 0);
     const unitPrice = Number(item.unitPrice || 0);
     const lineTotal = getInvoiceItemLineTotal(item);
-    const costUnit = Number(item.costPriceSnapshot ?? product.avgCost ?? 0);
+    // Cost per chosen unit (snapshot is per base unit), like qty and unitPrice.
+    const costUnit =
+      Number(item.costPriceSnapshot ?? product.avgCost ?? 0) *
+      getItemFactor(item);
     const excludedFromProfit = isProfitExcludedItem(item, productMap);
     const costTotal = excludedFromProfit
       ? 0
