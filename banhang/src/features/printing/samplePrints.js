@@ -1,4 +1,5 @@
-// "In thử" glue: sample receipt and one row of sample labels with the given settings.
+// "In thử" glue with the given settings: sample receipt, A4 template sample and
+// one row of sample labels.
 import { printHtml } from '../../utils/printUtils.js';
 import { readPrintSettings } from './domain/printSettings.js';
 import {
@@ -15,7 +16,7 @@ import { getPrinterFor, printDocument } from './printTargets.js';
 export const printSampleReceipt = async (settings) => {
   const assets = await loadReceiptAssets(buildSampleReceiptData(settings));
   return printHtml(buildSampleReceiptHtml(settings, assets), {
-    deviceName: readPrintSettings(settings).receiptPrinterName,
+    deviceName: getPrinterFor(settings, 'receipt'),
     autoHeightWidthMm: getReceiptPaper(settings).widthMm,
   });
 };

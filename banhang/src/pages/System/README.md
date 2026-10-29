@@ -10,14 +10,14 @@ The selected group is in the URL (`/system?tab=printing`) and in `sessionStorage
 
 ## Groups
 
-| Key        | Menu            | Settings                                                                                                                                                               | Component                                                                                |
-| ---------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `shop`     | Cửa hàng        | `shopName`, `shopPhone`, `shopAddress`; bank account for VietQR receipts: `bankBin`, `bankAccountNo`, `bankAccountName`                                                | `groups/ShopGroup.jsx` + `features/printing/components/BankSettingsFields.jsx`           |
-| `sales`    | Bán hàng & kho  | `allowNegativeStock`, `autoUpdateAvgCostOnPurchase`, `lowStockThreshold`, `showSensitiveInfo`                                                                          | `groups/SalesGroup.jsx`                                                                  |
-| `printing` | In ấn           | Hoá đơn: `printCopies`, receipt printer/paper/width/margin + roll designer (`receiptLayout`, `receiptLogo`) · Tem (flag `labels`) · Mẫu hoá đơn: `invoiceTemplateHtml` | `groups/PrintingGroup.jsx` + `features/printing` forms + `components/TemplateEditor.jsx` |
-| `einvoice` | Hoá đơn điện tử | Tax method, seller tax code, e-invoice profiles, workflow                                                                                                              | `features/einvoice/components/settings/EinvoiceSettingsSection.jsx`                      |
-| `security` | Bảo mật         | `systemPassword` (default from `systemPassword.js`)                                                                                                                    | `groups/SecurityGroup.jsx`                                                               |
-| `data`     | Dữ liệu         | Tối ưu dữ liệu (`DataUpgradePanel`), Dữ liệu mẫu (flag `sampleData`)                                                                                                   | `groups/DataGroup.jsx`                                                                   |
+| Key        | Menu            | Settings                                                                                                                                                                                                  | Component                                                                                |
+| ---------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `shop`     | Cửa hàng        | `shopName`, `shopPhone`, `shopAddress`; bank account for VietQR receipts: `bankBin`, `bankAccountNo`, `bankAccountName`                                                                                   | `groups/ShopGroup.jsx` + `features/printing/components/BankSettingsFields.jsx`           |
+| `sales`    | Bán hàng & kho  | `allowNegativeStock`, `autoUpdateAvgCostOnPurchase`, `lowStockThreshold`, `showSensitiveInfo`                                                                                                             | `groups/SalesGroup.jsx`                                                                  |
+| `printing` | In ấn           | Hoá đơn: `printCopies`, receipt printer/paper/width/margin + roll designer (`receiptLayout`, `receiptLogo`) · Máy in A4: `documentPrinterName` · Tem (flag `labels`) · Mẫu hoá đơn: `invoiceTemplateHtml` | `groups/PrintingGroup.jsx` + `features/printing` forms + `components/TemplateEditor.jsx` |
+| `einvoice` | Hoá đơn điện tử | Tax method, seller tax code, e-invoice profiles, workflow                                                                                                                                                 | `features/einvoice/components/settings/EinvoiceSettingsSection.jsx`                      |
+| `security` | Bảo mật         | `systemPassword` (default from `systemPassword.js`)                                                                                                                                                       | `groups/SecurityGroup.jsx`                                                               |
+| `data`     | Dữ liệu         | Tối ưu dữ liệu (`DataUpgradePanel`), Dữ liệu mẫu (flag `sampleData`)                                                                                                                                      | `groups/DataGroup.jsx`                                                                   |
 
 ## Files
 
@@ -39,6 +39,9 @@ The selected group is in the URL (`/system?tab=printing`) and in `sessionStorage
 - "In ấn" → "Hoá đơn" has two saves: the printer form ("Lưu": printer, paper, copies) and, for roll
   paper, the receipt designer ("Lưu thiết kế": `receiptLayout`, `receiptLogo`). Neither overwrites
   the other's fields (see `features/printing/README.md`).
+- "In ấn" → "Máy in A4" (`DocumentPrintSettings`): printer for every A4/A5 print (template sales
+  invoice, purchase invoice, debt receipts, lists); "In thử A4" prints the invoice template with
+  the sample sale; its "Lưu" writes only `documentPrinterName`.
 
 ## Adding a setting
 

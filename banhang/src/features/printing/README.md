@@ -1,15 +1,36 @@
 # Printing (`features/printing`)
 
-Receipt printer (58 mm / 80 mm / custom roll) and label printer for shops that run everything on
-one machine. Configured in System → "In ấn" (sub-headings "Hoá đơn" and "Tem"); values live in
-backend `Settings`. Label UI is gated by the edition flag `labels` (minimart). Specs:
-`docs/superpowers/specs/2026-10-29-printing-labels-design.md`,
-`docs/superpowers/specs/2026-10-30-receipt-designer-design.md` (roll receipt designer).
+Receipt printer (58 mm / 80 mm / custom roll), A4 printer and label printer for shops that run
+everything on one machine. Configured in System → "In ấn" (sub-headings "Hoá đơn", "Máy in A4"
+and "Tem"); values live in backend `Settings`. Label UI is gated by the edition flag `labels`
+(minimart). Specs: `docs/superpowers/specs/2026-10-29-printing-labels-design.md`,
+`docs/superpowers/specs/2026-10-30-receipt-designer-design.md` (roll receipt designer),
+`docs/superpowers/specs/2026-10-30-printer-routing-design.md` (printer routing).
+
+## Printer routing (`printTargets.js`)
+
+`getPrinterFor(settings, target)` is the only place that maps a print to a printer
+(`''` = system default; a missing printer → default printer + warning).
+
+| Target     | Setting               | Documents                                                                                                                                      | Printed by                                                        |
+| ---------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `receipt`  | `receiptPrinterName`  | Sales invoice on a roll paper (58 / 80 / custom)                                                                                               | `printSalesInvoice` (format `default`)                            |
+| `document` | `documentPrinterName` | Sales invoice A5/A4 template (paper "Tự động A5/A4" or one-off "In A4"), purchase invoice, debt receipts, report/list prints (`ExportActions`) | `printDocument(html, options)`; `printSalesInvoice` template path |
+| `label`    | `labelPrinterName`    | Barcode labels                                                                                                                                 | `labels/printLabels.js`                                           |
+
+- `printDocument` = `printHtml` with the stored document printer (a given `deviceName` wins, used
+  by "In thử A4"); with `forceDialog` (ExportActions "PDF" / choose printer) the dialog opens
+  without a preset printer.
+- Sales print buttons (`SalesPrintButtons`, `domain/salesPrintButtons.js`): roll paper → "In"
+  (roll receipt) + "In A4" (`format: 'a4'`, template on the document printer) in the sales
+  toolbar, "Hóa đơn gần đây" ("IN LẠI" / "IN A4") and the report sales invoice modal; paper
+  "Tự động A5/A4" → one button as before. "Thanh toán & In" always prints the default format.
 
 ## Flow
 
 ```
-sales print / reprint ─► printSalesInvoice ─► roll paper? loadReceiptAssets → buildReceiptHtml : normal template
+sales print / reprint ─► printSalesInvoice ─► roll paper and format ≠ 'a4'? loadReceiptAssets → buildReceiptHtml : normal template
+A4/A5 documents ─► printDocument (document printer)
 purchase created ─► (payment modal closed) ─► LabelPrintModal ─► printLabels ─► labelHtml + JsBarcode
                                                       ▲
             purchase detail "In tem" / catalog "In tem" ┘
@@ -83,30 +104,33 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
 
 ## Files
 
-| Path                                                                                  | Role                                                                                                              |
-| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `domain/printSettings.js`                                                             | Defaults, presets, clamping, label row page size, auto-print decision                                             |
-| `domain/printSettingsForm.js`                                                         | Settings form ⇄ settings mapping, printer options                                                                 |
-| `domain/printSamples.js`, `samplePrints.js`                                           | "In thử" samples                                                                                                  |
-| `receipt/receiptPaper.js`, `receipt/receiptLayout.js`                                 | Roll paper geometry; layout defaults, normalization, designer editors                                             |
-| `receipt/receiptHtml.js`, `receipt/receiptStyles.js`, `receipt/receiptContext.js`     | Roll receipt document: blocks in layout order, CSS, shared render context                                         |
-| `receipt/blocks/*.js`                                                                 | One renderer per block (`index.js` = key → renderer + zone)                                                       |
-| `receipt/receiptAmounts.js`                                                           | Total, old debt, paid, amount due                                                                                 |
-| `receipt/vietqr.js`, `receipt/banks.js`, `receipt/qrSvg.js`                           | VietQR payload + CRC, bank BIN list, QR → SVG                                                                     |
-| `receipt/receiptAssets.js`                                                            | Async: QR / barcode SVG strings before printing                                                                   |
-| `printSalesInvoice.js`                                                                | Roll receipt vs normal template for every sales print                                                             |
-| `labels/buildLabelJobs.js`, `labels/labelRows.js`                                     | Purchase/product → label rows; row edits                                                                          |
-| `labels/barcodeLayout.js`, `labels/barcodeSvg.js`                                     | Module/quiet-zone math; lazy JsBarcode rendering                                                                  |
-| `labels/labelHtml.js`, `labels/printLabels.js`                                        | Label sheet HTML (one page = one row of labels) and printing                                                      |
-| `labels/labelPrintKeys.js`, `components/useEnterToPrint.js`                           | Enter prints; scanner Enter and buttons ignored                                                                   |
-| `useLabelPrint.js`, `components/LabelPrintModal.jsx`                                  | Confirm list                                                                                                      |
-| `components/ReceiptPrintSettings.jsx`, `components/LabelPrintSettings.jsx` (+ fields) | System → In ấn forms (receipt / labels), each with its own "Lưu"                                                  |
-| `components/ReceiptPaperFields.jsx`                                                   | Paper radio, custom width/margin, printable-width hint                                                            |
-| `components/receiptDesigner/*`                                                        | Roll receipt designer: state reducer, block list/rows, logo controls, true-size preview                           |
-| `receipt/logoPixels.js`, `receipt/logoImage.js`                                       | Logo size + black/white threshold (pure); file → PNG data URL (canvas)                                            |
-| `domain/bankSettingsForm.js`, `components/BankSettingsFields.jsx`                     | Shop bank select (listed BIN / "Khác") ⇄ `bankBin`; fields in System → Cửa hàng                                   |
-| `usePrintSettingsForm.js`                                                             | Shared form state: load, preset sync, save (stored print settings overlaid with the form, designer keys excluded) |
-| `printerList.js`, `usePrinters.js`                                                    | Electron printer list (`null` on the web)                                                                         |
+| Path                                                                                  | Role                                                                                                                                    |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `domain/printSettings.js`                                                             | Defaults, presets, clamping, label row page size, auto-print decision                                                                   |
+| `domain/printSettingsForm.js`                                                         | Settings form ⇄ settings mapping, printer options                                                                                       |
+| `domain/printSamples.js`, `samplePrints.js`                                           | "In thử" samples (receipt, labels, A4 template with the template editor's sample sale)                                                  |
+| `printTargets.js`                                                                     | Printer routing (`getPrinterFor`) and `printDocument`                                                                                   |
+| `domain/salesPrintButtons.js`, `components/SalesPrintButtons.jsx`                     | Sales print buttons per paper ("In" + "In A4" on roll paper)                                                                            |
+| `components/DocumentPrintSettings.jsx`                                                | System → In ấn → Máy in A4: printer, "In thử A4", own "Lưu" (only `documentPrinterName`)                                                |
+| `receipt/receiptPaper.js`, `receipt/receiptLayout.js`                                 | Roll paper geometry; layout defaults, normalization, designer editors                                                                   |
+| `receipt/receiptHtml.js`, `receipt/receiptStyles.js`, `receipt/receiptContext.js`     | Roll receipt document: blocks in layout order, CSS, shared render context                                                               |
+| `receipt/blocks/*.js`                                                                 | One renderer per block (`index.js` = key → renderer + zone)                                                                             |
+| `receipt/receiptAmounts.js`                                                           | Total, old debt, paid, amount due                                                                                                       |
+| `receipt/vietqr.js`, `receipt/banks.js`, `receipt/qrSvg.js`                           | VietQR payload + CRC, bank BIN list, QR → SVG                                                                                           |
+| `receipt/receiptAssets.js`                                                            | Async: QR / barcode SVG strings before printing                                                                                         |
+| `printSalesInvoice.js`                                                                | Roll receipt vs normal template for every sales print (`format: 'default' \| 'a4'`)                                                     |
+| `labels/buildLabelJobs.js`, `labels/labelRows.js`                                     | Purchase/product → label rows; row edits                                                                                                |
+| `labels/barcodeLayout.js`, `labels/barcodeSvg.js`                                     | Module/quiet-zone math; lazy JsBarcode rendering                                                                                        |
+| `labels/labelHtml.js`, `labels/printLabels.js`                                        | Label sheet HTML (one page = one row of labels) and printing                                                                            |
+| `labels/labelPrintKeys.js`, `components/useEnterToPrint.js`                           | Enter prints; scanner Enter and buttons ignored                                                                                         |
+| `useLabelPrint.js`, `components/LabelPrintModal.jsx`                                  | Confirm list                                                                                                                            |
+| `components/ReceiptPrintSettings.jsx`, `components/LabelPrintSettings.jsx` (+ fields) | System → In ấn forms (receipt / labels), each with its own "Lưu"                                                                        |
+| `components/ReceiptPaperFields.jsx`                                                   | Paper radio, custom width/margin, printable-width hint                                                                                  |
+| `components/receiptDesigner/*`                                                        | Roll receipt designer: state reducer, block list/rows, logo controls, true-size preview                                                 |
+| `receipt/logoPixels.js`, `receipt/logoImage.js`                                       | Logo size + black/white threshold (pure); file → PNG data URL (canvas)                                                                  |
+| `domain/bankSettingsForm.js`, `components/BankSettingsFields.jsx`                     | Shop bank select (listed BIN / "Khác") ⇄ `bankBin`; fields in System → Cửa hàng                                                         |
+| `usePrintSettingsForm.js`                                                             | Shared form state: load, preset sync, save (stored print settings overlaid with the form, designer keys excluded; `names` → only those) |
+| `printerList.js`, `usePrinters.js`                                                    | Electron printer list (`null` on the web)                                                                                               |
 
 ## Rules
 
@@ -117,10 +141,10 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
 
 ## Shop setup checklist
 
-1. Install both printer drivers on Windows.
+1. Install the printer drivers (roll, A4, label) on Windows.
 2. Label printer driver: paper size = one row of labels (e.g. 72 × 22 mm for 35 × 22 two-up),
    run the gap/label calibration once.
 3. Receipt printer driver: the roll width (58 or 80 mm); enable "open cash drawer after print" if a drawer is
    connected (the app cannot send drawer commands).
-4. System → "In ấn": pick both printers, label size, then "In thử" / "In thử tem" and
-   adjust the X/Y offsets.
+4. System → "In ấn": pick the receipt, A4 and label printers, label size, then "In thử" /
+   "In thử A4" / "In thử tem" and adjust the X/Y offsets.

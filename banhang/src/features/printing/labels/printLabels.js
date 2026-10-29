@@ -2,6 +2,7 @@
 import { message } from 'antd';
 import { printHtml } from '../../../utils/printUtils.js';
 import { getLabelRowSize, readPrintSettings } from '../domain/printSettings.js';
+import { getPrinterFor } from '../printTargets.js';
 import { loadBarcodeRenderer } from './barcodeSvg.js';
 import { buildLabelPagesHtml } from './labelHtml.js';
 
@@ -21,7 +22,7 @@ export const printLabelRows = async (rows, settings = {}) => {
     renderBarcode,
   });
   return printHtml(html, {
-    deviceName: print.labelPrinterName,
+    deviceName: getPrinterFor(settings, 'label'),
     pageSizeMm: getLabelRowSize(print),
   });
 };
