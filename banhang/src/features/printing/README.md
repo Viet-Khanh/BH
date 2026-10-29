@@ -1,22 +1,23 @@
 # Printing (`features/printing`)
 
 Receipt printer (58 mm / 80 mm / custom roll), A4 printer and label printer for shops that run
-everything on one machine. Configured in System → "In ấn" (sub-headings "Hoá đơn", "Máy in A4"
-and "Tem"); values live in backend `Settings`. Label UI is gated by the edition flag `labels`
-(minimart). Specs: `docs/superpowers/specs/2026-10-29-printing-labels-design.md`,
+everything on one machine. Configured in System → "In ấn" (sub-headings "Hoá đơn", "Máy in A4",
+"Nhập hàng (F8 - Lưu và in)" and "Tem"); values live in backend `Settings`. Label UI is gated by
+the edition flag `labels` (minimart). Specs: `docs/superpowers/specs/2026-10-29-printing-labels-design.md`,
 `docs/superpowers/specs/2026-10-30-receipt-designer-design.md` (roll receipt designer),
-`docs/superpowers/specs/2026-10-30-printer-routing-design.md` (printer routing).
+`docs/superpowers/specs/2026-10-30-printer-routing-design.md` (printer routing),
+`docs/superpowers/specs/2026-10-30-purchase-save-and-print-design.md` (purchase F8/F12).
 
 ## Printer routing (`printTargets.js`)
 
 `getPrinterFor(settings, target)` is the only place that maps a print to a printer
 (`''` = system default; a missing printer → default printer + warning).
 
-| Target     | Setting               | Documents                                                                                                                                      | Printed by                                                        |
-| ---------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `receipt`  | `receiptPrinterName`  | Sales invoice on a roll paper (58 / 80 / custom)                                                                                               | `printSalesInvoice` (format `default`)                            |
-| `document` | `documentPrinterName` | Sales invoice A5/A4 template (paper "Tự động A5/A4" or one-off "In A4"), purchase invoice, debt receipts, report/list prints (`ExportActions`) | `printDocument(html, options)`; `printSalesInvoice` template path |
-| `label`    | `labelPrinterName`    | Barcode labels                                                                                                                                 | `labels/printLabels.js`                                           |
+| Target     | Setting               | Documents                                                                                                                                        | Printed by                                                        |
+| ---------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `receipt`  | `receiptPrinterName`  | Sales invoice on a roll paper (58 / 80 / custom)                                                                                                 | `printSalesInvoice` (format `default`)                            |
+| `document` | `documentPrinterName` | Sales invoice A5/A4 template (paper "Tự động A5/A4" or one-off "In A4"), purchase slip (F8), debt receipts, report/list prints (`ExportActions`) | `printDocument(html, options)`; `printSalesInvoice` template path |
+| `label`    | `labelPrinterName`    | Barcode labels                                                                                                                                   | `labels/printLabels.js`                                           |
 
 - `printDocument` = `printHtml` with the stored document printer (a given `deviceName` wins, used
   by "In thử A4"); with `forceDialog` (ExportActions "PDF" / choose printer) the dialog opens
@@ -26,12 +27,31 @@ and "Tem"); values live in backend `Settings`. Label UI is gated by the edition 
   toolbar, "Hóa đơn gần đây" ("IN LẠI" / "IN A4") and the report sales invoice modal; paper
   "Tự động A5/A4" → one button as before. "Thanh toán & In" always prints the default format.
 
+## Purchases: "F8 - Lưu và in" / "F12 - Lưu không in"
+
+Buttons and keys of the purchase payment modal (keys only while it is open, no Ctrl/Alt/Meta;
+one checkout at a time). Both save the purchase and record the payment.
+
+| Key | After the payment modal closes                                                                                                                                                                       |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F8  | `purchasePrintSlip` (default on) → purchase slip of the saved purchase on the A4 printer (`printDocument`, `printCopies`); then `autoPrintLabelsOnPurchase` (default on, flag `labels`) → label list |
+| F12 | Nothing printed, no label list ("In tem" in the purchase detail stays available)                                                                                                                     |
+
+- Decision: `getPurchasePrintPlan(settings, labelsEnabled, { print })` →
+  `{ slip, labels }` (`features/purchases/domain/purchaseSavePrint.js`, tested).
+- Slip HTML (`features/purchases/domain/purchaseSlipHtml.js`, shared with the preview) is built at
+  checkout, before the form resets, from the save response (code, date, items) with the screen
+  values as fallback; the label list gets every line of the purchase (new or edited).
+- Glue: `features/purchases/hooks/usePurchaseSavePrint.js` (queue until the modal closes),
+  `usePurchaseCheckoutKeys.js` (F8/F12). Settings form: `components/PurchasePrintSettings.jsx`
+  (`PURCHASE_FORM_NAMES`).
+
 ## Flow
 
 ```
 sales print / reprint ─► printSalesInvoice ─► roll paper and format ≠ 'a4'? loadReceiptAssets → buildReceiptHtml : normal template
 A4/A5 documents ─► printDocument (document printer)
-purchase created ─► (payment modal closed) ─► LabelPrintModal ─► printLabels ─► labelHtml + JsBarcode
+purchase F8 ─► (payment modal closed) ─► slip: printDocument ─► LabelPrintModal ─► printLabels ─► labelHtml + JsBarcode
                                                       ▲
             purchase detail "In tem" / catalog "In tem" ┘
 all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidthMm })
@@ -99,7 +119,8 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
   label without barcode + warning.
 - EAN-13 for valid 13-digit codes, otherwise Code128. Quiet zones included; bar width snapped to
   whole printer dots (203 dpi). Codes too long for the label width get a warning.
-- After saving a purchase the list always opens with every imported product (price labels for all).
+- After F8 "Lưu và in" on a purchase (setting on) the list opens with every imported product (price
+  labels for all); F12 never opens it.
   "Bỏ qua hàng đã có mã vạch" (off by default) hides products whose base unit already has a manufacturer
   barcode, for shops that only sticker unbranded goods.
 
@@ -107,12 +128,13 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
 
 | Path                                                                                  | Role                                                                                                                                    |
 | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `domain/printSettings.js`                                                             | Defaults, presets, clamping, label row page size, auto-print decision                                                                   |
+| `domain/printSettings.js`                                                             | Defaults, presets, clamping, label row page size, label list decision (purchases F8)                                                    |
 | `domain/printSettingsForm.js`                                                         | Settings form ⇄ settings mapping, printer options                                                                                       |
 | `domain/printSamples.js`, `samplePrints.js`                                           | "In thử" samples (receipt, labels, A4 template with the template editor's sample sale)                                                  |
 | `printTargets.js`                                                                     | Printer routing (`getPrinterFor`) and `printDocument`                                                                                   |
 | `domain/salesPrintButtons.js`, `components/SalesPrintButtons.jsx`                     | Sales print buttons per paper ("In" + "In A4" on roll paper)                                                                            |
 | `components/DocumentPrintSettings.jsx`                                                | System → In ấn → Máy in A4: printer, "In thử A4", own "Lưu" (only `documentPrinterName`)                                                |
+| `components/PurchasePrintSettings.jsx`                                                | System → In ấn → Nhập hàng (F8): slip switch, label list switch (flag `labels`), own "Lưu" (`PURCHASE_FORM_NAMES`)                      |
 | `receipt/receiptPaper.js`, `receipt/receiptLayout.js`                                 | Roll paper geometry; layout defaults, normalization, designer editors                                                                   |
 | `receipt/receiptHtml.js`, `receipt/receiptStyles.js`, `receipt/receiptContext.js`     | Roll receipt document: blocks in layout order, CSS, shared render context                                                               |
 | `receipt/blocks/*.js`                                                                 | One renderer per block (`index.js` = key → renderer + zone)                                                                             |
