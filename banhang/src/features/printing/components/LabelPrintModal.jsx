@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Button, Modal, Space, Switch, Table } from 'antd';
 import { getLabelPrintColumns } from './labelPrintColumns.jsx';
 import { useEnterToPrint } from './useEnterToPrint.js';
+import { LABEL_PRINT_MODAL_CLASS } from '../labels/labelPrintKeys.js';
 
 // Above other modals (it can open from the purchase detail modal).
 const Z_INDEX = 1100;
@@ -53,6 +54,7 @@ const LabelPrintModal = ({
       footer={footer}
       width={860}
       zIndex={Z_INDEX}
+      wrapClassName={LABEL_PRINT_MODAL_CLASS}
       destroyOnHidden
     >
       {forPurchase && (
