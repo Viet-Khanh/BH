@@ -48,7 +48,7 @@ export const useInvoiceProductSelection = ({
   const barcode = useInvoiceBarcode({
     items,
     setItems,
-    activeProducts,
+    products,
     onSearchProducts,
     getUnitPrice,
   });

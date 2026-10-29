@@ -282,6 +282,7 @@ export const usePurchasesScreen = () => {
       updateItem: updatePurchaseItem,
       removeItem,
       changeItemUnit: barcode.changeItemUnit,
+      searchPlaceholder: barcode.searchPlaceholder,
       ...productModalFeatures,
     },
     payments: {

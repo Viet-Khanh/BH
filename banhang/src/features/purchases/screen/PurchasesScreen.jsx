@@ -80,6 +80,7 @@ const PurchasesScreen = () => {
         searchKeyword={productSelection.searchKeyword}
         onSearchKeywordChange={productSelection.setSearchKeyword}
         onPressEnter={productSelection.handleQuickAdd}
+        inputPlaceholder={productSelection.searchPlaceholder}
         onOpenSearch={() => productSelection.setSearchOpen(true)}
         filteredQuick={productSelection.filteredQuick}
         onQuickSelect={productSelection.handleAddProduct}

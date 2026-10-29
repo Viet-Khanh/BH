@@ -5,11 +5,12 @@ import { buildSaleLine } from '../invoiceItemHandlers.js';
 const buildLine = ({ product, qty, price, unit }) =>
   buildSaleLine({ product, qty, unitPrice: price, unit });
 
-// Sales: scanning when `barcode` is on; the line unit select when `units` is on.
+// Sales: scanning when `barcode` is on; the line unit select and F4 when `units` is on.
+// `products` = the list the items table shows (all products).
 export const useInvoiceBarcode = ({
   items,
   setItems,
-  activeProducts,
+  products,
   onSearchProducts,
   getUnitPrice,
 }) => {
@@ -17,9 +18,10 @@ export const useInvoiceBarcode = ({
   const unitsEnabled = useEditionFeature('units');
   const lines = useBarcodeLines({
     enabled,
+    unitsEnabled,
     items,
     setItems,
-    products: activeProducts,
+    products,
     searchProducts: onSearchProducts,
     priceField: 'unitPrice',
     getUnitPrice,

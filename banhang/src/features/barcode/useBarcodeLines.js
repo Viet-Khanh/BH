@@ -3,19 +3,25 @@ import { message } from 'antd';
 import {
   findBarcodeMatch,
   mergeScannedLine,
-  nextUnitName,
   switchLineUnit,
 } from '../../utils/barcodeLines.js';
 import { findProductUnit } from '../../utils/productUnits.js';
 import { playBeep } from '../../utils/beep.js';
+import { createTaskQueue } from '../../utils/taskQueue.js';
+import { isModalOpen } from './barcodeDom.js';
+import { getUnitSwitchForKey } from './unitSwitchKey.js';
 import { useBarcodeScanner } from './useBarcodeScanner.js';
 
 const activeOnly = (list) =>
   (Array.isArray(list) ? list : []).filter((product) => !product?.isDeleted);
 
-// Scanned/typed barcodes → merged lines; unit switching on lines (table select, F4).
+// Scanned/typed barcodes → merged lines (scanning when `enabled`); unit switching on lines
+// (table select, F4 when `unitsEnabled`). `products` = the list the items table shows (all
+// products, deleted included); only active ones match a scan. `searchProducts(code,
+// { throwOnError: true })` must reject on failure so the real error is shown.
 export const useBarcodeLines = ({
   enabled,
+  unitsEnabled = false,
   items,
   setItems,
   products,
@@ -26,12 +32,16 @@ export const useBarcodeLines = ({
 }) => {
   const latest = useRef({});
   latest.current = { items, products, getUnitPrice, buildLine };
+  const queueRef = useRef(null);
+  if (!queueRef.current) queueRef.current = createTaskQueue();
 
-  const addByCode = useCallback(
+  const addNow = useCallback(
     async (code) => {
-      const found = activeOnly(await searchProducts?.(code));
+      const found = activeOnly(
+        await searchProducts?.(code, { throwOnError: true })
+      );
       const match = findBarcodeMatch(
-        [...found, ...latest.current.products],
+        [...found, ...activeOnly(latest.current.products)],
         code
       );
       if (!match) return false;
@@ -50,6 +60,12 @@ export const useBarcodeLines = ({
       return true;
     },
     [priceField, searchProducts, setItems]
+  );
+
+  // Queued so lines are appended in scan order even when searches finish out of order.
+  const addByCode = useCallback(
+    (code) => queueRef.current.run(() => addNow(code)),
+    [addNow]
   );
 
   const handleScan = useCallback(
@@ -79,7 +95,9 @@ export const useBarcodeLines = ({
         getUnitPrice: priceOf,
       } = latest.current;
       const item = current[index];
-      const product = list.find((entry) => entry.id === item?.productId);
+      const product = (list || []).find(
+        (entry) => entry.id === item?.productId
+      );
       if (!product) return;
       const price = priceOf(product, unitName);
       setItems((prev) =>
@@ -94,21 +112,21 @@ export const useBarcodeLines = ({
   );
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!unitsEnabled) return undefined;
     const handleKeyDown = (event) => {
-      if (event.key !== 'F4') return;
       const { items: current, products: list } = latest.current;
-      const index = current.length - 1;
-      const product = list.find(
-        (entry) => entry.id === current[index]?.productId
-      );
-      if (!product?.units?.length) return;
+      const change = getUnitSwitchForKey(event, {
+        items: current,
+        products: list,
+        modalOpen: event.key === 'F4' && isModalOpen(),
+      });
+      if (!change) return;
       event.preventDefault();
-      changeItemUnit(index, nextUnitName(product, current[index].unitName));
+      changeItemUnit(change.index, change.unitName);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [changeItemUnit, enabled]);
+  }, [changeItemUnit, unitsEnabled]);
 
   return { addByCode, changeItemUnit };
 };

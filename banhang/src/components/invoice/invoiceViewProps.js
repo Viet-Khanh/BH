@@ -1,4 +1,4 @@
-const SCAN_PLACEHOLDER = 'Quét hoặc gõ mã vạch / tên hàng...';
+import { SCAN_PLACEHOLDER } from '../../features/barcode/scanPlaceholder.js';
 
 export const buildInvoiceViewProps = ({
   onCancel,
