@@ -8,6 +8,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Electron's smallest custom page side, in microns.
 const MIN_PAGE_MICRONS = 353;
 
+const NAMED_PAGE_SIZES = {
+  ...Object.fromEntries(
+    ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6'].map((size) => [size, size])
+  ),
+  LEGAL: 'Legal',
+  LETTER: 'Letter',
+  TABLOID: 'Tabloid',
+};
+
 // The main process stays self-contained: no imports from src/.
 const toMicrons = (mm) => Math.round(Number(mm) * 1000);
 
@@ -24,24 +33,7 @@ const normalizePageSize = (value) => {
   const normalized = String(value || '')
     .trim()
     .toUpperCase();
-  if (!normalized) return '';
-  const supported = [
-    'A0',
-    'A1',
-    'A2',
-    'A3',
-    'A4',
-    'A5',
-    'A6',
-    'LEGAL',
-    'LETTER',
-    'TABLOID',
-  ];
-  if (!supported.includes(normalized)) return '';
-  if (normalized === 'LEGAL') return 'Legal';
-  if (normalized === 'LETTER') return 'Letter';
-  if (normalized === 'TABLOID') return 'Tabloid';
-  return normalized;
+  return NAMED_PAGE_SIZES[normalized] || '';
 };
 
 const createMainWindow = async () => {
@@ -73,19 +65,18 @@ const createMainWindow = async () => {
   return win;
 };
 
-const createPrintWindow = async (html, showWindow) => {
-  const printWindow = new BrowserWindow({
-    show: showWindow,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
-  await printWindow.loadURL(
-    `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
-  );
-  return printWindow;
+// Print jobs load from a temp file: large label batches exceed data: URL limits.
+const createPrintFilePath = () => {
+  const random = Math.random().toString(36).slice(2, 10);
+  const name = `banhang-print-${Date.now()}-${random}.html`;
+  return path.join(app.getPath('temp'), name);
 };
+
+const createPrintWindow = (showWindow) =>
+  new BrowserWindow({
+    show: showWindow,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
 
 const listPrinters = async (webContents) => {
   const printers = await webContents.getPrintersAsync();
@@ -127,9 +118,13 @@ ipcMain.handle('print-html', async (event, payload = {}) => {
     event.sender,
     options.deviceName
   );
-  const printWindow = await createPrintWindow(html, !silent);
+  const filePath = createPrintFilePath();
+  let printWindow = null;
 
   try {
+    await fs.writeFile(filePath, html, 'utf8');
+    printWindow = createPrintWindow(!silent);
+    await printWindow.loadFile(filePath);
     const printOptions = {
       silent,
       printBackground: true,
@@ -157,9 +152,10 @@ ipcMain.handle('print-html', async (event, payload = {}) => {
     });
     return fallback ? { ok: true, fallback: true } : { ok: true };
   } finally {
-    if (!printWindow.isDestroyed()) {
+    if (printWindow && !printWindow.isDestroyed()) {
       printWindow.close();
     }
+    await fs.unlink(filePath).catch(() => {});
   }
 });
 
