@@ -39,7 +39,9 @@ Scanning the same product+unit again adds 1 to that line.
   hàng.`; used by another active product → 400 `Mã vạch <x> đã dùng cho hàng <tên>.` Bulk create
   also checks duplicates inside the payload.
 - Product search filter (`modules/sales/services/sales.service.js` `buildProductSearchFilter`)
-  adds `barcode` and `units.barcode`.
+  adds `barcode` and `units.barcode`. A single-term search also fetches exact matches
+  (`barcode`, `units.barcode`, `code` equal to the term) and puts them first (deduped), so the
+  row limit can never drop the scanned product.
 - The demo shim must support the dotted array path `units.barcode` (regex and `$in`); covered by
   a demo test.
 
@@ -76,25 +78,34 @@ Scanner:
 - `src/utils/beep.js`: short Web Audio beep (`ok` / `error`), silent when audio is unavailable.
 
 `src/features/barcode/useBarcodeLines.js` (shared by sales and purchases):
-`{ enabled, items, setItems, products, searchProducts, priceField, getUnitPrice, buildLine }` →
-- registers the scanner; on a code: `searchProducts(code)` → `findBarcodeMatch` → build the line
-  (qty 1, unit price of the scanned unit) → `mergeScannedLine` → ok beep; miss → error beep +
-  warning;
+`{ enabled, unitsEnabled, items, setItems, products, searchProducts, priceField, getUnitPrice,
+buildLine }` (`products` = the list the items table shows, deleted included; only active ones
+match a scan) →
+- registers the scanner when `enabled`; on a code: `searchProducts(code, { throwOnError: true })`
+  → `findBarcodeMatch` → build the line (qty 1, unit price of the scanned unit) →
+  `mergeScannedLine` → ok beep; miss → error beep + warning; search failure → error beep + the
+  real error message;
 - `addByCode(code)` → same, returns `true` when a product matched (used by the search input's
-  Enter so typed codes work without a scanner);
-- `changeItemUnit(index, unitName)` → `switchLineUnit` with `getUnitPrice`;
-- F4 → `changeItemUnit(last line, nextUnitName(...))`.
+  Enter so typed codes work without a scanner). Calls run through a promise queue
+  (`utils/taskQueue.js`) so lines are appended in scan order;
+- `changeItemUnit(index, unitName)` → `switchLineUnit` with `getUnitPrice`, looking the product
+  up in `products` (same list as the table, so the select never silently reverts);
+- F4 when `unitsEnabled` → `changeItemUnit(last line, nextUnitName(...))`; ignored while a modal
+  is open or with Ctrl/Alt/Meta (Alt+F4). Decision in `unitSwitchKey.js` (pure, tested).
 
 Screens:
 - Sales (`InvoiceEditor` stack): search input shown when `barcode` is on; Enter tries
   `addByCode` first, then the existing quick add. Price = `getUnitSellPrice` for packaging units,
   `getProductPrice` for the base unit.
-- Purchases: same with `getUnitCostPrice`; disabled when the purchase is read-only.
+- Purchases: same with `getUnitCostPrice` and the same scan placeholder; disabled (scanning and
+  F4) when the purchase is read-only.
 - Items table (`InvoiceItemsTable` / `InvoiceItemRow`): the ĐVT cell becomes a select of the
   product's units when an `onChangeUnit` prop is given, the product has packaging units and the
   table is not read-only.
 - `searchProducts` of both screens (`useSalesCatalog`, `usePurchasesCatalog`) return the fetched
-  products.
+  products. The screens wrap them with `utils/guardProductSearch.js`: typing searches show
+  "Không thể tải danh sách sản phẩm." and get `[]`; `{ throwOnError: true }` (scans) rejects with
+  the real error.
 - Catalog: "Mã vạch" field next to "Mã hàng" and a barcode column in the units editor, shown when
   `barcode` is on.
 
