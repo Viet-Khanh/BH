@@ -245,7 +245,7 @@ export const getRecentPurchases = async (query) => {
         Ngay: dayjs(purchase.date).format('DD/MM/YYYY'),
         Nha_cung_cap: supplier?.name || '',
         San_pham: product.name || '',
-        DVT: product.unit || '',
+        DVT: item.unitName || product.unit || '',
         Quy_cach: product.spec || '',
         So_luong: item.qty,
         Don_gia: item.unitCost,

@@ -97,3 +97,40 @@ describe('reportHelpers date sorting', () => {
     ).toEqual(['new', 'middle', 'old']);
   });
 });
+
+describe('packaging-unit lines', () => {
+  const cartonInvoice = {
+    id: 'inv-2',
+    date: '2026-10-29T00:00:00.000Z',
+    items: [
+      {
+        productId: 'p1',
+        qty: 2,
+        unitName: 'thùng',
+        factor: 24,
+        unitPrice: 220000,
+        lineTotal: 440000,
+        costPriceSnapshot: 8000,
+      },
+    ],
+  };
+  const productMap = { p1: { id: 'p1', name: 'Coca', unit: 'lon' } };
+
+  it('computes cost from base quantity', () => {
+    expect(buildInvoiceProfitFinancials(cartonInvoice, productMap)).toEqual({
+      revenue: 440000,
+      cost: 384000,
+      profit: 56000,
+    });
+  });
+
+  it('shows the line unit and base quantity', () => {
+    expect(buildInvoiceItems(cartonInvoice, productMap)[0]).toMatchObject({
+      unit: 'thùng',
+      qty: 2,
+      baseUnit: 'lon',
+      baseQty: 48,
+      costTotal: 384000,
+    });
+  });
+});

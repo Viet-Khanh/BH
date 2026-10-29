@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { getBaseQty } from './productUnits.js';
 
 export const toStartOfDay = (value) => dayjs(value).startOf('day');
 export const toEndOfDay = (value) => dayjs(value).endOf('day');
@@ -127,10 +128,9 @@ export const getInvoiceItemLineTotal = (item) => {
 };
 
 export const getInvoiceItemCostTotal = (item, productMap = {}) => {
-  const qty = Number(item.qty || 0);
   const product = productMap[item.productId] || {};
   const costUnit = Number(item.costPriceSnapshot ?? product.avgCost ?? 0);
-  return qty * costUnit * getAreaMultiplier(item);
+  return getBaseQty(item) * costUnit * getAreaMultiplier(item);
 };
 
 export const buildInvoiceProfitFinancials = (invoice, productMap = {}) =>
@@ -414,7 +414,9 @@ export const buildInvoiceItems = (invoice, productMap = {}) =>
       key: `${invoice.id}-${index}`,
       productId: item.productId,
       name: product.name || 'Sản phẩm',
-      unit: product.unit || '',
+      unit: item.unitName || product.unit || '',
+      baseUnit: product.unit || '',
+      baseQty: getBaseQty(item),
       spec: product.spec || '',
       qty,
       unitPrice,
