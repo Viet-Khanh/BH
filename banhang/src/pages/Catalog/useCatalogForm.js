@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Form, Modal, message } from 'antd';
 import { v4 as uuid } from 'uuid';
+import { buildEditFormValues } from './catalogFormValues.js';
 import { buildCodeFromName } from './catalogUtils.js';
 
 const useCatalogForm = ({
@@ -43,7 +44,8 @@ const useCatalogForm = ({
 
   const openEdit = (record) => {
     setEditing(record);
-    form.setFieldsValue(record);
+    form.resetFields();
+    form.setFieldsValue(buildEditFormValues(record, activeKey));
     setCodeEdited(activeKey === 'products');
     setModalOpen(true);
   };
