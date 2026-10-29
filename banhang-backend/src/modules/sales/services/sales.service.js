@@ -35,6 +35,22 @@ export const buildProductSearchFilter = (search) => {
   };
 };
 
+// A single-term search (a scanned/typed barcode or code) also fetches its exact matches, so the
+// row limit of the regex search can never drop the product the code belongs to.
+const findExactProducts = async (search) => {
+  const term = String(search || '').trim();
+  if (!term || /\s/.test(term)) return [];
+  return findProducts({
+    isDeleted: { $ne: true },
+    $or: [{ barcode: term }, { 'units.barcode': term }, { code: term }],
+  });
+};
+
+const exactFirst = (exact, found) => {
+  const ids = new Set(exact.map((product) => product.id));
+  return [...exact, ...found.filter((product) => !ids.has(product.id))];
+};
+
 export const getProductsForSales = async (query) => {
   const rawLimit = Number(query.limit || 30);
   const limit = Number.isFinite(rawLimit)
@@ -47,7 +63,11 @@ export const getProductsForSales = async (query) => {
   };
 
   const settings = await findMainSettings();
-  const products = await findProducts(filter, { sort: { name: 1 }, limit });
+  const [exact, found] = await Promise.all([
+    findExactProducts(query.search),
+    findProducts(filter, { sort: { name: 1 }, limit }),
+  ]);
+  const products = exactFirst(exact, found).slice(0, limit);
   if (isSnapshotReady(settings)) {
     return products.map((product) => ({
       ...product,
