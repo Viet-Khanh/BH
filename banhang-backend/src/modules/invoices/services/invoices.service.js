@@ -28,6 +28,7 @@ import {
   buildItemUpdateStockDeltas,
   invertStockDeltas,
 } from '../../../services/stockSnapshot.service.js';
+import { resolveItemUnits } from '../../../services/itemUnits.service.js';
 import { stripEinvoiceFields } from '../../einvoice/domain/contentChange.js';
 import { checkInvoiceChange } from '../../einvoice/services/einvoiceGuard.service.js';
 
@@ -73,6 +74,9 @@ export const createInvoiceItem = async (payload) => {
     stripEinvoiceFields(sanitizePayload(payload))
   );
   if (!cleanPayload.id) cleanPayload.id = uuid();
+  if (Array.isArray(cleanPayload.items)) {
+    cleanPayload.items = await resolveItemUnits(cleanPayload.items);
+  }
   const snapshotResult = await applyInvoiceSnapshot({
     stockDeltas: buildInvoiceCreateStockDeltas(cleanPayload.items || []),
     debtDeltas: buildInvoiceDebtDelta(cleanPayload),
@@ -95,6 +99,9 @@ export const bulkCreateInvoices = async (items) => {
 
 export const updateInvoiceItem = async (id, payload) => {
   const cleanPayload = stripEinvoiceFields(sanitizePayload(payload));
+  if (Array.isArray(cleanPayload.items)) {
+    cleanPayload.items = await resolveItemUnits(cleanPayload.items);
+  }
   const existing = await findInvoiceById(id);
 
   if (
