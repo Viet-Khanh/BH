@@ -77,15 +77,26 @@ const estimateContentHeightPx = async (
   }
 };
 
+// A5 page height minus the template's 2 x 8 mm margins and a 6 mm safety allowance.
+const A5_FIT_HEIGHT_MM = A5_HEIGHT_MM - 2 * 8 - 6;
+// A5 width minus the template's 2 x 10 mm side margins.
+const A5_PRINTABLE_WIDTH_MM = A5_WIDTH_MM - 2 * 10;
+
+export const chooseAutoPageSize = (contentHeightPx) => {
+  if (!Number.isFinite(contentHeightPx)) return 'A4';
+  return contentHeightPx <= toPx(A5_FIT_HEIGHT_MM) ? 'A5' : 'A4';
+};
+
 export const resolveAutoPageSize = async (htmlDocument) => {
   const htmlForMeasure = injectPageSizeCss(htmlDocument, 'A5');
+  // The viewport must be tiny: in standards mode documentElement.scrollHeight
+  // is never below the viewport height, so a tall viewport always reads as A4.
   const contentHeightPx = await estimateContentHeightPx(
     htmlForMeasure,
-    A5_WIDTH_MM
+    A5_PRINTABLE_WIDTH_MM,
+    1
   );
-  if (!Number.isFinite(contentHeightPx)) return 'A4';
-  const safeA5HeightPx = toPx(A5_HEIGHT_MM) - 64;
-  return contentHeightPx <= safeA5HeightPx ? 'A5' : 'A4';
+  return chooseAutoPageSize(contentHeightPx);
 };
 
 // Page of widthMm by the measured content height (receipt rolls), or null.
