@@ -10,26 +10,35 @@ The selected group is in the URL (`/system?tab=printing`) and in `sessionStorage
 
 ## Groups
 
-| Key        | Menu            | Settings                                                                                                                         | Component                                                                                |
-| ---------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `shop`     | Cửa hàng        | `shopName`, `shopPhone`, `shopAddress`                                                                                           | `groups/ShopGroup.jsx`                                                                   |
-| `sales`    | Bán hàng & kho  | `allowNegativeStock`, `autoUpdateAvgCostOnPurchase`, `lowStockThreshold`, `showSensitiveInfo`                                    | `groups/SalesGroup.jsx`                                                                  |
-| `printing` | In ấn           | Hoá đơn: `printCopies`, receipt printer/paper · Tem (flag `labels`): label printer and size · Mẫu hoá đơn: `invoiceTemplateHtml` | `groups/PrintingGroup.jsx` + `features/printing` forms + `components/TemplateEditor.jsx` |
-| `einvoice` | Hoá đơn điện tử | Tax method, seller tax code, e-invoice profiles, workflow                                                                        | `features/einvoice/components/settings/EinvoiceSettingsSection.jsx`                      |
-| `security` | Bảo mật         | `systemPassword` (default from `systemPassword.js`)                                                                              | `groups/SecurityGroup.jsx`                                                               |
-| `data`     | Dữ liệu         | Tối ưu dữ liệu (`DataUpgradePanel`), Dữ liệu mẫu (flag `sampleData`)                                                             | `groups/DataGroup.jsx`                                                                   |
+| Key        | Menu            | Settings                                                                                                                                                               | Component                                                                                |
+| ---------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `shop`     | Cửa hàng        | `shopName`, `shopPhone`, `shopAddress`; bank account for VietQR receipts: `bankBin`, `bankAccountNo`, `bankAccountName`                                                | `groups/ShopGroup.jsx` + `features/printing/components/BankSettingsFields.jsx`           |
+| `sales`    | Bán hàng & kho  | `allowNegativeStock`, `autoUpdateAvgCostOnPurchase`, `lowStockThreshold`, `showSensitiveInfo`                                                                          | `groups/SalesGroup.jsx`                                                                  |
+| `printing` | In ấn           | Hoá đơn: `printCopies`, receipt printer/paper/width/margin + roll designer (`receiptLayout`, `receiptLogo`) · Tem (flag `labels`) · Mẫu hoá đơn: `invoiceTemplateHtml` | `groups/PrintingGroup.jsx` + `features/printing` forms + `components/TemplateEditor.jsx` |
+| `einvoice` | Hoá đơn điện tử | Tax method, seller tax code, e-invoice profiles, workflow                                                                                                              | `features/einvoice/components/settings/EinvoiceSettingsSection.jsx`                      |
+| `security` | Bảo mật         | `systemPassword` (default from `systemPassword.js`)                                                                                                                    | `groups/SecurityGroup.jsx`                                                               |
+| `data`     | Dữ liệu         | Tối ưu dữ liệu (`DataUpgradePanel`), Dữ liệu mẫu (flag `sampleData`)                                                                                                   | `groups/DataGroup.jsx`                                                                   |
 
 ## Files
 
-| File                             | Role                                                                                 |
-| -------------------------------- | ------------------------------------------------------------------------------------ |
-| `System.jsx`                     | Shell: access check, initial loads, "Quay lại", menu + selected group                |
-| `systemGroups.js`                | Group list (`{ key, label, flag? }`), `getVisibleGroups`, `resolveGroupKey` (tested) |
-| `useSystemTab.js`                | Selected group from `?tab=` / `sessionStorage`                                       |
-| `useSystemReload.js`             | Reloads every store after data is replaced (data optimisation, sample data)          |
-| `groups/SettingsFormSection.jsx` | Reusable small form: fields + "Lưu", saves only `names`, re-syncs while untouched    |
-| `groups/SystemGroupContent.jsx`  | Key → group component, with the group heading                                        |
-| `System.css`                     | Two-column layout and sub-headings                                                   |
+| File                             | Role                                                                                                                                                                                        |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `System.jsx`                     | Shell: access check, initial loads, "Quay lại", menu + selected group                                                                                                                       |
+| `systemGroups.js`                | Group list (`{ key, label, flag? }`), `getVisibleGroups`, `resolveGroupKey` (tested)                                                                                                        |
+| `useSystemTab.js`                | Selected group from `?tab=` / `sessionStorage`                                                                                                                                              |
+| `useSystemReload.js`             | Reloads every store after data is replaced (data optimisation, sample data)                                                                                                                 |
+| `groups/SettingsFormSection.jsx` | Reusable small form: fields + "Lưu", saves only `names`, re-syncs while untouched; optional `toValues`/`fromValues` (module-level) when form fields differ from settings (shop bank select) |
+| `groups/SystemGroupContent.jsx`  | Key → group component, with the group heading                                                                                                                                               |
+| `System.css`                     | Two-column layout and sub-headings                                                                                                                                                          |
+
+## Notes
+
+- "Cửa hàng" bank select: a listed bank (`features/printing/receipt/banks.js`, label
+  "Vietcombank (970436)", search by name/code/BIN) or "Khác" + a typed 6-digit BIN; mapping in
+  `features/printing/domain/bankSettingsForm.js` (form `bankChoice`/`bankOtherBin` ⇄ `bankBin`).
+- "In ấn" → "Hoá đơn" has two saves: the printer form ("Lưu": printer, paper, copies) and, for roll
+  paper, the receipt designer ("Lưu thiết kế": `receiptLayout`, `receiptLogo`). Neither overwrites
+  the other's fields (see `features/printing/README.md`).
 
 ## Adding a setting
 

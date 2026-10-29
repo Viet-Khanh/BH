@@ -45,6 +45,30 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
   asset is skipped); `buildReceiptHtml(data, assets)` and `buildSalesPrintJob` stay pure/sync.
 - Logo: `Settings.receiptLogo`, an image data URL (anything else is ignored).
 
+## Receipt designer (System → In ấn → Hoá đơn)
+
+- Printer form (`ReceiptPrintSettings` + `ReceiptPaperFields`): printer, paper (Tự động / 58 / 80 /
+  Tùy chỉnh → "Chiều rộng giấy" 40–112 mm + "Lề trái/phải" 0–10 mm), copies; roll papers show
+  "Vùng in ≈ N mm" (`getReceiptPaper`). Its "Lưu" never writes `receiptLayout`/`receiptLogo`
+  (`omitDesignerSettings` in `domain/printSettingsForm.js`): the form may hold stale copies.
+- Designer (`components/receiptDesigner/`), shown while the paper on screen is a roll paper; own
+  state (`designerState.js` reducer over the `receiptLayout.js` editors, `dirty` = unsaved; follows
+  the stored values while unedited) and own "Lưu thiết kế" (writes only `receiptLayout` +
+  `receiptLogo`). Left: font size, blocks in print order (switch — `items`/`totals` locked — label,
+  ↑/↓, text for `title`/`footer`, "2 dòng"/"Gọn" for `items`, bank hint on `qr`, logo
+  pick/remove/thumbnail). Right: preview of the sample receipt (`domain/printSamples.js`) with the
+  unsaved paper + designer values, debounced (`useReceiptPreviewHtml`: `loadReceiptAssets` →
+  `buildReceiptHtml`), in a sandboxed `iframe` exactly `paper.widthMm` mm wide (receipt CSS stays
+  isolated; height follows the content). "In thử" prints the same unsaved values on the chosen
+  printer; "Khôi phục mặc định" resets the layout and keeps the logo.
+- Logo (`receipt/logoImage.js`, browser only): image file → canvas `min(image width, printable mm ×
+8)` px wide (ratio kept, ≤ 160 px high) → grayscale on white + threshold 128 → PNG data URL;
+  non-images and results > 200 KB are rejected with a message. Pixel math in `receipt/logoPixels.js`
+  (tested). Nothing is uploaded: the data URL is stored in Settings on "Lưu thiết kế".
+- Bank info for the QR block: System → Cửa hàng (`components/BankSettingsFields.jsx`,
+  `domain/bankSettingsForm.js`): bank select from `banks.js` or "Khác" + 6-digit BIN, account
+  number, account holder.
+
 ## Label rules
 
 - Count per product = base quantity bought (2 thùng × 24 = 48 lon labels); the user can switch a
@@ -59,26 +83,30 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
 
 ## Files
 
-| Path                                                                                  | Role                                                                                      |
-| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `domain/printSettings.js`                                                             | Defaults, presets, clamping, label row page size, auto-print decision                     |
-| `domain/printSettingsForm.js`                                                         | Settings form ⇄ settings mapping, printer options                                         |
-| `domain/printSamples.js`, `samplePrints.js`                                           | "In thử" samples                                                                          |
-| `receipt/receiptPaper.js`, `receipt/receiptLayout.js`                                 | Roll paper geometry; layout defaults, normalization, designer editors                     |
-| `receipt/receiptHtml.js`, `receipt/receiptStyles.js`, `receipt/receiptContext.js`     | Roll receipt document: blocks in layout order, CSS, shared render context                 |
-| `receipt/blocks/*.js`                                                                 | One renderer per block (`index.js` = key → renderer + zone)                               |
-| `receipt/receiptAmounts.js`                                                           | Total, old debt, paid, amount due                                                         |
-| `receipt/vietqr.js`, `receipt/banks.js`, `receipt/qrSvg.js`                           | VietQR payload + CRC, bank BIN list, QR → SVG                                             |
-| `receipt/receiptAssets.js`                                                            | Async: QR / barcode SVG strings before printing                                           |
-| `printSalesInvoice.js`                                                                | Roll receipt vs normal template for every sales print                                     |
-| `labels/buildLabelJobs.js`, `labels/labelRows.js`                                     | Purchase/product → label rows; row edits                                                  |
-| `labels/barcodeLayout.js`, `labels/barcodeSvg.js`                                     | Module/quiet-zone math; lazy JsBarcode rendering                                          |
-| `labels/labelHtml.js`, `labels/printLabels.js`                                        | Label sheet HTML (one page = one row of labels) and printing                              |
-| `labels/labelPrintKeys.js`, `components/useEnterToPrint.js`                           | Enter prints; scanner Enter and buttons ignored                                           |
-| `useLabelPrint.js`, `components/LabelPrintModal.jsx`                                  | Confirm list                                                                              |
-| `components/ReceiptPrintSettings.jsx`, `components/LabelPrintSettings.jsx` (+ fields) | System → In ấn forms (receipt / labels), each with its own "Lưu"                          |
-| `usePrintSettingsForm.js`                                                             | Shared form state: load, preset sync, save (stored print settings overlaid with the form) |
-| `printerList.js`, `usePrinters.js`                                                    | Electron printer list (`null` on the web)                                                 |
+| Path                                                                                  | Role                                                                                                              |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `domain/printSettings.js`                                                             | Defaults, presets, clamping, label row page size, auto-print decision                                             |
+| `domain/printSettingsForm.js`                                                         | Settings form ⇄ settings mapping, printer options                                                                 |
+| `domain/printSamples.js`, `samplePrints.js`                                           | "In thử" samples                                                                                                  |
+| `receipt/receiptPaper.js`, `receipt/receiptLayout.js`                                 | Roll paper geometry; layout defaults, normalization, designer editors                                             |
+| `receipt/receiptHtml.js`, `receipt/receiptStyles.js`, `receipt/receiptContext.js`     | Roll receipt document: blocks in layout order, CSS, shared render context                                         |
+| `receipt/blocks/*.js`                                                                 | One renderer per block (`index.js` = key → renderer + zone)                                                       |
+| `receipt/receiptAmounts.js`                                                           | Total, old debt, paid, amount due                                                                                 |
+| `receipt/vietqr.js`, `receipt/banks.js`, `receipt/qrSvg.js`                           | VietQR payload + CRC, bank BIN list, QR → SVG                                                                     |
+| `receipt/receiptAssets.js`                                                            | Async: QR / barcode SVG strings before printing                                                                   |
+| `printSalesInvoice.js`                                                                | Roll receipt vs normal template for every sales print                                                             |
+| `labels/buildLabelJobs.js`, `labels/labelRows.js`                                     | Purchase/product → label rows; row edits                                                                          |
+| `labels/barcodeLayout.js`, `labels/barcodeSvg.js`                                     | Module/quiet-zone math; lazy JsBarcode rendering                                                                  |
+| `labels/labelHtml.js`, `labels/printLabels.js`                                        | Label sheet HTML (one page = one row of labels) and printing                                                      |
+| `labels/labelPrintKeys.js`, `components/useEnterToPrint.js`                           | Enter prints; scanner Enter and buttons ignored                                                                   |
+| `useLabelPrint.js`, `components/LabelPrintModal.jsx`                                  | Confirm list                                                                                                      |
+| `components/ReceiptPrintSettings.jsx`, `components/LabelPrintSettings.jsx` (+ fields) | System → In ấn forms (receipt / labels), each with its own "Lưu"                                                  |
+| `components/ReceiptPaperFields.jsx`                                                   | Paper radio, custom width/margin, printable-width hint                                                            |
+| `components/receiptDesigner/*`                                                        | Roll receipt designer: state reducer, block list/rows, logo controls, true-size preview                           |
+| `receipt/logoPixels.js`, `receipt/logoImage.js`                                       | Logo size + black/white threshold (pure); file → PNG data URL (canvas)                                            |
+| `domain/bankSettingsForm.js`, `components/BankSettingsFields.jsx`                     | Shop bank select (listed BIN / "Khác") ⇄ `bankBin`; fields in System → Cửa hàng                                   |
+| `usePrintSettingsForm.js`                                                             | Shared form state: load, preset sync, save (stored print settings overlaid with the form, designer keys excluded) |
+| `printerList.js`, `usePrinters.js`                                                    | Electron printer list (`null` on the web)                                                                         |
 
 ## Rules
 
