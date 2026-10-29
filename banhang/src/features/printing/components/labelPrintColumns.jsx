@@ -1,6 +1,7 @@
 import { InputNumber, Select, Tag } from 'antd';
 import { formatMoney } from '../../../utils/moneyFormat.js';
 import { getUnitOptions } from '../../../utils/productUnits.js';
+import { MAX_LABELS_PER_ROW } from '../labels/labelRows.js';
 
 const renderName = (name, row) => (
   <>
@@ -53,6 +54,7 @@ export const getLabelPrintColumns = ({ onUnitChange, onCountChange }) => [
       <InputNumber
         size="small"
         min={0}
+        max={MAX_LABELS_PER_ROW}
         precision={0}
         value={count}
         onChange={(value) => onCountChange(row.key, value)}

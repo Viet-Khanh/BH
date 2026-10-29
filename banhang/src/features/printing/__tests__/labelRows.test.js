@@ -5,6 +5,7 @@ import {
   createPurchaseRows,
   getPrintableRows,
   getVisibleRows,
+  MAX_LABELS_PER_ROW,
   setRowCount,
   setRowUnit,
 } from '../labels/labelRows.js';
@@ -105,6 +106,16 @@ describe('setRowCount', () => {
     expect(setRowCount(rows, key, 3.7)[0].count).toBe(3);
     expect(setRowCount(rows, key, -2)[0].count).toBe(0);
     expect(setRowCount(rows, key, null)[0].count).toBe(0);
+  });
+
+  it('ignores counts above the limit (e.g. a barcode scanned into the field)', () => {
+    const rows = createProductRows(noodle);
+    const key = rows[0].key;
+    const counted = setRowCount(rows, key, 12);
+    expect(setRowCount(counted, key, MAX_LABELS_PER_ROW)[0].count).toBe(
+      MAX_LABELS_PER_ROW
+    );
+    expect(setRowCount(counted, key, 8936000020026)[0].count).toBe(12);
   });
 });
 

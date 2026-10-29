@@ -53,11 +53,14 @@ export const setRowUnit = (rows, key, unitName, options = {}) =>
     skippable: row.skippable,
   }));
 
-export const setRowCount = (rows, key, count) =>
-  updateRow(rows, key, (row) => ({
-    ...row,
-    count: Math.max(0, Math.floor(Number(count) || 0)),
-  }));
+// Upper bound per row: a barcode scanned into the count field must not become a huge job.
+export const MAX_LABELS_PER_ROW = 9999;
+
+export const setRowCount = (rows, key, count) => {
+  const next = Math.max(0, Math.floor(Number(count) || 0));
+  if (next > MAX_LABELS_PER_ROW) return rows;
+  return updateRow(rows, key, (row) => ({ ...row, count: next }));
+};
 
 export const getVisibleRows = (rows, skipWithBarcode) =>
   skipWithBarcode ? rows.filter((row) => !row.skippable) : rows;
