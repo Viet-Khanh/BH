@@ -1,7 +1,7 @@
 # Printing (`features/printing`)
 
 Receipt printer (58 mm roll) and label printer for shops that run everything on one machine.
-Configured in System → "Máy in & tem"; values live in backend `Settings`. Label UI is gated by
+Configured in System → "In ấn" (sub-headings "Hoá đơn" and "Tem"); values live in backend `Settings`. Label UI is gated by
 the edition flag `labels` (minimart). Spec: `docs/superpowers/specs/2026-10-29-printing-labels-design.md`.
 
 ## Flow
@@ -30,20 +30,21 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
 
 ## Files
 
-| Path | Role |
-| --- | --- |
-| `domain/printSettings.js` | Defaults, presets, clamping, label row page size, auto-print decision |
-| `domain/printSettingsForm.js` | Settings form ⇄ settings mapping, printer options |
-| `domain/printSamples.js`, `samplePrints.js` | "In thử" samples |
-| `receipt58.js` | 58 mm receipt HTML (line units, old debt, change/debt) |
-| `printSalesInvoice.js` | Chooses receipt vs normal template for every sales print |
-| `labels/buildLabelJobs.js`, `labels/labelRows.js` | Purchase/product → label rows; row edits |
-| `labels/barcodeLayout.js`, `labels/barcodeSvg.js` | Module/quiet-zone math; lazy JsBarcode rendering |
-| `labels/labelHtml.js`, `labels/printLabels.js` | Label sheet HTML (one page = one row of labels) and printing |
-| `labels/labelPrintKeys.js`, `components/useEnterToPrint.js` | Enter prints; scanner Enter and buttons ignored |
-| `useLabelPrint.js`, `components/LabelPrintModal.jsx` | Confirm list |
-| `components/PrintSettingsSection.jsx` (+ fields) | System page section |
-| `printerList.js`, `usePrinters.js` | Electron printer list (`null` on the web) |
+| Path                                                                                  | Role                                                                                      |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `domain/printSettings.js`                                                             | Defaults, presets, clamping, label row page size, auto-print decision                     |
+| `domain/printSettingsForm.js`                                                         | Settings form ⇄ settings mapping, printer options                                         |
+| `domain/printSamples.js`, `samplePrints.js`                                           | "In thử" samples                                                                          |
+| `receipt58.js`                                                                        | 58 mm receipt HTML (line units, old debt, change/debt)                                    |
+| `printSalesInvoice.js`                                                                | Chooses receipt vs normal template for every sales print                                  |
+| `labels/buildLabelJobs.js`, `labels/labelRows.js`                                     | Purchase/product → label rows; row edits                                                  |
+| `labels/barcodeLayout.js`, `labels/barcodeSvg.js`                                     | Module/quiet-zone math; lazy JsBarcode rendering                                          |
+| `labels/labelHtml.js`, `labels/printLabels.js`                                        | Label sheet HTML (one page = one row of labels) and printing                              |
+| `labels/labelPrintKeys.js`, `components/useEnterToPrint.js`                           | Enter prints; scanner Enter and buttons ignored                                           |
+| `useLabelPrint.js`, `components/LabelPrintModal.jsx`                                  | Confirm list                                                                              |
+| `components/ReceiptPrintSettings.jsx`, `components/LabelPrintSettings.jsx` (+ fields) | System → In ấn forms (receipt / labels), each with its own "Lưu"                          |
+| `usePrintSettingsForm.js`                                                             | Shared form state: load, preset sync, save (stored print settings overlaid with the form) |
+| `printerList.js`, `usePrinters.js`                                                    | Electron printer list (`null` on the web)                                                 |
 
 ## Rules
 
@@ -58,5 +59,5 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
    run the gap/label calibration once.
 3. Receipt printer driver: 58 mm roll; enable "open cash drawer after print" if a drawer is
    connected (the app cannot send drawer commands).
-4. System → "Máy in & tem": pick both printers, label size, then "In thử" / "In thử tem" and
+4. System → "In ấn": pick both printers, label size, then "In thử" / "In thử tem" and
    adjust the X/Y offsets.

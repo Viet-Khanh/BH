@@ -1,4 +1,4 @@
-// Mapping between Settings and the "Máy in & tem" form (label preset is form-only).
+// Mapping between Settings and the printer forms (System → In ấn) (label preset is form-only).
 import { LABEL_PRESETS, readPrintSettings } from './printSettings.js';
 
 export const CUSTOM_PRESET = 'custom';

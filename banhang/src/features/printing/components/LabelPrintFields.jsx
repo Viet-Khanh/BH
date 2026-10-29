@@ -1,4 +1,4 @@
-import { Button, Divider, Form, InputNumber, Select, Switch } from 'antd';
+import { Button, Form, InputNumber, Select, Switch } from 'antd';
 import { LABEL_PRESET_OPTIONS } from '../domain/printSettingsForm.js';
 import PrinterSelectItem from './PrinterSelectItem.jsx';
 
@@ -20,12 +20,9 @@ const SWITCH_FIELDS = [
   },
 ];
 
-// Label printer part of "Máy in & tem" (edition flag `labels`).
+// Label printer fields (System → In ấn → Tem, edition flag `labels`).
 const LabelPrintFields = ({ printers, canChoose, onTest }) => (
   <>
-    <Divider orientation="left" plain>
-      Tem mã vạch
-    </Divider>
     <PrinterSelectItem
       name="labelPrinterName"
       label="Máy in tem"

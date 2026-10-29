@@ -1,0 +1,54 @@
+/* System page: left group menu + selected group; menu on top below 768 px. */
+.system-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.system-menu {
+  flex: 0 0 200px;
+  position: sticky;
+  top: 16px;
+}
+
+.system-menu.ant-menu-inline {
+  border-inline-end: none;
+}
+
+.system-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.system-content > .section-title:first-child {
+  margin-top: 0;
+}
+
+.system-subtitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e6efee;
+}
+
+.system-content > .section-title + .system-subtitle {
+  margin-top: 0;
+}
+
+.system-spacer {
+  height: 16px;
+}
+
+@media (max-width: 767px) {
+  .system-layout {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .system-menu {
+    position: static;
+    flex: none;
+    width: 100%;
+  }
+}

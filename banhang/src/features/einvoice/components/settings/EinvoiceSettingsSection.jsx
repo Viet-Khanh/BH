@@ -8,7 +8,7 @@ import { profileOptions } from '../../profiles/index.js';
 import EinvoiceWorkflowFields from './EinvoiceWorkflowFields.jsx';
 import ReducedVatAlert from './ReducedVatAlert.jsx';
 
-// "Hoá đơn điện tử" section of the System page; owns its form.
+// System page group "Hoá đơn điện tử" (the page shows the heading); owns its form.
 const EinvoiceSettingsSection = () => {
   const { settings, update } = useSettingsStore();
   const [form] = Form.useForm();
@@ -26,7 +26,6 @@ const EinvoiceSettingsSection = () => {
 
   return (
     <>
-      <div className="section-title">Hoá đơn điện tử</div>
       <ReducedVatAlert settings={settings} />
       <Form form={form} layout="vertical" style={{ maxWidth: 640 }}>
         <Form.Item label="Loại hình" name="taxMethod">

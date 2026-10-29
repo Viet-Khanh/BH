@@ -31,7 +31,7 @@ const SalesScreen = () => {
         onShowDebt={() => {
           navigation.navigate('/sales/recent?debt=1');
         }}
-        onShowTemplate={() => navigation.navigate('/system')}
+        onShowTemplate={() => navigation.navigate('/system?tab=printing')}
         onNewInvoice={actions.newInvoice}
       />
       <CustomerDebtReceiptModal
