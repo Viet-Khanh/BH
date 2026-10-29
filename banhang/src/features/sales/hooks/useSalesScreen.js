@@ -3,6 +3,7 @@ import { message } from 'antd';
 import { useCustomerStore } from '../../../store/customerStore.js';
 import { useInvoiceStore } from '../../../store/invoiceStore.js';
 import { useSettingsStore } from '../../../store/settingsStore.js';
+import { guardProductSearch } from '../../../utils/guardProductSearch.js';
 import { useSalesBootstrap } from './useSalesBootstrap.js';
 import { useSalesCatalog } from './useSalesCatalog.js';
 import { useSalesCustomerDebt } from './useSalesCustomerDebt.js';
@@ -11,6 +12,9 @@ import { useSalesEditor } from './useSalesEditor.js';
 import { useSalesInvoicePersistence } from './useSalesInvoicePersistence.js';
 import { useSalesNavigation } from './useSalesNavigation.js';
 import { useSalesPayments } from './useSalesPayments.js';
+
+const showSearchError = () =>
+  message.error('Không thể tải danh sách sản phẩm.');
 
 export const useSalesScreen = () => {
   const navigation = useSalesNavigation();
@@ -61,15 +65,9 @@ export const useSalesScreen = () => {
     refreshCustomerDebt: debt.refreshCustomerDebt,
   });
 
-  const searchProducts = useCallback(
-    async (keyword = '') => {
-      try {
-        return await catalog.searchProducts(keyword);
-      } catch (error) {
-        message.error('Không thể tải danh sách sản phẩm.');
-        return [];
-      }
-    },
+  // Typing: error message + []; scans pass { throwOnError: true } to show the real error.
+  const searchProducts = useMemo(
+    () => guardProductSearch(catalog.searchProducts, showSearchError),
     [catalog.searchProducts]
   );
 

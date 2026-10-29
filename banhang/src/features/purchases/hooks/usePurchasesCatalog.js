@@ -1,6 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
+import { message } from 'antd';
+import { guardProductSearch } from '../../../utils/guardProductSearch.js';
 import { searchPurchaseProducts } from '../api/purchasesApi.js';
 import { mergeProducts } from '../domain/purchasesDomain.js';
+
+const showSearchError = () =>
+  message.error('Không thể tải danh sách sản phẩm.');
 
 export const usePurchasesCatalog = () => {
   const [products, setProducts] = useState([]);
@@ -10,7 +15,7 @@ export const usePurchasesCatalog = () => {
     setProducts((prev) => mergeProducts(prev, nextProducts));
   }, []);
 
-  const searchProducts = useCallback(
+  const fetchProducts = useCallback(
     async (keyword = '') => {
       const data = await searchPurchaseProducts(keyword, { limit: 30 });
       if (!Array.isArray(data)) return [];
@@ -18,6 +23,11 @@ export const usePurchasesCatalog = () => {
       return data;
     },
     [mergeCatalogProducts]
+  );
+  // Typing: error message + []; scans pass { throwOnError: true } to show the real error.
+  const searchProducts = useMemo(
+    () => guardProductSearch(fetchProducts, showSearchError),
+    [fetchProducts]
   );
 
   const activeProducts = useMemo(
