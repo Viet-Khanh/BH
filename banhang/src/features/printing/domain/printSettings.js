@@ -9,6 +9,7 @@ export const PRINT_DEFAULT_SETTINGS = {
   receiptMarginMm: 5,
   receiptLayout: normalizeReceiptLayout(),
   receiptLogo: '',
+  documentPrinterName: '',
   labelPrinterName: '',
   labelWidthMm: 35,
   labelHeightMm: 22,
@@ -96,6 +97,7 @@ export const readPrintSettings = (settings = {}) => {
     receiptPrinterName: readText(source.receiptPrinterName),
     receiptLayout: normalizeReceiptLayout(source.receiptLayout),
     receiptLogo: readLogo(source.receiptLogo),
+    documentPrinterName: readText(source.documentPrinterName),
     labelPrinterName: readText(source.labelPrinterName),
     ...numbers,
     labelShowShopName: readBoolean(

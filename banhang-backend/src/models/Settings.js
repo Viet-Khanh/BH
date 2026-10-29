@@ -58,6 +58,7 @@ const SettingsSchema = new mongoose.Schema(
     // Plain object (Mixed): { fontSizePx, blocks: [{ key, on, text?, style? }] }
     receiptLayout: { type: Object, default: defaultReceiptLayout },
     receiptLogo: { type: String, default: '' }, // PNG data URL
+    documentPrinterName: { type: String, default: '' }, // A4/A5 documents
     labelPrinterName: { type: String, default: '' },
     labelWidthMm: { type: Number, default: 35 },
     labelHeightMm: { type: Number, default: 22 },

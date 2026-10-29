@@ -9,6 +9,7 @@ describe('Settings model: roll receipt fields', () => {
       receiptWidthMm: 58,
       receiptMarginMm: 5,
       receiptLogo: '',
+      documentPrinterName: '',
       bankBin: '',
       bankAccountNo: '',
       bankAccountName: '',
