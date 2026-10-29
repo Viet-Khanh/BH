@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { saveWorkbook } from '../../utils/excelExport.js';
-import { printHtml } from '../../utils/printUtils.js';
+import { printDocument } from '../../features/printing/printTargets.js';
 import { printSalesInvoice } from '../../features/printing/printSalesInvoice.js';
 
 export const exportReportInvoiceItems = async ({
@@ -40,7 +40,10 @@ export const printReportInvoicePreview = async ({
     1,
     Math.round(Number(copies ?? settings?.printCopies ?? 1))
   );
-  await printHtml(previewHtml, { copies: printCopies, autoPageSize: true });
+  await printDocument(previewHtml, {
+    copies: printCopies,
+    autoPageSize: true,
+  });
 };
 
 export const printReportSalesInvoice = ({

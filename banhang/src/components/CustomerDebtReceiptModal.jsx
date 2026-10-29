@@ -17,7 +17,7 @@ import {
 import { formatMoney } from '../utils/moneyFormat.js';
 import { generateCode } from '../utils/codeGenerator.js';
 import { formatNumberInput, parseNumberInput } from '../utils/numberInput.js';
-import { printHtml } from '../utils/printUtils.js';
+import { printDocument } from '../features/printing/printTargets.js';
 import { renderDebtReceiptTemplate } from '../utils/renderDebtReceiptTemplate.js';
 
 const CustomerDebtReceiptModal = ({
@@ -87,7 +87,7 @@ const CustomerDebtReceiptModal = ({
         1,
         Math.round(Number(settings?.printCopies || 1))
       );
-      await printHtml(html, { copies: printCopies, autoPageSize: true });
+      await printDocument(html, { copies: printCopies, autoPageSize: true });
     },
     [settings]
   );

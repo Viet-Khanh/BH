@@ -69,7 +69,38 @@ describe('buildSalesPrintJob', () => {
     });
     expect(job).toEqual({
       html: '<p>a5</p>',
-      options: { copies: 1, autoPageSize: true },
+      options: { copies: 1, autoPageSize: true, deviceName: '' },
+    });
+  });
+
+  it('prints the template on the document printer', () => {
+    const job = buildSalesPrintJob({
+      ...base,
+      settings: {
+        receiptPaper: 'auto',
+        receiptPrinterName: 'XP-58',
+        documentPrinterName: 'Canon LBP',
+      },
+    });
+    expect(job.options.deviceName).toBe('Canon LBP');
+  });
+
+  it("forces the A5/A4 template with format 'a4' on roll paper", () => {
+    const settings = {
+      receiptPaper: '58mm',
+      receiptPrinterName: 'XP-58',
+      documentPrinterName: 'Canon LBP',
+      printCopies: 2,
+    };
+    expect(buildSalesPrintJob({ ...base, settings, format: 'a4' })).toEqual({
+      html: '<p>a5</p>',
+      options: { copies: 2, autoPageSize: true, deviceName: 'Canon LBP' },
+    });
+    const roll = buildSalesPrintJob({ ...base, settings, format: 'default' });
+    expect(roll.options).toEqual({
+      copies: 2,
+      deviceName: 'XP-58',
+      autoHeightWidthMm: 58,
     });
   });
 
@@ -110,6 +141,20 @@ describe('printSalesInvoice', () => {
     expect(printHtml).toHaveBeenCalledWith('<p>a5</p>', {
       copies: 1,
       autoPageSize: true,
+      deviceName: '',
+    });
+  });
+
+  it("prints format 'a4' without loading receipt assets", async () => {
+    await printSalesInvoice({
+      ...base,
+      format: 'a4',
+      settings: { receiptPaper: '80mm', documentPrinterName: 'Canon LBP' },
+    });
+    expect(printHtml).toHaveBeenCalledWith('<p>a5</p>', {
+      copies: 1,
+      autoPageSize: true,
+      deviceName: 'Canon LBP',
     });
   });
 

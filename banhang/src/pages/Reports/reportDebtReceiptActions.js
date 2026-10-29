@@ -1,4 +1,4 @@
-import { printHtml } from '../../utils/printUtils.js';
+import { printDocument } from '../../features/printing/printTargets.js';
 import { renderDebtReceiptTemplate } from '../../utils/renderDebtReceiptTemplate.js';
 
 export const findDebtReceiptTimelineRow = (rows = [], paymentId) =>
@@ -22,7 +22,7 @@ export const printDebtReceiptDocument = async ({
     1,
     Math.round(Number(copies ?? settings?.printCopies ?? 1))
   );
-  await printHtml(html, { copies: printCopies, autoPageSize: true });
+  await printDocument(html, { copies: printCopies, autoPageSize: true });
 };
 
 export const refreshDebtReceiptContext = async ({

@@ -3,7 +3,7 @@ import { Button, Dropdown, message } from 'antd';
 import * as XLSX from 'xlsx';
 import { useSettingsStore } from '../store/settingsStore.js';
 import { saveWorkbook } from '../utils/excelExport.js';
-import { printHtml } from '../utils/printUtils.js';
+import { printDocument } from '../features/printing/printTargets.js';
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -105,7 +105,7 @@ const ExportActions = ({
       rows: rowsForPdf,
       summaryItems,
     });
-    await printHtml(html, { copies: printCopies });
+    await printDocument(html, { copies: printCopies });
   };
 
   const handlePdf = async () => {
@@ -118,7 +118,7 @@ const ExportActions = ({
       rows: rowsForPdf,
       summaryItems,
     });
-    await printHtml(html, { copies: printCopies, forceDialog: true });
+    await printDocument(html, { copies: printCopies, forceDialog: true });
   };
 
   const exportItems = [
