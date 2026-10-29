@@ -30,6 +30,14 @@ export const createPurchaseRows = (
   }));
 };
 
+// After saving a purchase every imported product gets a price label by default (the shop
+// asked for labels "ứng với số hàng nhập và giá tiền"); skipping products that already carry
+// a manufacturer barcode is opt-in.
+export const getPurchaseLabelStart = (rows = []) => ({
+  open: rows.length > 0,
+  skipWithBarcode: false,
+});
+
 // One label of the base unit (catalog "In tem").
 export const createProductRows = (product, options = {}) =>
   product?.id

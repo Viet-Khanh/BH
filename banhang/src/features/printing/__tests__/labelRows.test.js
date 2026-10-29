@@ -4,6 +4,7 @@ import {
   createProductRows,
   createPurchaseRows,
   getPrintableRows,
+  getPurchaseLabelStart,
   getVisibleRows,
   MAX_LABELS_PER_ROW,
   setRowCount,
@@ -139,5 +140,33 @@ describe('visible and printable rows', () => {
       'p1',
     ]);
     expect(countLabels(getPrintableRows(rows, false))).toBe(48);
+  });
+});
+
+describe('purchase label list start', () => {
+  const branded = {
+    id: 'p1',
+    name: 'Coca',
+    unit: 'lon',
+    barcode: '8934588012345',
+    sellPriceDefault: 10000,
+  };
+
+  it('opens after every purchase with lines, even when all products have barcodes', () => {
+    const rows = createPurchaseRows([{ productId: 'p1', qty: 24 }], [branded]);
+    expect(getPurchaseLabelStart(rows)).toEqual({
+      open: true,
+      skipWithBarcode: false,
+    });
+    expect(
+      getVisibleRows(rows, getPurchaseLabelStart(rows).skipWithBarcode)
+    ).toHaveLength(1);
+  });
+
+  it('stays closed when the purchase has no printable product', () => {
+    expect(getPurchaseLabelStart([])).toEqual({
+      open: false,
+      skipWithBarcode: false,
+    });
   });
 });

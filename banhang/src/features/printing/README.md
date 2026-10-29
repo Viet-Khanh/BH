@@ -99,8 +99,9 @@ all ─► utils/printUtils.printHtml({ deviceName, pageSizeMm | autoHeightWidth
   label without barcode + warning.
 - EAN-13 for valid 13-digit codes, otherwise Code128. Quiet zones included; bar width snapped to
   whole printer dots (203 dpi). Codes too long for the label width get a warning.
-- "Bỏ qua hàng đã có mã vạch" (purchases): products whose base unit already has a manufacturer
-  barcode need no sticker.
+- After saving a purchase the list always opens with every imported product (price labels for all).
+  "Bỏ qua hàng đã có mã vạch" (off by default) hides products whose base unit already has a manufacturer
+  barcode, for shops that only sticker unbranded goods.
 
 ## Files
 

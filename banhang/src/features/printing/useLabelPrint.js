@@ -8,6 +8,7 @@ import {
   createProductRows,
   createPurchaseRows,
   getPrintableRows,
+  getPurchaseLabelStart,
   getVisibleRows,
   setRowCount as changeRowCount,
   setRowUnit as changeRowUnit,
@@ -32,14 +33,20 @@ export const useLabelPrint = ({ settings, products = [] } = {}) => {
   const [printing, setPrinting] = useState(false);
   const printingRef = useRef(false);
 
-  // `auto`: opened by saving a purchase — stays closed when nothing needs a label.
+  // `auto`: opened by saving a purchase — stays closed only when no line has a product.
   const openForPurchase = useCallback(
     (items, extraProducts = [], { auto = false } = {}) => {
       const rows = createPurchaseRows(items, products, extraProducts, {
         labelWidthMm,
       });
-      if (auto && !getVisibleRows(rows, true).length) return false;
-      setState({ open: true, rows, skipWithBarcode: true, forPurchase: true });
+      const start = getPurchaseLabelStart(rows);
+      if (auto && !start.open) return false;
+      setState({
+        open: true,
+        rows,
+        skipWithBarcode: start.skipWithBarcode,
+        forPurchase: true,
+      });
       return true;
     },
     [labelWidthMm, products]

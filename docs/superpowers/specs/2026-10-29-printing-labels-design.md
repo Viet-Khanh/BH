@@ -72,7 +72,7 @@ post-purchase label list and the label buttons.
   `{ productId, unitName, count, barcode, barcodeFormat, price, warning }`:
   default unit = base unit, count = base quantity of all lines of that product; price = unit sell
   price; barcode per the rule above; format `EAN13` for valid 13-digit EAN, else `CODE128`;
-  `skipWithBarcode` option (default on) drops rows whose unit already has a manufacturer barcode
+  `skipWithBarcode` option (default off since 2026-10-30: every imported product gets a price label) drops rows whose unit already has a manufacturer barcode
   (only products without a barcode need a sticker).
 - `features/printing/labels/labelHtml.js` (pure except the injected SVG renderer): page = one
   row of `labelColumns` labels; each label sized in mm with offsets; content per settings; text
