@@ -101,6 +101,8 @@ Display data:
   stay per chosen unit (qty × price = amount holds).
 - E-invoice `domain/contentChange.js` `LINE_FIELDS` += `unitName`, `factor`, and the FE mirror
   `features/einvoice/domain/contentChange.js` (parity test).
+- Printed/list total quantity (`totalQty`, `qtySum`) sums line quantities in mixed units
+  (accepted).
 
 Models: `Product.units` sub-schema; `unitName: String`, `factor: Number` on
 `InvoiceItemSchema` and `PurchaseItemSchema`.
