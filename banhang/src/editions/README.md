@@ -23,6 +23,7 @@ One module per retail industry. Read `../platform/README.md` first (contract, sl
 | `features.sampleData`               | `pages/System/System.jsx`                                                                                                                                         |
 | `features.units`                    | `pages/Catalog/CatalogFormModal.jsx`, `components/invoice/productModal/InvoiceProductModal.jsx`                                                                   |
 | `features.barcode`                  | `features/barcode/useBarcodeLines.js` callers, `pages/Catalog/*`                                                                                                  |
+| `features.labels`                   | `features/printing/*` (label settings, label list after purchases, "In tem" buttons)                                                                              |
 | `labels`                            | `pages/Catalog/CatalogFormModal.jsx`                                                                                                                              |
 | `appTitle`                          | `App.jsx`, `applyEditionToDocument()`                                                                                                                             |
 | `defaultShopName`, `invoiceTagline` | `store/settingsDefaults.js`, `features/settings/templates/defaultInvoiceTemplate.js`                                                                              |

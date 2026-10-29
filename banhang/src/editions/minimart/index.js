@@ -13,6 +13,7 @@ export default defineEdition({
       sampleData: false,
       units: true,
       barcode: true,
+      labels: true,
     },
     labels: { group: 'Ngành hàng', spec: 'Quy cách' },
   },

@@ -13,6 +13,7 @@ export default defineEdition({
       sampleData: false,
       units: false,
       barcode: false,
+      labels: false,
     },
     labels: { group: 'Nhóm thuốc', spec: 'Quy cách đóng gói' },
   },

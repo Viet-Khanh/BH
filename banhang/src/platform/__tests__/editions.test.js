@@ -29,6 +29,7 @@ describe.each(getAvailableEditions())('edition $id', (edition) => {
       sampleData: expect.any(Boolean),
       units: expect.any(Boolean),
       barcode: expect.any(Boolean),
+      labels: expect.any(Boolean),
     });
     expect(edition.config.labels).toEqual({
       group: expect.any(String),
