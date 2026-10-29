@@ -44,6 +44,11 @@ describe('printDocument', () => {
     });
   });
 
+  it('lets the caller name the printer (test print of unsaved values)', async () => {
+    await printDocument('<p>a4</p>', { deviceName: '' });
+    expect(printHtml).toHaveBeenCalledWith('<p>a4</p>', { deviceName: '' });
+  });
+
   it('keeps the print dialog free to choose', async () => {
     await printDocument('<p>a4</p>', { copies: 1, forceDialog: true });
     expect(printHtml).toHaveBeenCalledWith('<p>a4</p>', {

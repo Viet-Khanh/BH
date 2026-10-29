@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readPrintSettings } from '../domain/printSettings.js';
 import {
+  buildSampleDocumentHtml,
   buildSampleLabelRows,
   buildSampleReceiptData,
   buildSampleReceiptHtml,
@@ -41,5 +42,24 @@ describe('buildSampleReceiptHtml', () => {
   it('leaves an amount due so the VietQR block can be tried', () => {
     const { invoice, payments } = buildSampleReceiptData({ shopName: 'X' });
     expect(getReceiptAmounts(invoice, payments).due).toBeGreaterThan(0);
+  });
+});
+
+describe('buildSampleDocumentHtml', () => {
+  it('fills the shop invoice template with the sample sale', () => {
+    const html = buildSampleDocumentHtml({
+      shopName: 'Tạp hoá An',
+      invoiceTemplateHtml:
+        '<h1>{{shop.name}}</h1><p>{{invoice.code}}</p>{{items}}',
+    });
+    expect(html).toContain('<h1>Tạp hoá An</h1>');
+    expect(html).toContain('INV-20240101-001');
+    expect(html).toContain('Hàng mẫu');
+  });
+
+  it('falls back to the default template', () => {
+    const html = buildSampleDocumentHtml({ shopName: 'Tạp hoá An' });
+    expect(html).toContain('@page { size: A4');
+    expect(html).toContain('Tạp hoá An');
   });
 });

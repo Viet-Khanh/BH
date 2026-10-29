@@ -1,4 +1,7 @@
 // Sample content for the "In thử" buttons of the printer settings.
+import { buildDefaultTemplate } from '../../settings/templates/defaultInvoiceTemplate.js';
+import { renderInvoiceTemplate } from '../../../utils/renderTemplate.js';
+import { buildSampleInvoice } from '../../../utils/sampleInvoice.js';
 import { buildLabelRow } from '../labels/buildLabelJobs.js';
 import { buildReceiptHtml } from '../receipt/receiptHtml.js';
 
@@ -40,3 +43,14 @@ export const buildSampleReceiptData = (settings = {}) => ({
 // `assets` = ready-made { qrSvg, barcodeSvg } (receipt/receiptAssets.js).
 export const buildSampleReceiptHtml = (settings = {}, assets) =>
   buildReceiptHtml(buildSampleReceiptData(settings), assets);
+
+// A5/A4 invoice template with the template editor's sample sale ("In thử A4").
+export const buildSampleDocumentHtml = (settings = {}) =>
+  renderInvoiceTemplate({
+    template: settings.invoiceTemplateHtml || buildDefaultTemplate(),
+    invoice: buildSampleInvoice(SAMPLE_PRODUCTS[0], { dimensions: false }),
+    customer: null,
+    payments: [],
+    products: SAMPLE_PRODUCTS,
+    settings,
+  });

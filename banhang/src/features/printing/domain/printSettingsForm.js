@@ -45,6 +45,14 @@ export const omitDesignerSettings = (settings = {}) =>
     Object.entries(settings).filter(([key]) => !DESIGNER_KEYS.includes(key))
   );
 
+// Only the named settings (all without names): a form that saves just its own fields.
+export const pickSettings = (settings = {}, names) =>
+  names
+    ? Object.fromEntries(
+        Object.entries(settings).filter(([key]) => names.includes(key))
+      )
+    : settings;
+
 const SIZE_FIELDS = ['labelWidthMm', 'labelHeightMm', 'labelColumns'];
 
 // Form patch keeping preset and sizes in step (Form onValuesChange), or null.

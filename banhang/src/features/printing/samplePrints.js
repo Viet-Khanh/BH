@@ -2,6 +2,7 @@
 import { printHtml } from '../../utils/printUtils.js';
 import { readPrintSettings } from './domain/printSettings.js';
 import {
+  buildSampleDocumentHtml,
   buildSampleLabelRows,
   buildSampleReceiptData,
   buildSampleReceiptHtml,
@@ -9,6 +10,7 @@ import {
 import { printLabelRows } from './labels/printLabels.js';
 import { loadReceiptAssets } from './receipt/receiptAssets.js';
 import { getReceiptPaper } from './receipt/receiptPaper.js';
+import { getPrinterFor, printDocument } from './printTargets.js';
 
 export const printSampleReceipt = async (settings) => {
   const assets = await loadReceiptAssets(buildSampleReceiptData(settings));
@@ -20,3 +22,10 @@ export const printSampleReceipt = async (settings) => {
 
 export const printSampleLabels = (settings) =>
   printLabelRows(buildSampleLabelRows(readPrintSettings(settings)), settings);
+
+// "In thử A4": the invoice template sample on the A4 printer chosen on screen.
+export const printSampleDocument = (settings) =>
+  printDocument(buildSampleDocumentHtml(settings), {
+    autoPageSize: true,
+    deviceName: getPrinterFor(settings, 'document'),
+  });

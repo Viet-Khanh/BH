@@ -15,12 +15,13 @@ export const getPrinterFor = (settings, target) => {
   return key ? readPrintSettings(settings || {})[key] : '';
 };
 
-// printHtml on the document printer; `forceDialog` lets the user pick in the dialog.
+// printHtml on the stored document printer (a given `deviceName` wins, e.g. a test
+// print of unsaved values); `forceDialog` lets the user pick in the dialog.
 export const printDocument = (html, options = {}) => {
   if (options.forceDialog) return printHtml(html, options);
   const { settings } = useSettingsStore.getState();
   return printHtml(html, {
     ...options,
-    deviceName: getPrinterFor(settings, 'document'),
+    deviceName: options.deviceName ?? getPrinterFor(settings, 'document'),
   });
 };

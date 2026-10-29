@@ -7,6 +7,7 @@ import {
   DESIGNER_KEYS,
   LABEL_PRESET_OPTIONS,
   omitDesignerSettings,
+  pickSettings,
   RECEIPT_PAPER_OPTIONS,
   syncPresetFields,
   toPrintFormValues,
@@ -161,5 +162,18 @@ describe('omitDesignerSettings', () => {
     DESIGNER_KEYS.forEach((key) => expect(settings).not.toHaveProperty(key));
     expect(settings).toHaveProperty('receiptPaper', 'auto');
     expect(settings).toHaveProperty('labelColumns', 2);
+  });
+});
+
+describe('pickSettings', () => {
+  it('keeps only the named settings (a form that saves one field)', () => {
+    const settings = fromPrintFormValues({ documentPrinterName: ' Canon ' });
+    expect(pickSettings(settings, ['documentPrinterName'])).toEqual({
+      documentPrinterName: 'Canon',
+    });
+  });
+
+  it('keeps everything without names', () => {
+    expect(pickSettings({ a: 1 })).toEqual({ a: 1 });
   });
 });

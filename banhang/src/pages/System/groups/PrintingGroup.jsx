@@ -1,5 +1,6 @@
 import { message } from 'antd';
 import TemplateEditor from '../../../components/TemplateEditor.jsx';
+import DocumentPrintSettings from '../../../features/printing/components/DocumentPrintSettings.jsx';
 import LabelPrintSettings from '../../../features/printing/components/LabelPrintSettings.jsx';
 import ReceiptPrintSettings from '../../../features/printing/components/ReceiptPrintSettings.jsx';
 import { usePrinters } from '../../../features/printing/usePrinters.js';
@@ -7,7 +8,7 @@ import { useEditionFeature } from '../../../platform/useActiveModule.js';
 import { useCustomerStore } from '../../../store/customerStore.js';
 import { useProductStore } from '../../../store/productStore.js';
 import { useSettingsStore } from '../../../store/settingsStore.js';
-// "In ấn": copies + receipt printer, labels (flag `labels`), invoice template.
+// "In ấn": copies + receipt printer, A4 printer, labels (flag `labels`), invoice template.
 const PrintingGroup = () => {
   const labelsEnabled = useEditionFeature('labels');
   const { printers, canChoose } = usePrinters();
@@ -25,6 +26,9 @@ const PrintingGroup = () => {
     <>
       <div className="system-subtitle">Hoá đơn</div>
       <ReceiptPrintSettings printers={printers} canChoose={canChoose} />
+
+      <div className="system-subtitle">Máy in A4</div>
+      <DocumentPrintSettings printers={printers} canChoose={canChoose} />
 
       {labelsEnabled && (
         <>

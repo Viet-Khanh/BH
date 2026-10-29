@@ -4,14 +4,16 @@ import { useSettingsStore } from '../../store/settingsStore.js';
 import {
   fromPrintFormValues,
   omitDesignerSettings,
+  pickSettings,
   syncPresetFields,
   toPrintFormValues,
 } from './domain/printSettingsForm.js';
 
-// Form state shared by the receipt and label printer settings forms.
+// Form state shared by the receipt, A4 and label printer settings forms.
 // Saving writes every print setting (stored values overlaid with this form) except
-// the designer's receiptLayout/receiptLogo, which the receipt designer saves itself.
-export const usePrintSettingsForm = ({ successMessage }) => {
+// the designer's receiptLayout/receiptLogo, which the receipt designer saves itself;
+// with `names` it writes only those settings.
+export const usePrintSettingsForm = ({ successMessage, names }) => {
   const settings = useSettingsStore((state) => state.settings);
   const update = useSettingsStore((state) => state.update);
   const [form] = Form.useForm();
@@ -29,11 +31,14 @@ export const usePrintSettingsForm = ({ successMessage }) => {
   };
 
   const readFormSettings = () =>
-    omitDesignerSettings(
-      fromPrintFormValues({
-        ...toPrintFormValues(settings),
-        ...form.getFieldsValue(true),
-      })
+    pickSettings(
+      omitDesignerSettings(
+        fromPrintFormValues({
+          ...toPrintFormValues(settings),
+          ...form.getFieldsValue(true),
+        })
+      ),
+      names
     );
 
   // Test prints use the values on screen, saved or not (stored designer layout).
