@@ -1,4 +1,4 @@
-import { Form, InputNumber, message } from 'antd';
+import { message } from 'antd';
 import TemplateEditor from '../../../components/TemplateEditor.jsx';
 import LabelPrintSettings from '../../../features/printing/components/LabelPrintSettings.jsx';
 import ReceiptPrintSettings from '../../../features/printing/components/ReceiptPrintSettings.jsx';
@@ -7,10 +7,6 @@ import { useEditionFeature } from '../../../platform/useActiveModule.js';
 import { useCustomerStore } from '../../../store/customerStore.js';
 import { useProductStore } from '../../../store/productStore.js';
 import { useSettingsStore } from '../../../store/settingsStore.js';
-import SettingsFormSection from './SettingsFormSection.jsx';
-
-const COPIES_NAMES = ['printCopies'];
-
 // "In ấn": copies + receipt printer, labels (flag `labels`), invoice template.
 const PrintingGroup = () => {
   const labelsEnabled = useEditionFeature('labels');
@@ -28,15 +24,6 @@ const PrintingGroup = () => {
   return (
     <>
       <div className="system-subtitle">Hoá đơn</div>
-      <SettingsFormSection
-        names={COPIES_NAMES}
-        successMessage="Đã lưu số bản in."
-      >
-        <Form.Item label="Số bản in" name="printCopies">
-          <InputNumber min={1} precision={0} style={{ width: '100%' }} />
-        </Form.Item>
-      </SettingsFormSection>
-      <div className="system-spacer" />
       <ReceiptPrintSettings printers={printers} canChoose={canChoose} />
 
       {labelsEnabled && (

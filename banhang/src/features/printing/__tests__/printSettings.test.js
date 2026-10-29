@@ -31,6 +31,7 @@ describe('readPrintSettings', () => {
       autoPrintLabelsOnPurchase: false,
     });
     expect(print).toEqual({
+      printCopies: 1,
       receiptPaper: '58mm',
       receiptPrinterName: 'XP-58',
       labelPrinterName: 'Xprinter 365B',
@@ -66,6 +67,13 @@ describe('readPrintSettings', () => {
     expect(readPrintSettings({ labelGapMm: -3 }).labelGapMm).toBe(0);
     expect(readPrintSettings({ labelColumns: 0 }).labelColumns).toBe(1);
     expect(readPrintSettings({ labelColumns: 2.6 }).labelColumns).toBe(3);
+  });
+
+  it('keeps print copies as a whole number from 1 to 10', () => {
+    expect(readPrintSettings({ printCopies: 2 }).printCopies).toBe(2);
+    expect(readPrintSettings({ printCopies: 0 }).printCopies).toBe(1);
+    expect(readPrintSettings({ printCopies: 3.4 }).printCopies).toBe(3);
+    expect(readPrintSettings({ printCopies: 50 }).printCopies).toBe(10);
   });
 
   it('falls back to defaults for invalid values', () => {

@@ -1,5 +1,6 @@
 // Printer and label settings (merged into store/settingsDefaults.js).
 export const PRINT_DEFAULT_SETTINGS = {
+  printCopies: 1,
   receiptPaper: 'auto',
   receiptPrinterName: '',
   labelPrinterName: '',
@@ -41,6 +42,7 @@ export const LABEL_PRESETS = [
 ];
 
 const NUMBER_RANGES = {
+  printCopies: [1, 10],
   labelWidthMm: [10, 120],
   labelHeightMm: [10, 120],
   labelColumns: [1, 4],
@@ -72,6 +74,7 @@ export const readPrintSettings = (settings = {}) => {
     ])
   );
   numbers.labelColumns = Math.round(numbers.labelColumns);
+  numbers.printCopies = Math.floor(numbers.printCopies);
   return {
     receiptPaper: RECEIPT_PAPERS.includes(source.receiptPaper)
       ? source.receiptPaper

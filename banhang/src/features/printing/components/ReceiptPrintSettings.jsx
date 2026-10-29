@@ -1,14 +1,14 @@
-import { Button, Form, Radio, Tooltip } from 'antd';
+import { Button, Form, InputNumber, Radio, Tooltip } from 'antd';
 import { RECEIPT_PAPER_OPTIONS } from '../domain/printSettingsForm.js';
 import { printSampleReceipt } from '../samplePrints.js';
 import { usePrintSettingsForm } from '../usePrintSettingsForm.js';
 import PrinterSelectItem from './PrinterSelectItem.jsx';
 
-// Receipt printer and paper (System → In ấn → Hoá đơn); owns its form.
+// Copies, receipt printer and paper (System → In ấn → Hoá đơn); owns its form.
 // `printers`/`canChoose` come from usePrinters() in the parent (read once).
 const ReceiptPrintSettings = ({ printers, canChoose }) => {
   const { form, handleValuesChange, readPreviewSettings, save } =
-    usePrintSettingsForm({ successMessage: 'Đã lưu cài đặt máy in hoá đơn.' });
+    usePrintSettingsForm({ successMessage: 'Đã lưu cài đặt in hoá đơn.' });
   const paper = Form.useWatch('receiptPaper', form);
 
   return (
@@ -27,6 +27,9 @@ const ReceiptPrintSettings = ({ printers, canChoose }) => {
       <Form.Item label="Khổ giấy hoá đơn" name="receiptPaper">
         <Radio.Group options={RECEIPT_PAPER_OPTIONS} />
       </Form.Item>
+      <Form.Item label="Số bản in" name="printCopies">
+        <InputNumber min={1} max={10} precision={0} style={{ width: 120 }} />
+      </Form.Item>
       <Form.Item>
         <Tooltip
           title={
@@ -42,7 +45,7 @@ const ReceiptPrintSettings = ({ printers, canChoose }) => {
         </Tooltip>
       </Form.Item>
       <Button type="primary" onClick={save}>
-        Lưu máy in hoá đơn
+        Lưu
       </Button>
     </Form>
   );

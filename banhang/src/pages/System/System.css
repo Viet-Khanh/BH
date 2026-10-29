@@ -36,10 +36,6 @@
   margin-top: 0;
 }
 
-.system-spacer {
-  height: 16px;
-}
-
 @media (max-width: 767px) {
   .system-layout {
     flex-direction: column;
