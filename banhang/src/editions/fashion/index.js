@@ -15,6 +15,7 @@ export default defineEdition({
       units: false,
       barcode: false,
       labels: false,
+      sequentialCodes: false,
     },
     labels: { group: 'Danh mục', spec: 'Size / màu' },
   },

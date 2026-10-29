@@ -21,7 +21,8 @@ Merge order: **core defaults ← edition ← customer** (later wins).
 export default defineEdition({
   id: 'pharmacy',
   config: { name, tagline, appTitle, defaultShopName, invoiceTagline,
-            features: { dimensions, sampleData, units, barcode, labels }, labels: { group, spec } },
+            features: { dimensions, sampleData, units, barcode, labels, sequentialCodes },
+            labels: { group, spec } },
   routes: [{ module: 'expiry', path: '/expiry', page: ExpiryPage }],   // optional
   homeTiles: [{ module: 'expiry', label: 'HẠN DÙNG', to: '/expiry' }],  // optional
   hideModules: ['cashbook'],                                           // optional

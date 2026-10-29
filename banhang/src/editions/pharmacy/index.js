@@ -14,6 +14,7 @@ export default defineEdition({
       units: false,
       barcode: false,
       labels: false,
+      sequentialCodes: false,
     },
     labels: { group: 'Nhóm thuốc', spec: 'Quy cách đóng gói' },
   },

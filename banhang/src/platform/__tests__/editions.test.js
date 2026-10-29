@@ -30,6 +30,7 @@ describe.each(getAvailableEditions())('edition $id', (edition) => {
       units: expect.any(Boolean),
       barcode: expect.any(Boolean),
       labels: expect.any(Boolean),
+      sequentialCodes: expect.any(Boolean),
     });
     expect(edition.config.labels).toEqual({
       group: expect.any(String),
@@ -60,4 +61,11 @@ it('switches edition in demo/test builds and rejects unknown ids', () => {
   expect(getActiveModule().editionId).toBe('pharmacy');
   expect(hasFeature('dimensions')).toBe(false);
   expect(() => setActiveEdition('nope')).toThrow('Unknown edition "nope"');
+});
+
+it('uses sequential product codes only in the minimart edition', () => {
+  const enabled = getAvailableEditions()
+    .filter((edition) => edition.config.features.sequentialCodes)
+    .map((edition) => edition.id);
+  expect(enabled).toEqual(['minimart']);
 });
