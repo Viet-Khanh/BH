@@ -1,6 +1,6 @@
 # Barcode Scanning — Design
 
-Date: 2026-10-29 · Status: approved · Branch: `feat/minimart-units-barcode`
+Date: 2026-10-29 · Status: implemented · Branch: `feat/minimart-units-barcode`
 
 Phase 2 of the minimart track (phase 1: `2026-10-29-unit-conversion-design.md`).
 
