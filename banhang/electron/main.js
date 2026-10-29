@@ -5,7 +5,21 @@ import fs from 'fs/promises';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Electron's smallest custom page side, in microns.
+const MIN_PAGE_MICRONS = 353;
+
+const toMicrons = (mm) => Math.round(Number(mm) * 1000);
+
+// Named size ('A5', …) or custom { widthMm, heightMm } → { width, height } microns.
 const normalizePageSize = (value) => {
+  if (value && typeof value === 'object') {
+    const width = toMicrons(value.widthMm);
+    const height = toMicrons(value.heightMm);
+    if (!(width >= MIN_PAGE_MICRONS) || !(height >= MIN_PAGE_MICRONS)) {
+      return '';
+    }
+    return { width, height };
+  }
   const normalized = String(value || '')
     .trim()
     .toUpperCase();
@@ -72,6 +86,33 @@ const createPrintWindow = async (html, showWindow) => {
   return printWindow;
 };
 
+const listPrinters = async (webContents) => {
+  const printers = await webContents.getPrintersAsync();
+  return printers.map(({ name, displayName, isDefault }) => ({
+    name,
+    displayName: displayName || name,
+    isDefault: Boolean(isDefault),
+  }));
+};
+
+// A missing printer (settings restored on another machine) falls back to the
+// default printer; the renderer warns the user.
+const resolveDeviceName = async (webContents, value) => {
+  const deviceName = String(value || '').trim();
+  if (!deviceName) return { deviceName: '', fallback: false };
+  try {
+    const printers = await webContents.getPrintersAsync();
+    if (printers.some((printer) => printer.name === deviceName)) {
+      return { deviceName, fallback: false };
+    }
+    return { deviceName: '', fallback: true };
+  } catch (error) {
+    return { deviceName, fallback: false };
+  }
+};
+
+ipcMain.handle('list-printers', (event) => listPrinters(event.sender));
+
 ipcMain.handle('print-html', async (event, payload = {}) => {
   const { html = '', options = {} } = payload || {};
   if (!html) {
@@ -81,6 +122,10 @@ ipcMain.handle('print-html', async (event, payload = {}) => {
   const copies = Math.max(1, Math.round(Number(options.copies) || 1));
   const silent = options.silent !== false;
   const pageSize = normalizePageSize(options.pageSize);
+  const { deviceName, fallback } = await resolveDeviceName(
+    event.sender,
+    options.deviceName
+  );
   const printWindow = await createPrintWindow(html, !silent);
 
   try {
@@ -92,6 +137,13 @@ ipcMain.handle('print-html', async (event, payload = {}) => {
     if (pageSize) {
       printOptions.pageSize = pageSize;
     }
+    if (typeof pageSize === 'object') {
+      // Custom sizes (receipt roll, label row) are laid out edge to edge.
+      printOptions.margins = { marginType: 'none' };
+    }
+    if (deviceName) {
+      printOptions.deviceName = deviceName;
+    }
 
     await new Promise((resolve, reject) => {
       printWindow.webContents.print(printOptions, (success, failureReason) => {
@@ -102,7 +154,7 @@ ipcMain.handle('print-html', async (event, payload = {}) => {
         resolve();
       });
     });
-    return { ok: true };
+    return fallback ? { ok: true, fallback: true } : { ok: true };
   } finally {
     if (!printWindow.isDestroyed()) {
       printWindow.close();

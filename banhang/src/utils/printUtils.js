@@ -1,120 +1,35 @@
 import { message } from 'antd';
+import {
+  injectPageSizeCss,
+  normalizeMmPageSize,
+  normalizePageSize,
+} from './printPageSize.js';
+import {
+  resolveAutoHeightPageSize,
+  resolveAutoPageSize,
+} from './printMeasure.js';
 
-const PX_PER_MM = 96 / 25.4;
-const A5_HEIGHT_MM = 210;
-const A5_WIDTH_MM = 148;
-const A4_HEIGHT_MM = 297;
-
-const toPx = (mm) => mm * PX_PER_MM;
-
-const normalizePageSize = (value) => {
-  const normalized = String(value || '')
-    .trim()
-    .toUpperCase();
-  if (!normalized) return '';
-  const supported = [
-    'A0',
-    'A1',
-    'A2',
-    'A3',
-    'A4',
-    'A5',
-    'A6',
-    'LEGAL',
-    'LETTER',
-    'TABLOID',
-  ];
-  if (!supported.includes(normalized)) return '';
-  if (normalized === 'LEGAL') return 'Legal';
-  if (normalized === 'LETTER') return 'Letter';
-  if (normalized === 'TABLOID') return 'Tabloid';
-  return normalized;
-};
-
-const injectPageSizeCss = (htmlDocument, pageSize) => {
-  const normalizedPageSize = normalizePageSize(pageSize);
-  if (!normalizedPageSize) return htmlDocument;
-  const styleTag = `<style id="__print_page_size__">@page { size: ${normalizedPageSize} portrait; }</style>`;
-  if (htmlDocument.includes('</body>')) {
-    return htmlDocument.replace('</body>', `${styleTag}</body>`);
-  }
-  if (htmlDocument.includes('</head>')) {
-    return htmlDocument.replace('</head>', `${styleTag}</head>`);
-  }
-  return `${styleTag}${htmlDocument}`;
-};
-
-const waitForLayout = (iframeDocument) =>
-  new Promise((resolve) => {
-    const raf = iframeDocument.defaultView?.requestAnimationFrame;
-    if (!raf) {
-      setTimeout(resolve, 40);
-      return;
+const resolvePageSize = async (documentHtml, options) => {
+  const { pageSize, pageSizeMm, autoPageSize, autoHeightWidthMm } = options;
+  const explicit =
+    normalizeMmPageSize(pageSizeMm) || normalizePageSize(pageSize);
+  if (Number(autoHeightWidthMm) > 0) {
+    try {
+      const measured = await resolveAutoHeightPageSize(
+        documentHtml,
+        Number(autoHeightWidthMm)
+      );
+      return measured || explicit;
+    } catch (error) {
+      return explicit;
     }
-    raf(() => raf(() => setTimeout(resolve, 20)));
-  });
-
-const estimateContentHeightPx = async (htmlDocument, widthMm) => {
-  if (typeof document === 'undefined') return Number.POSITIVE_INFINITY;
-
-  const iframe = document.createElement('iframe');
-  iframe.setAttribute('aria-hidden', 'true');
-  iframe.style.position = 'fixed';
-  iframe.style.left = '-10000px';
-  iframe.style.top = '0';
-  iframe.style.opacity = '0';
-  iframe.style.pointerEvents = 'none';
-  iframe.style.width = `${toPx(widthMm)}px`;
-  iframe.style.height = `${toPx(A4_HEIGHT_MM)}px`;
-  iframe.style.border = '0';
-  iframe.style.background = 'transparent';
-  document.body.appendChild(iframe);
-
-  try {
-    await new Promise((resolve, reject) => {
-      let done = false;
-      const timeout = setTimeout(() => {
-        if (done) return;
-        done = true;
-        reject(new Error('print_measure_timeout'));
-      }, 1200);
-
-      iframe.onload = () => {
-        if (done) return;
-        done = true;
-        clearTimeout(timeout);
-        resolve();
-      };
-
-      iframe.srcdoc = htmlDocument;
-    });
-
-    const iframeDoc = iframe.contentDocument;
-    if (!iframeDoc) return Number.POSITIVE_INFINITY;
-    await waitForLayout(iframeDoc);
-    const body = iframeDoc.body;
-    const docEl = iframeDoc.documentElement;
-    if (!body || !docEl) return Number.POSITIVE_INFINITY;
-    return Math.max(
-      body.scrollHeight,
-      body.offsetHeight,
-      docEl.scrollHeight,
-      docEl.offsetHeight
-    );
-  } finally {
-    iframe.remove();
   }
-};
-
-const resolveAutoPageSize = async (htmlDocument) => {
-  const htmlForMeasure = injectPageSizeCss(htmlDocument, 'A5');
-  const contentHeightPx = await estimateContentHeightPx(
-    htmlForMeasure,
-    A5_WIDTH_MM
-  );
-  if (!Number.isFinite(contentHeightPx)) return 'A4';
-  const safeA5HeightPx = toPx(A5_HEIGHT_MM) - 64;
-  return contentHeightPx <= safeA5HeightPx ? 'A5' : 'A4';
+  if (!autoPageSize) return explicit;
+  try {
+    return await resolveAutoPageSize(documentHtml);
+  } catch (error) {
+    return explicit || 'A4';
+  }
 };
 
 const wrapHtmlDocument = (html) => {
@@ -133,7 +48,15 @@ const wrapHtmlDocument = (html) => {
 
 export const printHtml = async (
   html,
-  { copies = 1, forceDialog = false, pageSize = '', autoPageSize = false } = {}
+  {
+    copies = 1,
+    forceDialog = false,
+    pageSize = '',
+    pageSizeMm = null,
+    autoPageSize = false,
+    autoHeightWidthMm = 0,
+    deviceName = '',
+  } = {}
 ) => {
   const documentHtml = wrapHtmlDocument(html);
   if (!documentHtml) {
@@ -142,16 +65,14 @@ export const printHtml = async (
   }
 
   const safeCopies = Math.max(1, Math.round(Number(copies) || 1));
-  const explicitPageSize = normalizePageSize(pageSize);
-  let resolvedPageSize = explicitPageSize;
-  if (autoPageSize) {
-    try {
-      resolvedPageSize = await resolveAutoPageSize(documentHtml);
-    } catch (error) {
-      resolvedPageSize = explicitPageSize || 'A4';
-    }
-  }
+  const resolvedPageSize = await resolvePageSize(documentHtml, {
+    pageSize,
+    pageSizeMm,
+    autoPageSize,
+    autoHeightWidthMm,
+  });
   const htmlForPrint = injectPageSizeCss(documentHtml, resolvedPageSize);
+  const printerName = String(deviceName || '').trim();
 
   const hasElectronPrint =
     typeof window !== 'undefined' &&
@@ -163,9 +84,15 @@ export const printHtml = async (
         copies: safeCopies,
         silent: !forceDialog,
         pageSize: resolvedPageSize,
+        deviceName: printerName,
       });
       if (result?.ok === false) {
         throw new Error(result.error || 'Print failed');
+      }
+      if (result?.fallback) {
+        message.warning(
+          `Không tìm thấy máy in '${printerName}', đã in ra máy mặc định.`
+        );
       }
       return true;
     } catch (error) {
