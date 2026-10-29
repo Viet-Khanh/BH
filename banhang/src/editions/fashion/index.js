@@ -9,7 +9,7 @@ export default defineEdition({
     appTitle: 'PHẦN MỀM BÁN HÀNG THỜI TRANG - GIÀY DÉP',
     defaultShopName: 'Shop thời trang',
     invoiceTagline: 'QUẦN ÁO - GIÀY DÉP - TÚI XÁCH - PHỤ KIỆN',
-    features: { dimensions: false, sampleData: false },
+    features: { dimensions: false, sampleData: false, units: false },
     labels: { group: 'Danh mục', spec: 'Size / màu' },
   },
 });

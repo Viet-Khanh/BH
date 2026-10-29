@@ -27,6 +27,7 @@ describe.each(getAvailableEditions())('edition $id', (edition) => {
     expect(edition.config.features).toEqual({
       dimensions: expect.any(Boolean),
       sampleData: expect.any(Boolean),
+      units: expect.any(Boolean),
     });
     expect(edition.config.labels).toEqual({
       group: expect.any(String),

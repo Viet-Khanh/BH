@@ -8,7 +8,7 @@ export default defineEdition({
     appTitle: 'PHẦN MỀM BÁN HÀNG TẠP HOÁ - MINIMART',
     defaultShopName: 'Cửa hàng tạp hoá',
     invoiceTagline: 'HÀNG TIÊU DÙNG - ĐỒ UỐNG - THỰC PHẨM - HOÁ PHẨM',
-    features: { dimensions: false, sampleData: false },
+    features: { dimensions: false, sampleData: false, units: true },
     labels: { group: 'Ngành hàng', spec: 'Quy cách' },
   },
 });

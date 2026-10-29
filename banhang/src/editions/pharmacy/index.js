@@ -8,7 +8,7 @@ export default defineEdition({
     appTitle: 'PHẦN MỀM BÁN HÀNG NHÀ THUỐC',
     defaultShopName: 'Nhà thuốc',
     invoiceTagline: 'THUỐC - VITAMIN - THIẾT BỊ Y TẾ',
-    features: { dimensions: false, sampleData: false },
+    features: { dimensions: false, sampleData: false, units: false },
     labels: { group: 'Nhóm thuốc', spec: 'Quy cách đóng gói' },
   },
 });

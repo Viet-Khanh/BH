@@ -21,6 +21,7 @@ One module per retail industry. Read `../platform/README.md` first (contract, sl
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `features.dimensions`               | `components/invoice/itemsTable`, `components/invoice/productModal`, `components/measure/MeasureCells.jsx`, `utils/printItems.js`, `components/TemplateEditor.jsx` |
 | `features.sampleData`               | `pages/System/System.jsx`                                                                                                                                         |
+| `features.units`                    | `pages/Catalog/CatalogFormModal.jsx`, `components/invoice/productModal/InvoiceProductModal.jsx`                                                                   |
 | `labels`                            | `pages/Catalog/CatalogFormModal.jsx`                                                                                                                              |
 | `appTitle`                          | `App.jsx`, `applyEditionToDocument()`                                                                                                                             |
 | `defaultShopName`, `invoiceTagline` | `store/settingsDefaults.js`, `features/settings/templates/defaultInvoiceTemplate.js`                                                                              |
