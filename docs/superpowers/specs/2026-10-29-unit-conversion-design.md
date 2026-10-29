@@ -48,7 +48,8 @@ Product unit rules (backend validation on create/update/bulk, `400` on violation
 - At most 5 units per product.
 
 Line rules (backend, on invoice/purchase create and update):
-- `unitName` empty or equal to the product's base unit → `unitName = product.unit`, `factor = 1`.
+- `unitName` empty or equal to the product's base unit → the line carries no `unitName`/`factor`
+  (same shape as lines saved before units existed, so exported e-invoices are not flagged).
 - `unitName` set, `factor` set → kept (snapshot; allows editing old lines after the product
   changed).
 - `unitName` set, `factor` missing → resolved from `product.units`; unknown unit → `400`.
@@ -112,14 +113,15 @@ Models: `Product.units` sub-schema; `unitName: String`, `factor: Number` on
   Parity test with backend `getBaseQty` semantics.
 - Catalog: `pages/Catalog/ProductUnitsField.jsx` (Form.List: name, factor, sell price) rendered
   in `CatalogFormModal` when `units` is on; payload builders (`useCatalogForm.js`,
-  `features/sales/domain/salesDomain.js` `buildProductPayload`) carry `units`. Catalog stock
-  column shows `formatStockByUnits` when `units` is on.
+  `features/sales/domain/salesDomain.js` `buildProductPayload`) already spread form values,
+  so `units` is sent. Catalog ĐVT column shows `formatUnitsSummary` ("lon (lốc 6, thùng 24)").
 - Product modal (sales and purchases, `InvoiceProductModal` / `ProductInfoPanel`): unit
   selector (hidden when the product has no units). Changing the unit sets the price from the
   helpers. Stock line shows base stock plus `formatStockByUnits`.
 - Line building: `invoiceItemHandlers.js` `createConfirmAddHandler` and
-  `pages/Purchases/usePurchaseProductModal.js` `handleConfirmAdd` add `unitName`, `factor`.
-  Same product in two units = two lines; adding the same product+unit again merges as today.
+  `pages/Purchases/usePurchaseProductModal.js` `handleConfirmAdd` add `unitName`, `factor`
+  only for a packaging unit. Same product in two units = two lines (adding always appends a
+  line, as today).
 - Payloads keep the fields: `components/invoice/invoicePayload.js`,
   `features/purchases/domain/purchasesDomain.js` `normalizeItem`/`buildPurchasePayload`.
 - Display `item.unitName || product.unit`: `InvoiceItemRow.jsx`, `utils/printItems.js`
