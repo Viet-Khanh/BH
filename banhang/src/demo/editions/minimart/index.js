@@ -4,6 +4,7 @@ export default {
   id: 'minimart',
   seed: 1101,
   codePrefix: 'TH',
+  barcodePrefix: '893600',
   shop: {
     name: 'Tạp hoá Minh Anh',
     taxCode: '8012345678',

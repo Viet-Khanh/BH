@@ -68,7 +68,7 @@ describe('demo session', () => {
 
   it('reseeds corrupt data and supports manual reset', async () => {
     await activateEdition('minimart');
-    storage.setItem('bh-demo:v2:minimart:invoice', '{broken');
+    storage.setItem('bh-demo:v3:minimart:invoice', '{broken');
     configureStorage(storage);
     const result = await bootDemoSession();
     expect(result.notices).toEqual([DEMO_NOTICES.corruptReset]);

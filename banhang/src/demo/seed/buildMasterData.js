@@ -1,5 +1,6 @@
 import { SNAPSHOT_DATA_VERSION } from '@backend/utils/snapshotStatus.js';
 import { v4 as uuid } from 'uuid';
+import { ean13 } from './ean13.js';
 import { DEMO_SYSTEM_PASSWORD, SEED_DAYS } from '../config.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -21,7 +22,13 @@ const buildSettings = (edition, createdAt) => ({
   stockDebtSnapshotAt: createdAt,
 });
 
-const toProduct = (createdAt, prefix) => (row, index) => {
+// Minimart-style editions: 6-digit prefix + product no. + unit no. (0 = base unit).
+const barcodeFor = (barcodePrefix, index, unitIndex) =>
+  ean13(
+    `${barcodePrefix}${String(index + 1).padStart(3, '0')}${String(unitIndex).padStart(3, '0')}`
+  );
+
+const toProduct = (createdAt, prefix, barcodePrefix) => (row, index) => {
   const [
     group,
     name,
@@ -44,10 +51,14 @@ const toProduct = (createdAt, prefix) => (row, index) => {
     sellPriceDefault,
     sellPriceWholesale,
     openingStock,
-    units: units.map(([unitName, factor, sellPrice]) => ({
+    ...(barcodePrefix && { barcode: barcodeFor(barcodePrefix, index, 0) }),
+    units: units.map(([unitName, factor, sellPrice], unitIndex) => ({
       name: unitName,
       factor,
       sellPrice,
+      ...(barcodePrefix && {
+        barcode: barcodeFor(barcodePrefix, index, unitIndex + 1),
+      }),
     })),
     excludeFromProfit: false,
     note: '',
@@ -75,7 +86,9 @@ export const buildMasterData = (edition, now) => {
       note: '',
       createdAt,
     })),
-    products: edition.products.map(toProduct(createdAt, edition.codePrefix)),
+    products: edition.products.map(
+      toProduct(createdAt, edition.codePrefix, edition.barcodePrefix)
+    ),
     customers: customers.map(({ profile: _profile, ...customer }) => customer),
     suppliers: edition.suppliers.map((supplier) => ({
       id: uuid(),

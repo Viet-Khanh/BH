@@ -3,6 +3,7 @@ import { getBaseQty } from '../../utils/productUnits.js';
 import { dispatch } from '../demoApp.js';
 import { configureStorage, setActiveNamespace } from '../db/localStore.js';
 import { DEMO_EDITIONS } from '../editions/index.js';
+import { ean13 } from '../seed/ean13.js';
 import { seedEdition } from '../seed/seedEdition.js';
 import { createMemoryStorage } from './helpers/memoryStorage.js';
 
@@ -50,6 +51,21 @@ describe.each(DEMO_EDITIONS)('seeded edition $id', (edition) => {
     expect(
       invoices.some((invoice) => invoice.items.some((item) => item.unitName))
     ).toBe(true);
+  });
+
+  it('seeds unique valid EAN-13 barcodes only for the minimart', async () => {
+    const products = await get('/products');
+    const codes = products.flatMap((product) => [
+      product.barcode,
+      ...(product.units || []).map((unit) => unit.barcode),
+    ]);
+    if (edition.id !== 'minimart') {
+      expect(codes.some(Boolean)).toBe(false);
+      return;
+    }
+    expect(codes.every((code) => /^\d{13}$/.test(code))).toBe(true);
+    expect(new Set(codes).size).toBe(codes.length);
+    codes.forEach((code) => expect(ean13(code.slice(0, 12))).toBe(code));
   });
 
   it('keeps customer debt consistent with invoices and payments', async () => {
