@@ -1,6 +1,6 @@
 # Printing: Receipt Printer and Labels — Design
 
-Date: 2026-10-29 · Status: approved · Branch: `feat/minimart-units-barcode`
+Date: 2026-10-29 · Status: implemented · Branch: `feat/minimart-units-barcode`
 
 Phase 3 of the minimart track (phase 1 units, phase 2 barcode scanning).
 
