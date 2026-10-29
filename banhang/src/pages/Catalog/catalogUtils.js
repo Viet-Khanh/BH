@@ -11,22 +11,10 @@ export {
   hasSearchMatch,
   normalizeSearchText,
 } from '../../utils/searchText.js';
+export { buildCodeFromName } from '../../features/productCodes/productCodes.js';
 
 export const normalizeHeader = (value) =>
   normalizeSearchText(value).replace(/\s+/g, '');
-
-export const buildCodeFromName = (name = '') => {
-  const cleaned = name
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
-  if (!cleaned) return '';
-  return cleaned
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((word) => word[0]?.toUpperCase())
-    .join('');
-};
 
 export const parseNumberInput = sharedParseNumberInput;
 
@@ -126,10 +114,10 @@ export const IMPORT_CONFIGS = {
       const name = String(raw.name || '').trim();
       const unit = String(raw.unit || '').trim();
       if (!name || !unit) return null;
-      const code = String(raw.code || '').trim() || buildCodeFromName(name);
+      // A missing code is filled by fillImportCodes (deduped initials).
       return {
         id: uuid(),
-        code,
+        code: String(raw.code || '').trim(),
         name,
         unit,
         sellPriceDefault: parseImportNumber(raw.sellPriceDefault),

@@ -54,6 +54,16 @@ export const bulkFillMissingAvgCostFromRetail = async (ids) =>
     body: { ids: Array.isArray(ids) ? ids : [] },
   });
 
+// Next sequential product code (SP000001…), counted by the backend.
+export const getNextProductCode = async ({
+  prefix = 'SP',
+  digits = 6,
+} = {}) => {
+  const params = new URLSearchParams({ prefix, digits: String(digits) });
+  const data = await apiRequest(`/products/next-code?${params.toString()}`);
+  return data?.code || '';
+};
+
 export const clearAll = async () => apiRequest('/reset', { method: 'POST' });
 
 export const getSettings = async () => getById('settings', 'main');

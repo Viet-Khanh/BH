@@ -93,4 +93,20 @@ describe.each(DEMO_EDITIONS)('seeded edition $id', (edition) => {
     await get('/purchases-tools/recent?limit=20');
     await get('/sales/products?limit=10');
   });
+
+  it('serves the next product code and rejects duplicate codes', async () => {
+    expect(await get('/products/next-code?prefix=SP&digits=6')).toEqual({
+      code: 'SP000001',
+    });
+    const [first] = await get('/products');
+    const { status, data } = await dispatch({
+      method: 'POST',
+      path: '/api/products',
+      body: { name: 'Hàng thử mã trùng', unit: 'cái', code: first.code },
+    });
+    expect(status).toBe(400);
+    expect(data.message).toBe(
+      `Mã hàng ${first.code} đã dùng cho hàng ${first.name}.`
+    );
+  });
 });

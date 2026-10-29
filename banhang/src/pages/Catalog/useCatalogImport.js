@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { message } from 'antd';
 import * as XLSX from 'xlsx';
 import { saveWorkbook } from '../../utils/excelExport.js';
+import { fillImportCodes } from '../../features/productCodes/productCodes.js';
 import {
   buildProductPriceUpdateRows,
   buildTemplateRow,
@@ -163,7 +164,14 @@ const useCatalogImport = ({
         return;
       }
 
-      await bulkAdd(items);
+      await bulkAdd(
+        tabKey === 'products'
+          ? fillImportCodes(
+              items,
+              (products || []).map((item) => item.code)
+            )
+          : items
+      );
       if (skipped > 0) {
         message.success(
           `Đã nhập ${items.length} dòng. Bỏ qua ${skipped} dòng trống hoặc thiếu dữ liệu.`
