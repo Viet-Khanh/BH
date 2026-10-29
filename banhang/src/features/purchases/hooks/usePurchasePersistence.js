@@ -18,6 +18,7 @@ export const usePurchasePersistence = ({
   isFullEdit,
   setEditing,
   mergeCatalogProducts,
+  onCreated,
 }) => {
   const persistPurchase = useCallback(async () => {
     if (isEdit && !isFullEdit) return editing;
@@ -70,7 +71,9 @@ export const usePurchasePersistence = ({
       if (Array.isArray(data?.products)) {
         mergeCatalogProducts(data.products);
       }
-      return data?.purchase || purchasePayload;
+      const saved = data?.purchase || purchasePayload;
+      onCreated?.(saved, Array.isArray(data?.products) ? data.products : []);
+      return saved;
     } catch (error) {
       message.error('Không thể lưu phiếu nhập.');
       return null;
@@ -84,6 +87,7 @@ export const usePurchasePersistence = ({
     items,
     mergeCatalogProducts,
     note,
+    onCreated,
     setEditing,
     supplierId,
   ]);

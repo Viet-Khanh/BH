@@ -10,10 +10,9 @@ import InvoiceProductModal from '../../../components/invoice/productModal/Invoic
 import InvoiceSearchBar from '../../../components/invoice/InvoiceSearchBar.jsx';
 import InvoiceTopSection from '../../../components/invoice/InvoiceTopSection.jsx';
 import SupplierDebtPaymentModal from '../../../components/SupplierDebtPaymentModal.jsx';
-import PurchaseDetailModal from '../../../pages/Purchases/PurchaseDetailModal.jsx';
-import PurchaseRecentModal from '../../../pages/Purchases/PurchaseRecentModal.jsx';
 import { usePurchasePreviewHtml } from '../hooks/usePurchasePreviewHtml.js';
 import { usePurchasesScreen } from '../hooks/usePurchasesScreen.js';
+import PurchaseRecentDialogs from './PurchaseRecentDialogs.jsx';
 
 const PurchasesScreen = () => {
   const {
@@ -26,6 +25,7 @@ const PurchasesScreen = () => {
     debtPayment,
     preview,
     actions,
+    labels,
   } = usePurchasesScreen();
 
   const previewHtml = usePurchasePreviewHtml({ data, draft, payments });
@@ -127,25 +127,11 @@ const PurchasesScreen = () => {
         onConfirmAdd={productSelection.handleConfirmAdd}
         priceMin={undefined}
       />
-      <PurchaseRecentModal
-        open={recent.open}
-        onClose={() => recent.setOpen(false)}
-        filteredPurchases={recent.purchases}
-        suppliers={data.suppliers}
-        supplierOptions={data.supplierOptions}
-        filterRange={recent.filterRange}
-        onFilterRangeChange={recent.setFilterRange}
-        filterSupplier={recent.filterSupplier}
-        onFilterSupplierChange={recent.setFilterSupplier}
-        exportRows={recent.exportRows}
-        onSelectDetail={actions.selectDetail}
-        onSelectPayment={actions.selectPayment}
-      />
-      <PurchaseDetailModal
-        open={recent.detailOpen}
-        onClose={() => recent.setDetailOpen(false)}
-        detail={recent.detail}
-        products={data.products}
+      <PurchaseRecentDialogs
+        data={data}
+        recent={recent}
+        actions={actions}
+        labels={labels}
       />
       <InvoicePaymentModal
         open={payments.paymentModalOpen}

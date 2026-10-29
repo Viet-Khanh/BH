@@ -9,6 +9,7 @@ import { getPurchaseDetail } from '../api/purchasesApi.js';
 import { usePurchaseBarcode } from './usePurchaseBarcode.js';
 import { usePurchaseDebtState } from './usePurchaseDebtState.js';
 import { usePurchaseDraftState } from './usePurchaseDraftState.js';
+import { usePurchaseLabels } from './usePurchaseLabels.js';
 import { usePurchaseModalState } from './usePurchaseModalState.js';
 import { usePurchasePaymentRecords } from './usePurchasePaymentRecords.js';
 import { usePurchasePersistence } from './usePurchasePersistence.js';
@@ -22,6 +23,7 @@ export const usePurchasesScreen = () => {
   const { items: suppliers, load: loadSuppliers } = useSupplierStore();
   const { settings, load: loadSettings } = useSettingsStore();
   const catalog = usePurchasesCatalog();
+  const labels = usePurchaseLabels({ settings, products: catalog.products });
   const draft = usePurchaseDraftState({ suppliers });
   const modals = usePurchaseModalState();
   const recent = usePurchaseRecentState();
@@ -94,6 +96,7 @@ export const usePurchasesScreen = () => {
     isFullEdit: draft.isFullEdit,
     setEditing: draft.setEditing,
     mergeCatalogProducts: catalog.mergeCatalogProducts,
+    onCreated: labels.onPurchaseCreated,
   });
 
   const handleCancelTicket = useCallback(() => {
@@ -314,5 +317,6 @@ export const usePurchasesScreen = () => {
       selectDetail: handleSelectDetail,
       selectPayment: handleSelectPayment,
     },
+    labels,
   };
 };

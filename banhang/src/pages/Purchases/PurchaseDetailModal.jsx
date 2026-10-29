@@ -1,4 +1,4 @@
-import { Modal } from 'antd';
+import { Button, Modal } from 'antd';
 import {
   DimensionCells,
   DimensionHeaders,
@@ -6,12 +6,23 @@ import {
 import { formatMoney } from '../../utils/moneyFormat.js';
 import { getItemUnitName } from '../../utils/productUnits.js';
 
-const PurchaseDetailModal = ({ open, onClose, detail, products }) => (
+// `onPrintLabels(detail)` adds an "In tem" button (edition flag `labels`).
+const PurchaseDetailModal = ({
+  open,
+  onClose,
+  detail,
+  products,
+  onPrintLabels,
+}) => (
   <Modal
     title="Chi tiết phiếu nhập"
     open={open}
     onCancel={onClose}
-    footer={null}
+    footer={
+      onPrintLabels && detail ? (
+        <Button onClick={() => onPrintLabels(detail)}>In tem</Button>
+      ) : null
+    }
     width={900}
   >
     {detail && (

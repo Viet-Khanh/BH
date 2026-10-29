@@ -6,6 +6,7 @@ export const getColumns = ({
   activeKey,
   onEdit,
   onDelete,
+  onPrintLabel = null,
   showSensitiveInfo = false,
 }) => {
   const actionColumn = {
@@ -13,6 +14,9 @@ export const getColumns = ({
     render: (_, record) => (
       <div className="flex-row">
         <Button onClick={() => onEdit(record)}>Sửa</Button>
+        {activeKey === 'products' && onPrintLabel && (
+          <Button onClick={() => onPrintLabel(record)}>In tem</Button>
+        )}
         <Button danger onClick={() => onDelete(record)}>
           Xóa
         </Button>

@@ -4,6 +4,7 @@ import {
   LABEL_PRESETS,
   PRINT_DEFAULT_SETTINGS,
   readPrintSettings,
+  shouldAutoPrintLabels,
 } from '../domain/printSettings.js';
 
 describe('readPrintSettings', () => {
@@ -107,4 +108,14 @@ it('describes the label presets', () => {
     '40x30x1',
     '50x30x1',
   ]);
+});
+
+describe('shouldAutoPrintLabels', () => {
+  it('needs the labels flag and the setting (default on)', () => {
+    expect(shouldAutoPrintLabels({}, true)).toBe(true);
+    expect(shouldAutoPrintLabels({}, false)).toBe(false);
+    expect(
+      shouldAutoPrintLabels({ autoPrintLabelsOnPurchase: false }, true)
+    ).toBe(false);
+  });
 });

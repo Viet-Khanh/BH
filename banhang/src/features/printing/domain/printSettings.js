@@ -98,3 +98,8 @@ export const getLabelRowSize = (print) => ({
     (print.labelColumns - 1) * print.labelGapMm,
   heightMm: print.labelHeightMm,
 });
+
+// Open the label list after a new purchase: edition flag `labels` + the setting.
+export const shouldAutoPrintLabels = (settings, labelsEnabled) =>
+  Boolean(labelsEnabled) &&
+  readPrintSettings(settings).autoPrintLabelsOnPurchase;

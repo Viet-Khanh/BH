@@ -1,6 +1,8 @@
 import { Button, Tabs } from 'antd';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LabelPrintModal from '../../features/printing/components/LabelPrintModal.jsx';
+import { useLabelPrint } from '../../features/printing/useLabelPrint.js';
 import CatalogFormModal from './CatalogFormModal.jsx';
 import CatalogTabContent from './CatalogTabContent.jsx';
 import OpeningImportPreviewModal from './OpeningImportPreviewModal.jsx';
@@ -55,6 +57,7 @@ const Catalog = () => {
 
   const [activeKey, setActiveKey] = useState('products');
   const [searchText, setSearchText] = useState('');
+  const labelPrint = useLabelPrint();
   const catalogForm = useCatalogForm({
     activeKey,
     addProduct,
@@ -182,9 +185,10 @@ const Catalog = () => {
         activeKey,
         onEdit: openEdit,
         onDelete: handleDelete,
+        onPrintLabel: labelPrint.enabled ? labelPrint.openForProduct : null,
         showSensitiveInfo,
       }),
-    [activeKey, showSensitiveInfo]
+    [activeKey, labelPrint.enabled, showSensitiveInfo]
   );
   const exportConfig = useMemo(
     () => getExportConfig({ activeKey, dataSource, showSensitiveInfo }),
@@ -303,6 +307,7 @@ const Catalog = () => {
         onConfirm={confirmAvgCostUpdate}
         confirmLoading={avgCostUpdating}
       />
+      <LabelPrintModal {...labelPrint} />
     </div>
   );
 };
