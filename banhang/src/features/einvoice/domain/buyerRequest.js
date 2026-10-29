@@ -1,3 +1,5 @@
+import { isWalkInCustomer } from '../../../utils/customers.js';
+
 // Buyer data taken at the counter when the customer wants an e-invoice
 // (`invoice.einvoiceRequest`; the backend prefers it over the customer record).
 export const REQUEST_FIELDS = [
@@ -8,10 +10,7 @@ export const REQUEST_FIELDS = [
   'email',
 ];
 
-const WALK_IN_NAMES = new Set(['Khách lẻ', 'Khach le']);
-
-export const isWalkInCustomer = (customer) =>
-  !customer || WALK_IN_NAMES.has(customer.name);
+export { isWalkInCustomer };
 
 // Form values: the request when filled, else the customer's own data.
 export const initialRequestValues = (request, customer) => {

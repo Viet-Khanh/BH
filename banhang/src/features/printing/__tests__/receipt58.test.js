@@ -85,6 +85,39 @@ describe('buildReceipt58Html', () => {
     expect(html).not.toContain('Còn nợ');
   });
 
+  it('prints old debt and the grand total; nothing owed when fully paid', () => {
+    const html = build({
+      invoice: { ...invoice, customerDebt: 100000 },
+      payments: [{ amount: 555000 }],
+    });
+    expect(html).toContain('Nợ cũ');
+    expect(html).toContain('100.000');
+    expect(html).toContain('Tổng thanh toán');
+    expect(html).toContain('555.000');
+    expect(html).not.toContain('Còn nợ');
+    expect(html).not.toContain('Tiền thối');
+  });
+
+  it('prints the remaining debt when underpaid with old debt', () => {
+    const html = build({
+      invoice: { ...invoice, customerDebt: 100000 },
+      payments: [{ amount: 500000 }],
+    });
+    expect(html).toContain('Còn nợ');
+    expect(html).toContain('55.000');
+    expect(html).not.toContain('Tiền thối');
+  });
+
+  it('prints change when overpaid with old debt', () => {
+    const html = build({
+      invoice: { ...invoice, customerDebt: 100000 },
+      payments: [{ amount: 600000 }],
+    });
+    expect(html).toContain('Tiền thối');
+    expect(html).toContain('45.000');
+    expect(html).not.toContain('Còn nợ');
+  });
+
   it('hides the walk-in customer and shows a named one', () => {
     expect(build()).not.toContain('Khách lẻ');
     expect(build({ customer: null })).not.toContain('Khách hàng');

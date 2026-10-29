@@ -1,6 +1,6 @@
 // Sales receipt for 58 mm roll paper (printable width ≈ 48 mm, ~32 characters).
 import dayjs from 'dayjs';
-import { isWalkInCustomer } from '../einvoice/domain/buyerRequest.js';
+import { isWalkInCustomer } from '../../utils/customers.js';
 import { escapeHtml } from '../../utils/htmlEscape.js';
 import { getLineAmount, getMeasuredQty } from '../../utils/lineMeasure.js';
 import { formatMeasure } from '../../utils/measureFormat.js';
@@ -70,13 +70,18 @@ const buildItemHtml = (item, products) => {
   )}</div>`;
 };
 
-const buildTotalsHtml = (total, paid) => {
-  const lines = [
-    row('TỔNG CỘNG', formatMoney(total), 'row total'),
-    row('Khách trả', formatMoney(paid)),
-  ];
-  if (paid < total) lines.push(row('Còn nợ', formatMoney(total - paid)));
-  if (paid > total) lines.push(row('Tiền thối', formatMoney(paid - total)));
+const buildTotalsHtml = (total, oldDebt, paid) => {
+  const lines = [row('TỔNG CỘNG', formatMoney(total), 'row total')];
+  if (oldDebt !== 0) {
+    lines.push(
+      row('Nợ cũ', formatMoney(oldDebt)),
+      row('Tổng thanh toán', formatMoney(total + oldDebt), 'row total')
+    );
+  }
+  lines.push(row('Khách trả', formatMoney(paid)));
+  const remaining = total + oldDebt - paid;
+  if (remaining > 0) lines.push(row('Còn nợ', formatMoney(remaining)));
+  if (remaining < 0) lines.push(row('Tiền thối', formatMoney(-remaining)));
   return lines.join('');
 };
 
@@ -95,6 +100,7 @@ export const buildReceipt58Html = ({
     invoice.total ??
       sumBy(items, (item) => item.lineTotal ?? getLineAmount(item))
   );
+  const oldDebt = Number(invoice.customerDebt || 0);
   const paid = sumBy(payments, (payment) => payment.amount);
   const note = invoice.printNote || invoice.note || '';
   const sections = [
@@ -104,7 +110,7 @@ export const buildReceipt58Html = ({
     '<div class="sep"></div>',
     items.map((item) => buildItemHtml(item, products || [])).join(''),
     '<div class="sep"></div>',
-    buildTotalsHtml(total, paid),
+    buildTotalsHtml(total, oldDebt, paid),
     note ? `<div class="sep"></div><div>Ghi chú: ${text(note)}</div>` : '',
     '<div class="sep"></div>',
     '<div class="center">Cảm ơn quý khách!</div>',
