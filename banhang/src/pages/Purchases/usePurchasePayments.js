@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { message } from 'antd';
 import { v4 as uuid } from 'uuid';
 
@@ -39,8 +39,10 @@ const usePurchasePayments = ({
   addPayment,
   updatePayment,
   removePayment,
+  onCheckedOut, // (purchase, { print, paid }) before the modal closes and the form resets
 }) => {
   const isEdit = Boolean(editing);
+  const checkingOutRef = useRef(false);
   const paymentsByPurchase = useMemo(
     () => buildPaymentsByPurchase(payments),
     [payments]
@@ -90,7 +92,18 @@ const usePurchasePayments = ({
     return getPaymentsByPurchaseId(payments, editing.id);
   }, [payments, editing]);
 
-  const handleCheckout = async () => {
+  // `print`: F8 "Lưu và in" (true) / F12 "Lưu không in". One checkout at a time.
+  const handleCheckout = async (options) => {
+    if (checkingOutRef.current) return;
+    checkingOutRef.current = true;
+    try {
+      await runCheckout(options?.print === true);
+    } finally {
+      checkingOutRef.current = false;
+    }
+  };
+
+  const runCheckout = async (print) => {
     const target =
       editing && !persistOnEdit ? editing : await persistPurchase();
     if (!target) return;
@@ -139,6 +152,7 @@ const usePurchasePayments = ({
       }
     }
     message.success('Đã ghi nhận thanh toán.');
+    onCheckedOut?.(target, { print, paid: enteredPaid });
     setPaymentAmount(0);
     setPaymentNote('');
     setPaymentMethod('cash');

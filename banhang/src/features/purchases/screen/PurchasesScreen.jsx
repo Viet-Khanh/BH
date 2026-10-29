@@ -10,6 +10,7 @@ import InvoiceProductModal from '../../../components/invoice/productModal/Invoic
 import InvoiceSearchBar from '../../../components/invoice/InvoiceSearchBar.jsx';
 import InvoiceTopSection from '../../../components/invoice/InvoiceTopSection.jsx';
 import SupplierDebtPaymentModal from '../../../components/SupplierDebtPaymentModal.jsx';
+import { usePurchaseCheckoutKeys } from '../hooks/usePurchaseCheckoutKeys.js';
 import { usePurchasePreviewHtml } from '../hooks/usePurchasePreviewHtml.js';
 import { usePurchasesScreen } from '../hooks/usePurchasesScreen.js';
 import PurchaseRecentDialogs from './PurchaseRecentDialogs.jsx';
@@ -29,6 +30,10 @@ const PurchasesScreen = () => {
   } = usePurchasesScreen();
 
   const previewHtml = usePurchasePreviewHtml({ data, draft, payments });
+  usePurchaseCheckoutKeys({
+    open: payments.paymentModalOpen,
+    checkout: payments.checkout,
+  });
 
   return (
     <div className="page-card pos-shell">
@@ -151,8 +156,8 @@ const PurchasesScreen = () => {
         onPaymentMethodChange={payments.setPaymentMethod}
         paymentNote={payments.paymentNote}
         onPaymentNoteChange={payments.setPaymentNote}
-        onCheckoutPrint={payments.checkout}
-        onCheckout={payments.checkout}
+        onCheckoutPrint={() => payments.checkout({ print: true })}
+        onCheckout={() => payments.checkout({ print: false })}
         focusTriggerAfterClose={false}
       />
       <InvoicePreviewModal

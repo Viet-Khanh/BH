@@ -14,6 +14,7 @@ import { usePurchaseModalState } from './usePurchaseModalState.js';
 import { usePurchasePaymentRecords } from './usePurchasePaymentRecords.js';
 import { usePurchasePersistence } from './usePurchasePersistence.js';
 import { usePurchaseRecentState } from './usePurchaseRecentState.js';
+import { usePurchaseSavePrint } from './usePurchaseSavePrint.js';
 import { usePurchasesBootstrap } from './usePurchasesBootstrap.js';
 import { usePurchasesCatalog } from './usePurchasesCatalog.js';
 import { usePurchasesNavigation } from './usePurchasesNavigation.js';
@@ -24,11 +25,7 @@ export const usePurchasesScreen = () => {
   const { settings, load: loadSettings } = useSettingsStore();
   const catalog = usePurchasesCatalog();
   const modals = usePurchaseModalState();
-  const labels = usePurchaseLabels({
-    settings,
-    products: catalog.products,
-    paymentModalOpen: modals.paymentModalOpen,
-  });
+  const labels = usePurchaseLabels({ settings, products: catalog.products });
   const draft = usePurchaseDraftState({ suppliers });
   const recent = usePurchaseRecentState();
   const payments = usePurchasePaymentRecords({
@@ -38,6 +35,16 @@ export const usePurchasesScreen = () => {
   const debt = usePurchaseDebtState({
     supplierId: draft.supplierId,
     excludePurchaseId: draft.editing?.id,
+  });
+
+  const savePrint = usePurchaseSavePrint({
+    settings,
+    labels,
+    paymentModalOpen: modals.paymentModalOpen,
+    draft,
+    supplierDebt: debt.supplierDebt,
+    suppliers,
+    products: catalog.products,
   });
 
   usePurchasesBootstrap({ loadSettings, loadSuppliers });
@@ -100,7 +107,7 @@ export const usePurchasesScreen = () => {
     isFullEdit: draft.isFullEdit,
     setEditing: draft.setEditing,
     mergeCatalogProducts: catalog.mergeCatalogProducts,
-    onCreated: labels.onPurchaseCreated,
+    onSaved: savePrint.rememberSaved,
   });
 
   const handleCancelTicket = useCallback(() => {
@@ -139,6 +146,7 @@ export const usePurchasesScreen = () => {
     addPayment: payments.addPayment,
     updatePayment: payments.updatePayment,
     removePayment: payments.removePayment,
+    onCheckedOut: savePrint.onCheckedOut,
   });
 
   const fetchPurchaseDetail = useCallback(
