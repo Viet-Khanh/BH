@@ -3,7 +3,10 @@ import { message } from 'antd';
 import { getPurchaseLineTotal } from '../../features/purchases/domain/purchasesDomain.js';
 import { usePendingUnit } from '../../components/invoice/productModal/usePendingUnit.js';
 import { readDimensions } from '../../utils/lineMeasure.js';
-import { getUnitCostPrice } from '../../utils/productUnits.js';
+import {
+  buildLineUnitFields,
+  getUnitCostPrice,
+} from '../../utils/productUnits.js';
 import { hasSearchMatch, normalizeSearchText } from '../../utils/searchText.js';
 
 const usePurchaseProductModal = ({
@@ -116,12 +119,7 @@ const usePurchaseProductModal = ({
         lineNote: '',
         length: dimensions.length,
         width: dimensions.width,
-        ...(pendingUnit.selection.value
-          ? {
-              unitName: pendingUnit.selection.value,
-              factor: pendingUnit.selection.factor,
-            }
-          : {}),
+        ...buildLineUnitFields(pendingUnit.selection),
       },
     ]);
 

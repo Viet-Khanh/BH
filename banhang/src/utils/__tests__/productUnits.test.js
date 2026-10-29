@@ -5,6 +5,7 @@ import {
 } from '@backend/utils/productUnits.js';
 import {
   MAX_PRODUCT_UNITS,
+  buildLineUnitFields,
   findProductUnit,
   formatStockByUnits,
   formatStockLine,
@@ -93,5 +94,14 @@ describe('productUnits (frontend)', () => {
     expect(formatStockLine(product)).toBe('Tồn kho: 51 lon (2 thùng 3 lon)');
     expect(formatStockLine({ ...product, stock: 3 })).toBe('Tồn kho: 3 lon');
     expect(formatStockLine({ ...product, stock: 0 })).toBe('Tồn kho: 0 lon');
+  });
+
+  it('snapshots the chosen unit onto a line', () => {
+    expect(buildLineUnitFields({ value: 'thùng', factor: 24 })).toEqual({
+      unitName: 'thùng',
+      factor: 24,
+    });
+    expect(buildLineUnitFields({ value: '', factor: 1 })).toEqual({});
+    expect(buildLineUnitFields(undefined)).toEqual({});
   });
 });

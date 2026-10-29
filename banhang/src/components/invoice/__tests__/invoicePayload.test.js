@@ -24,6 +24,31 @@ describe('buildInvoicePayload', () => {
       excludeFromProfitSnapshot: true,
     });
   });
+
+  it('keeps the line unit snapshot', () => {
+    const payload = buildInvoicePayload({
+      items: [
+        {
+          productId: 'p1',
+          qty: 2,
+          unitPrice: 220000,
+          lineTotal: 440000,
+          unitName: 'thùng',
+          factor: 24,
+        },
+      ],
+      products: [{ id: 'p1', avgCost: 8000 }],
+      invoice: null,
+      draftCode: 'INV-2',
+      customerId: 'customer-1',
+      date: '2026-10-29T00:00:00.000Z',
+      totals: { subTotal: 440000, total: 440000 },
+      status: 'CHUA THU',
+      note: '',
+    });
+
+    expect(payload.items[0]).toMatchObject({ unitName: 'thùng', factor: 24 });
+  });
 });
 
 describe('createPersistInvoice', () => {

@@ -1,5 +1,6 @@
 import { message } from 'antd';
 import { getLineAmount, readDimensions } from '../../utils/lineMeasure.js';
+import { buildLineUnitFields } from '../../utils/productUnits.js';
 
 export const createConfirmAddHandler =
   ({
@@ -40,9 +41,7 @@ export const createConfirmAddHandler =
       lineNote: '',
       length: dimensions.length,
       width: dimensions.width,
-      ...(pendingUnit?.value
-        ? { unitName: pendingUnit.value, factor: pendingUnit.factor }
-        : {}),
+      ...buildLineUnitFields(pendingUnit),
     };
     setItems((prev) => [...prev, newItem]);
     if (closeAfter) {

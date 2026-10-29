@@ -86,3 +86,9 @@ export const formatStockLine = (product) => {
     ? `Tồn kho: ${base}`
     : `Tồn kho: ${base} (${byUnits})`;
 };
+
+// Unit snapshot of a new line; nothing for the base unit.
+export const buildLineUnitFields = (selection) =>
+  selection?.value
+    ? { unitName: selection.value, factor: Number(selection.factor) }
+    : {};
