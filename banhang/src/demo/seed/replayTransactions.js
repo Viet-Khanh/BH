@@ -42,12 +42,17 @@ const replayPurchase = async (event, { api, nextCode }) => {
 };
 
 const buildInvoiceItems = (eventItems, productById) =>
-  eventItems.map(({ productId, qty, priceType }) => {
+  eventItems.map(({ productId, qty, priceType, unitName, factor = 1 }) => {
     const product = productById.get(productId);
-    const unitPrice =
+    const unit = product.units?.find((entry) => entry.name === unitName);
+    const basePrice =
       priceType === 'wholesale'
         ? product.sellPriceWholesale
         : product.sellPriceDefault;
+    const unitPrice =
+      unit && priceType !== 'wholesale' && unit.sellPrice != null
+        ? unit.sellPrice
+        : basePrice * factor;
     return {
       productId,
       qty,
@@ -56,6 +61,7 @@ const buildInvoiceItems = (eventItems, productById) =>
       lineNote: '',
       costPriceSnapshot: Number(product.avgCost || 0),
       excludeFromProfitSnapshot: Boolean(product.excludeFromProfit),
+      ...(unit ? { unitName, factor } : {}),
     };
   });
 

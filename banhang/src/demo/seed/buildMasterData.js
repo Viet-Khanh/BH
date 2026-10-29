@@ -31,6 +31,7 @@ const toProduct = (createdAt, prefix) => (row, index) => {
     sellPriceDefault,
     sellPriceWholesale,
     openingStock,
+    units = [],
   ] = row;
   return {
     id: uuid(),
@@ -43,6 +44,11 @@ const toProduct = (createdAt, prefix) => (row, index) => {
     sellPriceDefault,
     sellPriceWholesale,
     openingStock,
+    units: units.map(([unitName, factor, sellPrice]) => ({
+      name: unitName,
+      factor,
+      sellPrice,
+    })),
     excludeFromProfit: false,
     note: '',
     createdAt,

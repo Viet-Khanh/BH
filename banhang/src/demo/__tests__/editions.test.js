@@ -15,7 +15,7 @@ describe.each(DEMO_EDITIONS)('edition $id', (edition) => {
     const names = new Set();
     edition.products.forEach((row) => {
       const [group, name, unit, , cost, retail, wholesale, stock] = row;
-      expect(row).toHaveLength(8);
+      expect(row.length).toBeGreaterThanOrEqual(8);
       expect(group && name).toBeTruthy();
       expect(edition.units).toContain(unit);
       expect(cost).toBeGreaterThan(0);

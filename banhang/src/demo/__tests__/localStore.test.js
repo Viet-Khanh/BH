@@ -20,7 +20,7 @@ describe('localStore', () => {
 
   it('persists collections under the namespaced key', () => {
     writeCollection('product', [{ id: 'p1' }]);
-    expect(storage.getItem('bh-demo:v1:minimart:product')).toBe(
+    expect(storage.getItem('bh-demo:v2:minimart:product')).toBe(
       '[{"id":"p1"}]'
     );
     configureStorage(storage);
@@ -45,9 +45,9 @@ describe('localStore', () => {
   });
 
   it('detects corrupt collections and clears a namespace', () => {
-    storage.setItem('bh-demo:v1:minimart:invoice', '{oops');
+    storage.setItem('bh-demo:v2:minimart:invoice', '{oops');
     expect(findCorruptCollections('minimart')).toEqual([
-      'bh-demo:v1:minimart:invoice',
+      'bh-demo:v2:minimart:invoice',
     ]);
     expect(() => readCollection('invoice')).toThrow('Dữ liệu demo bị hỏng');
     clearNamespace('minimart');

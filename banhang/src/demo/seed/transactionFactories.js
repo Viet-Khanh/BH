@@ -26,14 +26,28 @@ const pickDistinct = (random, list, count) => {
   return picked;
 };
 
+const pickUnit = (random, product) =>
+  product.units?.length && random.chance(0.4)
+    ? random.pick(product.units)
+    : null;
+
 export const makePurchase = ({ edition, master, random, stock }) => {
   const [minQty, maxQty] = edition.activity.purchaseQty;
   const products = pickDistinct(random, master.products, random.int(3, 5));
   const items = products.map((product) => {
-    const qty = random.int(minQty, maxQty);
-    stock.add(product.id, qty);
-    const unitCost = roundPrice(product.avgCost * (0.95 + random.next() * 0.1));
-    return { productId: product.id, qty, unitCost };
+    const unit = pickUnit(random, product);
+    const qty = unit ? random.int(1, 2) : random.int(minQty, maxQty);
+    const factor = unit ? unit.factor : 1;
+    stock.add(product.id, qty * factor);
+    const unitCost = roundPrice(
+      product.avgCost * factor * (0.95 + random.next() * 0.1)
+    );
+    return {
+      productId: product.id,
+      qty,
+      unitCost,
+      ...(unit ? { unitName: unit.name, factor } : {}),
+    };
   });
   return {
     kind: 'purchase',
@@ -56,14 +70,21 @@ export const makeInvoice = ({ edition, master, random, stock }) => {
   const profile = master.profileById[customerId];
   const products = pickDistinct(random, candidates, random.int(1, 4));
   const items = products.map((product) => {
-    const wanted = random.int(1, edition.activity.maxQty);
-    const qty = Math.min(stock.available(product.id), wanted);
-    stock.take(product.id, qty);
+    const unit = pickUnit(random, product);
+    const factor =
+      unit && stock.available(product.id) >= unit.factor ? unit.factor : 1;
+    const wanted = factor > 1 ? 1 : random.int(1, edition.activity.maxQty);
+    const qty = Math.min(
+      Math.floor(stock.available(product.id) / factor),
+      wanted
+    );
+    stock.take(product.id, qty * factor);
     const wholesale = profile !== 'walkin' && random.chance(0.5);
     return {
       productId: product.id,
       qty,
       priceType: wholesale ? 'wholesale' : 'retail',
+      ...(factor > 1 ? { unitName: unit.name, factor } : {}),
     };
   });
   return {

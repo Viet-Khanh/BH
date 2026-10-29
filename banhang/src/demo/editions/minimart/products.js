@@ -1,16 +1,16 @@
-// [group, name, unit, spec, avgCost, sellPriceDefault, sellPriceWholesale, openingStock]
+// [group, name, unit, spec, avgCost, sellPriceDefault, sellPriceWholesale, openingStock, units?]
 // prettier-ignore
 export default [
-  ['Đồ uống', 'Nước suối Aquafina 500ml', 'chai', '500ml', 3500, 5000, 4500, 120],
-  ['Đồ uống', 'Coca-Cola lon 320ml', 'lon', '320ml', 7000, 10000, 9000, 96],
-  ['Đồ uống', 'Pepsi lon 320ml', 'lon', '320ml', 6800, 10000, 8800, 96],
+  ['Đồ uống', 'Nước suối Aquafina 500ml', 'chai', '500ml', 3500, 5000, 4500, 120, [['thùng', 24, 108000]]],
+  ['Đồ uống', 'Coca-Cola lon 320ml', 'lon', '320ml', 7000, 10000, 9000, 96, [['lốc', 6, 58000], ['thùng', 24, 220000]]],
+  ['Đồ uống', 'Pepsi lon 320ml', 'lon', '320ml', 6800, 10000, 8800, 96, [['lốc', 6, 58000], ['thùng', 24, 215000]]],
   ['Đồ uống', 'Trà xanh 0 độ 455ml', 'chai', '455ml', 7500, 10000, 9200, 72],
   ['Đồ uống', 'Sting dâu 330ml', 'chai', '330ml', 7200, 10000, 9000, 72],
-  ['Đồ uống', 'Bia Sài Gòn Lager lon 330ml', 'lon', '330ml', 10500, 13000, 12000, 120],
-  ['Đồ uống', 'Sữa tươi Vinamilk 180ml', 'hộp', '180ml', 6200, 8000, 7200, 96],
+  ['Đồ uống', 'Bia Sài Gòn Lager lon 330ml', 'lon', '330ml', 10500, 13000, 12000, 120, [['lốc', 6, 76000], ['thùng', 24, 295000]]],
+  ['Đồ uống', 'Sữa tươi Vinamilk 180ml', 'hộp', '180ml', 6200, 8000, 7200, 96, [['lốc', 4, 31000], ['thùng', 48, 360000]]],
   ['Đồ uống', 'Sữa đậu nành Fami 200ml', 'hộp', '200ml', 4300, 6000, 5200, 80],
-  ['Mì - đồ khô', 'Mì Hảo Hảo tôm chua cay', 'gói', '75g', 3600, 5000, 4300, 150],
-  ['Mì - đồ khô', 'Mì Omachi sườn hầm', 'gói', '80g', 6800, 9000, 8000, 90],
+  ['Mì - đồ khô', 'Mì Hảo Hảo tôm chua cay', 'gói', '75g', 3600, 5000, 4300, 150, [['thùng', 30, 135000]]],
+  ['Mì - đồ khô', 'Mì Omachi sườn hầm', 'gói', '80g', 6800, 9000, 8000, 90, [['thùng', 30, 250000]]],
   ['Mì - đồ khô', 'Phở bò Vifon', 'gói', '65g', 6000, 8000, 7200, 60],
   ['Mì - đồ khô', 'Gạo ST25 túi 5kg', 'bịch', '5kg', 150000, 185000, 175000, 20],
   ['Mì - đồ khô', 'Đường cát trắng 1kg', 'bịch', '1kg', 22000, 28000, 26000, 30],

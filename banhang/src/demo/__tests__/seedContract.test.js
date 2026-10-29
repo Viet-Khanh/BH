@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
+import { getBaseQty } from '../../utils/productUnits.js';
 import { dispatch } from '../demoApp.js';
 import { configureStorage, setActiveNamespace } from '../db/localStore.js';
 import { DEMO_EDITIONS } from '../editions/index.js';
@@ -34,11 +35,21 @@ describe.each(DEMO_EDITIONS)('seeded edition $id', (edition) => {
     products.forEach((product) => {
       const sold = sumBy(
         invoices.flatMap((invoice) => invoice.items),
-        (item) => (item.productId === product.id ? item.qty : 0)
+        (item) => (item.productId === product.id ? getBaseQty(item) : 0)
       );
       expect(product.stock).toBeGreaterThanOrEqual(0);
       expect(product.stock).toBe(product.openingStock - sold);
     });
+  });
+
+  it('seeds packaging units for the minimart', async () => {
+    if (edition.id !== 'minimart') return;
+    const products = await get('/products');
+    const invoices = await get('/invoices');
+    expect(products.some((product) => product.units?.length)).toBe(true);
+    expect(
+      invoices.some((invoice) => invoice.items.some((item) => item.unitName))
+    ).toBe(true);
   });
 
   it('keeps customer debt consistent with invoices and payments', async () => {
