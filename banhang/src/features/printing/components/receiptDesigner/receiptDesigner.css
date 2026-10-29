@@ -1,0 +1,80 @@
+/* Roll receipt designer: block list (left) + true-size preview (right). */
+.receipt-designer {
+  margin-top: 24px;
+}
+
+.receipt-designer-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.receipt-designer-blocks {
+  flex: 1 1 320px;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.receipt-designer-font {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.receipt-designer-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid #e6efee;
+  border-radius: 6px;
+}
+
+.receipt-designer-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.receipt-designer-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.receipt-designer-hint {
+  font-size: 12px;
+}
+
+.receipt-designer-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.receipt-designer-logo img {
+  max-height: 40px;
+  max-width: 120px;
+  border: 1px solid #e6efee;
+  background: #fff;
+}
+
+.receipt-designer-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.receipt-preview {
+  box-sizing: content-box;
+  display: block;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+}
