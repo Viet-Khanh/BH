@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Form, Modal, message } from 'antd';
 import { v4 as uuid } from 'uuid';
+import { useProductCodeField } from '../../features/productCodes/useProductCodeField.js';
 import { buildEditFormValues } from './catalogFormValues.js';
-import { buildCodeFromName } from './catalogUtils.js';
 
 const useCatalogForm = ({
   activeKey,
+  products = [],
   addProduct,
   updateProduct,
   removeProduct,
@@ -21,9 +22,9 @@ const useCatalogForm = ({
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [codeEdited, setCodeEdited] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
+  const codeField = useProductCodeField(form);
 
   const closeModal = () => {
     setModalOpen(false);
@@ -32,13 +33,12 @@ const useCatalogForm = ({
   const resetEditState = () => {
     setModalOpen(false);
     setEditing(null);
-    setCodeEdited(false);
   };
 
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
-    setCodeEdited(false);
+    if (activeKey === 'products') codeField.startCreate();
     setModalOpen(true);
   };
 
@@ -46,7 +46,7 @@ const useCatalogForm = ({
     setEditing(record);
     form.resetFields();
     form.setFieldsValue(buildEditFormValues(record, activeKey));
-    setCodeEdited(activeKey === 'products');
+    if (activeKey === 'products') codeField.startEdit();
     setModalOpen(true);
   };
 
@@ -66,18 +66,6 @@ const useCatalogForm = ({
     });
   };
 
-  const handleNameChange = (event) => {
-    const name = event.target.value || '';
-    if (!codeEdited) {
-      form.setFieldsValue({ code: buildCodeFromName(name) });
-    }
-  };
-
-  const handleCodeChange = (event) => {
-    const value = event.target.value || '';
-    setCodeEdited(value.trim().length > 0);
-  };
-
   const handleSave = async () => {
     let values;
     try {
@@ -91,7 +79,12 @@ const useCatalogForm = ({
       if (activeKey === 'products') {
         const payload = {
           ...values,
-          code: values.code || buildCodeFromName(values.name || ''),
+          code: codeField.resolveCode(
+            values,
+            products
+              .filter((product) => product.id !== editing?.id)
+              .map((product) => product.code)
+          ),
           avgCost: Number(values.avgCost || 0),
           sellPriceDefault: Number(values.sellPriceDefault || 0),
           sellPriceWholesale: Number(values.sellPriceWholesale || 0),
@@ -148,8 +141,8 @@ const useCatalogForm = ({
     openCreate,
     openEdit,
     handleDelete,
-    handleNameChange,
-    handleCodeChange,
+    handleNameChange: codeField.handleNameChange,
+    handleCodeChange: codeField.handleCodeChange,
     handleSave,
   };
 };

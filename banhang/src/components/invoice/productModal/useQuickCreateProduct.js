@@ -1,33 +1,30 @@
 import { Form, message } from 'antd';
 import { useState } from 'react';
-import { buildCodeFromName } from '../../../pages/Catalog/catalogUtils.js';
+import { useProductCodeField } from '../../../features/productCodes/useProductCodeField.js';
 
 // "Thêm mặt hàng" inside the product modal: form state, code autofill and save.
-export const useQuickCreateProduct = ({ onCreateProduct, onCreated }) => {
+// Initials are de-duplicated against `products` (those loaded on the screen);
+// the backend rejects any remaining duplicate and the form shows its message.
+export const useQuickCreateProduct = ({
+  onCreateProduct,
+  onCreated,
+  products = [],
+}) => {
   const [form] = Form.useForm();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [codeEdited, setCodeEdited] = useState(false);
+  const codeField = useProductCodeField(form);
   const canCreate = typeof onCreateProduct === 'function';
 
   const openForm = () => {
     if (!canCreate) return;
     form.resetFields();
-    setCodeEdited(false);
+    codeField.startCreate();
     setOpen(true);
   };
 
   const closeForm = () => {
     if (!loading) setOpen(false);
-  };
-
-  const handleNameChange = (event) => {
-    if (codeEdited) return;
-    form.setFieldsValue({ code: buildCodeFromName(event.target.value || '') });
-  };
-
-  const handleCodeChange = (event) => {
-    setCodeEdited((event.target.value || '').trim().length > 0);
   };
 
   const save = async () => {
@@ -40,11 +37,14 @@ export const useQuickCreateProduct = ({ onCreateProduct, onCreated }) => {
     }
     setLoading(true);
     try {
-      const created = await onCreateProduct(values);
+      const code = codeField.resolveCode(
+        values,
+        (products || []).map((product) => product.code)
+      );
+      const created = await onCreateProduct({ ...values, code });
       if (!created?.id) throw new Error('Không thể tạo sản phẩm.');
       setOpen(false);
       form.resetFields();
-      setCodeEdited(false);
       onCreated(created);
       message.success('Đã tạo sản phẩm.');
     } catch (error) {
@@ -63,8 +63,8 @@ export const useQuickCreateProduct = ({ onCreateProduct, onCreated }) => {
     canCreate,
     openForm,
     closeForm,
-    handleNameChange,
-    handleCodeChange,
+    handleNameChange: codeField.handleNameChange,
+    handleCodeChange: codeField.handleCodeChange,
     save,
   };
 };

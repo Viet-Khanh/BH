@@ -60,6 +60,7 @@ const Catalog = () => {
   const labelPrint = useLabelPrint();
   const catalogForm = useCatalogForm({
     activeKey,
+    products: activeProducts,
     addProduct,
     updateProduct,
     removeProduct,

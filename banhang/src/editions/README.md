@@ -24,7 +24,7 @@ One module per retail industry. Read `../platform/README.md` first (contract, sl
 | `features.units`                    | `pages/Catalog/CatalogFormModal.jsx`, `components/invoice/productModal/InvoiceProductModal.jsx`                                                                   |
 | `features.barcode`                  | `features/barcode/useBarcodeLines.js` callers, `pages/Catalog/*`                                                                                                  |
 | `features.labels`                   | `features/printing/*` (label settings, label list after purchases, "In tem" buttons)                                                                              |
-| `features.sequentialCodes`          | `pages/Catalog/useCatalogForm.js`, `components/invoice/productModal/useQuickCreateProduct.js` (next `SP` code from the API)                                       |
+| `features.sequentialCodes`          | `features/productCodes/useProductCodeField.js` (catalog form, sales quick create: next `SP` code from the API)                                                    |
 | `labels`                            | `pages/Catalog/CatalogFormModal.jsx`                                                                                                                              |
 | `appTitle`                          | `App.jsx`, `applyEditionToDocument()`                                                                                                                             |
 | `defaultShopName`, `invoiceTagline` | `store/settingsDefaults.js`, `features/settings/templates/defaultInvoiceTemplate.js`                                                                              |

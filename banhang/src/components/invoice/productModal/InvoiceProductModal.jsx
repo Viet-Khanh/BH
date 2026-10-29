@@ -57,6 +57,7 @@ const InvoiceProductModal = ({
     });
   const quickCreate = useQuickCreateProduct({
     onCreateProduct,
+    products,
     onCreated: (created) => {
       setSearchKeyword('');
       onSearchProducts?.('');
