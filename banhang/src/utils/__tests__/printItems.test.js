@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildItemsHtml } from '../printItems.js';
+import { buildItemsHtml, buildPrintRows } from '../printItems.js';
 
 const products = [{ id: 'p1', name: 'Kính <8ly>', unit: 'm2' }];
 const items = [
@@ -56,5 +56,20 @@ describe('buildItemsHtml', () => {
     const html = buildItemsHtml(items, products, { dimensions: false });
     expect(html.match(/Kính &lt;8ly&gt;/g)).toHaveLength(1);
     expect(html).toContain('cắt góc');
+  });
+});
+
+describe('buildPrintRows unit', () => {
+  it('prints the line unit for packaging-unit lines', () => {
+    const prods = [{ id: 'p1', name: 'Coca', unit: 'lon' }];
+    const [carton, single] = buildPrintRows(
+      [
+        { productId: 'p1', qty: 1, unitName: 'thùng', factor: 24 },
+        { productId: 'p1', qty: 2 },
+      ],
+      prods
+    );
+    expect(carton.unit).toBe('thùng');
+    expect(single.unit).toBe('lon');
   });
 });

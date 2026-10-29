@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import { getItemUnitName } from '../../utils/productUnits.js';
 
 export const getPurchaseAmounts = (row) => {
   const amount = Number(row.amount ?? row.total ?? 0);
@@ -52,7 +53,7 @@ export const buildPurchaseInvoiceItems = (purchase, products = []) => {
       key: `${item.productId || 'item'}-${index}`,
       productId: item.productId,
       name: product.name || '',
-      unit: product.unit || '',
+      unit: getItemUnitName(item, product),
       spec: product.spec || '',
       qty: item.qty,
       length: item.length ?? null,

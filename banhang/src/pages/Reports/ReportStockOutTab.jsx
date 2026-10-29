@@ -78,14 +78,14 @@ const ReportStockOutTab = ({ showSensitiveInfo = false }) => {
         const current = map.get(key) || {
           productId: item.productId || '',
           name: item.name || 'Sản phẩm',
-          unit: item.unit || '',
+          unit: item.baseUnit ?? item.unit ?? '',
           spec: item.spec || '',
           qty: 0,
           amount: 0,
           cost: 0,
           profit: 0,
         };
-        const qty = Number(item.qty || 0);
+        const qty = Number(item.baseQty ?? item.qty ?? 0);
         const amount = Number(item.lineTotal || 0);
         const cost = Number(item.costTotal ?? 0);
         const profit = Number(item.profit ?? amount - cost);

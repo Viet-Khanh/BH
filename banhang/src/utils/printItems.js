@@ -5,6 +5,7 @@ import { escapeHtml } from './htmlEscape.js';
 import { getMeasuredQty, hasDimensions } from './lineMeasure.js';
 import { formatMeasure } from './measureFormat.js';
 import { formatRoundedMoney } from './moneyFormat.js';
+import { getItemUnitName } from './productUnits.js';
 
 const STYLES = {
   index: 'width:30px;text-align:center;',
@@ -84,7 +85,7 @@ export const buildPrintRows = (items = [], products = []) => {
     return {
       index,
       item,
-      unit: product?.unit || '',
+      unit: getItemUnitName(item, product),
       measured: hasDimensions(item),
       nameHtml: buildNameHtml(
         resolveName(item, product),

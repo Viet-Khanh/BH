@@ -7,6 +7,7 @@ import {
   formatNumberInput,
   parseNumberInput,
 } from '../../../utils/numberInput.js';
+import { getItemUnitName } from '../../../utils/productUnits.js';
 import EditableNumberCell from './EditableNumberCell.jsx';
 import EditableTextCell from './EditableTextCell.jsx';
 
@@ -59,7 +60,7 @@ const CELL_RENDERERS = {
       <div className="pos-product-code">{product?.code || ''}</div>
     </td>
   ),
-  unit: ({ product }) => <td>{product?.unit || ''}</td>,
+  unit: ({ item, product }) => <td>{getItemUnitName(item, product)}</td>,
   length: dimensionCell('length'),
   width: dimensionCell('width'),
   qty: (row) =>

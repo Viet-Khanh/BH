@@ -4,6 +4,7 @@ import {
   DimensionHeaders,
 } from '../../components/measure/MeasureCells.jsx';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import { getItemUnitName } from '../../utils/productUnits.js';
 
 const PurchaseDetailModal = ({ open, onClose, detail, products }) => (
   <Modal
@@ -35,7 +36,7 @@ const PurchaseDetailModal = ({ open, onClose, detail, products }) => (
                 return (
                   <tr key={`${item.productId}-${index}`}>
                     <td>{product?.name || ''}</td>
-                    <td>{product?.unit || ''}</td>
+                    <td>{getItemUnitName(item, product)}</td>
                     <DimensionCells item={item} />
                     <td>{item.qty}</td>
                     <td>{formatMoney(item.unitCost)}</td>
