@@ -194,4 +194,89 @@ describe('purchases.service snapshot rollback', () => {
     );
     expect(fields).not.toHaveProperty('avgCost');
   });
+
+  it('adds stock and average cost in base units when buying cartons', async () => {
+    repository.findProductsByIds.mockResolvedValue([
+      {
+        id: 'p1',
+        name: 'Coca lon',
+        unit: 'lon',
+        units: [{ name: 'thùng', factor: 24 }],
+        openingStock: 24,
+        stock: 24,
+        avgCost: 7000,
+      },
+    ]);
+    repository.createPurchaseDoc.mockImplementation(async (doc) => doc);
+
+    const { purchase } = await createPurchase({
+      supplierId: 's1',
+      items: [{ productId: 'p1', qty: 2, unitCost: 192000, unitName: 'thùng' }],
+    });
+
+    expect(purchase.items[0]).toMatchObject({ unitName: 'thùng', factor: 24 });
+    expect(repository.updateProductById).toHaveBeenCalledWith(
+      'p1',
+      expect.objectContaining({ openingStock: 72, stock: 72, avgCost: 7667 })
+    );
+  });
+
+  it('rejects a purchase line in an unknown unit', async () => {
+    repository.findProductsByIds.mockResolvedValue([
+      { id: 'p1', name: 'Coca lon', unit: 'lon', units: [], openingStock: 0 },
+    ]);
+    await expect(
+      createPurchase({
+        supplierId: 's1',
+        items: [{ productId: 'p1', qty: 1, unitCost: 1, unitName: 'két' }],
+      })
+    ).rejects.toThrow('Đơn vị "két" không có trong hàng Coca lon.');
+    expect(repository.updateProductById).not.toHaveBeenCalled();
+  });
+
+  it('recomputes average cost in base units when a carton purchase is edited', async () => {
+    repository.findPurchaseById.mockResolvedValue({
+      id: 'po1',
+      supplierId: 's1',
+      appliedToStock: true,
+      items: [
+        {
+          productId: 'p1',
+          qty: 1,
+          unitCost: 240000,
+          unitName: 'thùng',
+          factor: 24,
+        },
+      ],
+    });
+    repository.findProductsByIds.mockResolvedValue([
+      {
+        id: 'p1',
+        unit: 'lon',
+        units: [{ name: 'thùng', factor: 24 }],
+        openingStock: 24,
+        stock: 24,
+        avgCost: 10000,
+      },
+    ]);
+    repository.updatePurchaseDoc.mockImplementation(async (_id, doc) => doc);
+
+    await updatePurchase('po1', {
+      supplierId: 's1',
+      items: [
+        {
+          productId: 'p1',
+          qty: 2,
+          unitCost: 192000,
+          unitName: 'thùng',
+          factor: 24,
+        },
+      ],
+    });
+
+    expect(repository.updateProductById).toHaveBeenCalledWith(
+      'p1',
+      expect.objectContaining({ openingStock: 48, stock: 48, avgCost: 8000 })
+    );
+  });
 });

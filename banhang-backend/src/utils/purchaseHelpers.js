@@ -7,7 +7,9 @@ export const buildOldDebtByPurchase = (
 ) => {
   const events = [
     ...purchases
-      .filter((purchase) => purchase?.id && purchase.supplierId && purchase.date)
+      .filter(
+        (purchase) => purchase?.id && purchase.supplierId && purchase.date
+      )
       .map((purchase) => ({
         id: `purchase:${purchase.id}`,
         type: 'purchase',
@@ -156,6 +158,9 @@ export const sanitizePurchaseItems = (items = []) =>
       productId: item.productId,
       qty,
       unitCost,
+      ...(item.unitName
+        ? { unitName: String(item.unitName), factor: item.factor }
+        : {}),
       lineNote: item.lineNote || '',
       length: item.length ?? null,
       width: item.width ?? null,

@@ -31,6 +31,11 @@ import {
   updateProductById,
   updatePurchaseDoc,
 } from '../repositories/purchases.repository.js';
+import {
+  getBaseQty,
+  getItemFactor,
+  resolveLineUnit,
+} from '../../../utils/productUnits.js';
 
 const getMainSettings = () => Settings.findOne({ id: 'main' }).lean();
 
@@ -77,8 +82,8 @@ const updateProductsSequentially = async (updates = []) => {
 const buildCostMapFromItems = (items = []) =>
   items.reduce((acc, item) => {
     if (!item?.productId) return acc;
-    const qty = Number(item.qty || 0);
-    const value = qty * Number(item.unitCost || 0);
+    const qty = getBaseQty(item);
+    const value = Number(item.qty || 0) * Number(item.unitCost || 0);
     const current = acc[item.productId] || { qty: 0, value: 0 };
     acc[item.productId] = {
       qty: current.qty + qty,
@@ -86,6 +91,14 @@ const buildCostMapFromItems = (items = []) =>
     };
     return acc;
   }, {});
+
+// Unit snapshot per line, checked against the loaded products (throws on unknown unit).
+const resolvePurchaseUnits = (items, products) => {
+  const productById = buildByIdMap(products);
+  return items.map((item) =>
+    resolveLineUnit(item, productById[item.productId])
+  );
+};
 
 const hasAvgCostImpact = (oldCost = {}, nextCost = {}) =>
   Number(oldCost.qty || 0) !== Number(nextCost.qty || 0) ||
@@ -451,9 +464,20 @@ export const updatePurchase = async (id, payload) => {
   if (!supplierId) throw new Error('supplierId is required');
   if (!items.length) throw new Error('items is required');
 
-  const sanitizedItems = sanitizePurchaseItems(items);
-  const invalid = findInvalidPurchaseItem(sanitizedItems);
+  const cleanItems = sanitizePurchaseItems(items);
+  const invalid = findInvalidPurchaseItem(cleanItems);
   if (invalid) throw new Error('Invalid purchase item');
+
+  const productIds = new Set(
+    [...(existingPurchase.items || []), ...cleanItems]
+      .map((item) => item?.productId)
+      .filter(Boolean)
+  );
+  const products = productIds.size
+    ? await findProductsByIds([...productIds], { activeOnly: true })
+    : [];
+  if (products.length !== productIds.size) throw new Error('Product not found');
+  const sanitizedItems = resolvePurchaseUnits(cleanItems, products);
 
   const oldQtyMap = buildQtyMapFromItems(existingPurchase.items || []);
   const nextQtyMap = buildQtyMapFromItems(sanitizedItems);
@@ -463,19 +487,11 @@ export const updatePurchase = async (id, payload) => {
   const nextCostMap = shouldUpdateAvgCost
     ? buildCostMapFromItems(sanitizedItems)
     : {};
-  const productIds = new Set([
-    ...Object.keys(oldQtyMap),
-    ...Object.keys(nextQtyMap),
-  ]);
   const shouldRecomputeAvgCost =
     shouldUpdateAvgCost &&
     [...productIds].some((productId) =>
       hasAvgCostImpact(oldCostMap[productId], nextCostMap[productId])
     );
-  const products = productIds.size
-    ? await findProductsByIds([...productIds], { activeOnly: true })
-    : [];
-  if (products.length !== productIds.size) throw new Error('Product not found');
 
   const [pendingPurchases, invoices] = shouldRecomputeAvgCost
     ? await Promise.all([
@@ -561,14 +577,15 @@ export const createPurchase = async (payload) => {
   if (!supplierId) throw new Error('supplierId is required');
   if (!items.length) throw new Error('items is required');
 
-  const sanitizedItems = sanitizePurchaseItems(items);
-  const invalid = findInvalidPurchaseItem(sanitizedItems);
+  const cleanItems = sanitizePurchaseItems(items);
+  const invalid = findInvalidPurchaseItem(cleanItems);
   if (invalid) throw new Error('Invalid purchase item');
 
-  const productIds = [...new Set(sanitizedItems.map((item) => item.productId))];
+  const productIds = [...new Set(cleanItems.map((item) => item.productId))];
   const products = await findProductsByIds(productIds, { activeOnly: true });
   if (products.length !== productIds.length)
     throw new Error('Product not found');
+  const sanitizedItems = resolvePurchaseUnits(cleanItems, products);
   const settings = await getMainSettings();
   const snapshotReady = isSnapshotReady(settings);
   const shouldUpdateAvgCost = settings?.autoUpdateAvgCostOnPurchase !== false;
@@ -606,14 +623,14 @@ export const createPurchase = async (payload) => {
       Number(current.openingStock || 0) +
       Number(inQtyMap[item.productId] || 0) -
       Number(outQtyMap[item.productId] || 0);
+    const baseQty = getBaseQty(item);
+    const baseUnitCost = Number(item.unitCost || 0) / getItemFactor(item);
     const nextAvgCost = shouldUpdateAvgCost
-      ? computeAvgCost(oldQty, current.avgCost, item.qty, item.unitCost)
+      ? computeAvgCost(oldQty, current.avgCost, baseQty, baseUnitCost)
       : null;
     updates[item.productId] = {
-      openingStock: Number(current.openingStock || 0) + Number(item.qty || 0),
-      ...(snapshotReady
-        ? { stock: Number(current.stock || 0) + Number(item.qty || 0) }
-        : {}),
+      openingStock: Number(current.openingStock || 0) + baseQty,
+      ...(snapshotReady ? { stock: Number(current.stock || 0) + baseQty } : {}),
       ...(shouldUpdateAvgCost ? { avgCost: nextAvgCost } : {}),
       ...(snapshotReady ? { stockUpdatedAt: new Date().toISOString() } : {}),
     };

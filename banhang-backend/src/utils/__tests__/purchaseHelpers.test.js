@@ -4,6 +4,7 @@ import {
   buildQtyMapFromInvoices,
   buildQtyMapFromItems,
   buildQtyMapFromPurchases,
+  sanitizePurchaseItems,
 } from '../purchaseHelpers.js';
 import { computeStock } from '../stock.js';
 
@@ -81,8 +82,12 @@ describe('base quantity maps', () => {
 
   it('sums base quantities', () => {
     expect(buildQtyMapFromItems(lines)).toEqual({ p1: 49 });
-    expect(buildQtyMapFromPurchases([{ items: lines }], ids)).toEqual({ p1: 49 });
-    expect(buildQtyMapFromInvoices([{ items: lines }], ids)).toEqual({ p1: 49 });
+    expect(buildQtyMapFromPurchases([{ items: lines }], ids)).toEqual({
+      p1: 49,
+    });
+    expect(buildQtyMapFromInvoices([{ items: lines }], ids)).toEqual({
+      p1: 49,
+    });
   });
 
   it('computes stock in base units', () => {
@@ -94,5 +99,35 @@ describe('base quantity maps', () => {
         [{ id: 'p1', openingStock: 10 }]
       )
     ).toBe(22);
+  });
+});
+
+describe('sanitizePurchaseItems', () => {
+  it('keeps the unit snapshot of packaging-unit lines', () => {
+    const [line] = sanitizePurchaseItems([
+      {
+        productId: 'p1',
+        qty: 2,
+        unitCost: 200000,
+        unitName: 'thùng',
+        factor: 24,
+      },
+    ]);
+    expect(line).toMatchObject({
+      productId: 'p1',
+      qty: 2,
+      unitCost: 200000,
+      unitName: 'thùng',
+      factor: 24,
+      lineTotal: 400000,
+    });
+  });
+
+  it('adds no unit fields to base-unit lines', () => {
+    const [line] = sanitizePurchaseItems([
+      { productId: 'p1', qty: 2, unitCost: 5 },
+    ]);
+    expect(line).not.toHaveProperty('unitName');
+    expect(line).not.toHaveProperty('factor');
   });
 });
