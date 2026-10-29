@@ -13,9 +13,9 @@ export const usePurchasesCatalog = () => {
   const searchProducts = useCallback(
     async (keyword = '') => {
       const data = await searchPurchaseProducts(keyword, { limit: 30 });
-      if (Array.isArray(data)) {
-        mergeCatalogProducts(data);
-      }
+      if (!Array.isArray(data)) return [];
+      mergeCatalogProducts(data);
+      return data;
     },
     [mergeCatalogProducts]
   );

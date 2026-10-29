@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
+import { quickAddByCode } from '../../features/barcode/quickAddByCode.js';
 import { buildPurchaseLine } from '../../features/purchases/domain/purchasesDomain.js';
 import { usePendingUnit } from '../../components/invoice/productModal/usePendingUnit.js';
 import { readDimensions } from '../../utils/lineMeasure.js';
@@ -11,6 +12,7 @@ const usePurchaseProductModal = ({
   setItems,
   readOnly = false,
   onSearchProducts,
+  addByCode,
 }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -82,8 +84,12 @@ const usePurchaseProductModal = ({
       .slice(0, 5);
   }, [searchKeyword, activeProducts]);
 
-  const handleQuickAdd = () => {
+  const handleQuickAdd = async () => {
     if (readOnly) return;
+    if (await quickAddByCode(addByCode, searchKeyword)) {
+      setSearchKeyword('');
+      return;
+    }
     if (!filteredQuick.length) {
       setSearchOpen(true);
       return;

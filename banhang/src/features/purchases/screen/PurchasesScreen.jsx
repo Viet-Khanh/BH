@@ -94,6 +94,7 @@ const PurchasesScreen = () => {
         products={data.products}
         onUpdateItem={productSelection.updateItem}
         onRemoveItem={productSelection.removeItem}
+        onChangeUnit={productSelection.changeItemUnit}
         readOnly={draft.readOnlyEdit}
         priceField="unitCost"
         qtyLabel="SL"

@@ -6,6 +6,7 @@ import usePurchaseItems from '../../../pages/Purchases/usePurchaseItems.js';
 import usePurchasePayments from '../../../pages/Purchases/usePurchasePayments.js';
 import usePurchaseProductModal from '../../../pages/Purchases/usePurchaseProductModal.js';
 import { getPurchaseDetail } from '../api/purchasesApi.js';
+import { usePurchaseBarcode } from './usePurchaseBarcode.js';
 import { usePurchaseDebtState } from './usePurchaseDebtState.js';
 import { usePurchaseDraftState } from './usePurchaseDraftState.js';
 import { usePurchaseModalState } from './usePurchaseModalState.js';
@@ -44,11 +45,13 @@ export const usePurchasesScreen = () => {
     [activeSuppliers]
   );
 
+  const barcode = usePurchaseBarcode({ draft, catalog });
   const productModalFeatures = usePurchaseProductModal({
     activeProducts: catalog.activeProducts,
     setItems: draft.setItems,
     readOnly: draft.readOnlyEdit,
     onSearchProducts: catalog.searchProducts,
+    addByCode: barcode.addByCode,
   });
 
   const { updateItem: updatePurchaseItem, removeItem } = usePurchaseItems({
@@ -278,6 +281,7 @@ export const usePurchasesScreen = () => {
       searchProducts: catalog.searchProducts,
       updateItem: updatePurchaseItem,
       removeItem,
+      changeItemUnit: barcode.changeItemUnit,
       ...productModalFeatures,
     },
     payments: {
