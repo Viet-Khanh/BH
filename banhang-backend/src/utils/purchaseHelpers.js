@@ -1,3 +1,5 @@
+import { getBaseQty } from './productUnits.js';
+
 export const buildOldDebtByPurchase = (
   purchases = [],
   paymentsByPurchase = {},
@@ -126,7 +128,7 @@ export const buildQtyMapFromPurchases = (
   purchases.forEach((purchase) => {
     (purchase.items || []).forEach((item) => {
       if (!productIds.has(item.productId)) return;
-      map[item.productId] = (map[item.productId] || 0) + Number(item.qty || 0);
+      map[item.productId] = (map[item.productId] || 0) + getBaseQty(item);
     });
   });
   return map;
@@ -140,7 +142,7 @@ export const buildQtyMapFromInvoices = (
   invoices.forEach((invoice) => {
     (invoice.items || []).forEach((item) => {
       if (!productIds.has(item.productId)) return;
-      map[item.productId] = (map[item.productId] || 0) + Number(item.qty || 0);
+      map[item.productId] = (map[item.productId] || 0) + getBaseQty(item);
     });
   });
   return map;
@@ -172,6 +174,6 @@ export const findInvalidPurchaseItem = (items = []) =>
 export const buildQtyMapFromItems = (items = []) =>
   items.reduce((acc, item) => {
     if (!item?.productId) return acc;
-    acc[item.productId] = (acc[item.productId] || 0) + Number(item.qty || 0);
+    acc[item.productId] = (acc[item.productId] || 0) + getBaseQty(item);
     return acc;
   }, {});

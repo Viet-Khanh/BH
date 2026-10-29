@@ -4,6 +4,7 @@ import Payment from '../../../models/Payment.js';
 import Product from '../../../models/Product.js';
 import Purchase from '../../../models/Purchase.js';
 import Settings from '../../../models/Settings.js';
+import { getBaseQty } from '../../../utils/productUnits.js';
 import {
   getDataVersion,
   isSnapshotReady,
@@ -29,7 +30,7 @@ export const buildStockSnapshot = ({
       if (!item.productId || stockByProductId[item.productId] === undefined) {
         return;
       }
-      stockByProductId[item.productId] += num(item.qty);
+      stockByProductId[item.productId] += getBaseQty(item);
     });
   });
 
@@ -38,7 +39,7 @@ export const buildStockSnapshot = ({
       if (!item.productId || stockByProductId[item.productId] === undefined) {
         return;
       }
-      stockByProductId[item.productId] -= num(item.qty);
+      stockByProductId[item.productId] -= getBaseQty(item);
     });
   });
 

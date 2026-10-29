@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { v4 as uuid } from 'uuid';
+import { getBaseQty } from './utils/productUnits.js';
 
 export const buildSeedData = () => {
   const now = dayjs();
@@ -285,11 +286,11 @@ export const buildSeedData = () => {
   }, {});
   purchase.items.forEach((item) => {
     stockByProductId[item.productId] =
-      Number(stockByProductId[item.productId] || 0) + Number(item.qty || 0);
+      Number(stockByProductId[item.productId] || 0) + getBaseQty(item);
   });
   invoice.items.forEach((item) => {
     stockByProductId[item.productId] =
-      Number(stockByProductId[item.productId] || 0) - Number(item.qty || 0);
+      Number(stockByProductId[item.productId] || 0) - getBaseQty(item);
   });
   products.forEach((product) => {
     product.stock = Number(stockByProductId[product.id] || 0);

@@ -1,5 +1,6 @@
 import { computeStock } from '../../../utils/stock.js';
 import { isSnapshotReady } from '../../../utils/snapshotStatus.js';
+import { getBaseQty } from '../../../utils/productUnits.js';
 import {
   buildProfitRows,
   inRange,
@@ -90,7 +91,7 @@ export const getStockMovementReport = async (query) => {
     (purchase.items || []).forEach((item) => {
       if (!item.productId) return;
       const stats = getStats(item.productId);
-      const qty = Number(item.qty || 0);
+      const qty = getBaseQty(item);
       if (purchase.appliedToStock) {
         stats.appliedPurchaseTotal += qty;
       }
@@ -107,7 +108,7 @@ export const getStockMovementReport = async (query) => {
     (invoice.items || []).forEach((item) => {
       if (!item.productId) return;
       const stats = getStats(item.productId);
-      const qty = Number(item.qty || 0);
+      const qty = getBaseQty(item);
       if (beforeFrom) stats.invoiceBeforeFrom += qty;
       if (inRangeFlag) stats.invoiceRange += qty;
     });

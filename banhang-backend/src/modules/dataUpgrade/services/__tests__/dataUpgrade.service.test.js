@@ -137,3 +137,15 @@ describe('dataUpgrade.service snapshot builders', () => {
     });
   });
 });
+
+describe('buildStockSnapshot with packaging units', () => {
+  it('replays purchases and sales in base units', () => {
+    expect(
+      buildStockSnapshot({
+        products: [{ id: 'p1', openingStock: 10 }],
+        purchases: [{ items: [{ productId: 'p1', qty: 1, factor: 24 }] }],
+        invoices: [{ items: [{ productId: 'p1', qty: 2, factor: 6 }] }],
+      })
+    ).toEqual({ p1: 22 });
+  });
+});

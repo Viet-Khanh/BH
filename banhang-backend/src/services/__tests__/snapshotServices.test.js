@@ -58,4 +58,22 @@ describe('snapshot delta helpers', () => {
       { customerId: 'c1', delta: -700 },
     ]);
   });
+
+  it('builds stock deltas in base units for packaging-unit lines', () => {
+    expect(
+      buildInvoiceCreateStockDeltas([
+        { productId: 'p1', qty: 2, unitName: 'thùng', factor: 24 },
+        { productId: 'p1', qty: 3 },
+      ])
+    ).toEqual([{ productId: 'p1', delta: -51 }]);
+    expect(
+      buildItemUpdateStockDeltas(
+        [{ productId: 'p1', qty: 1, unitName: 'thùng', factor: 24 }],
+        [{ productId: 'p1', qty: 20 }]
+      )
+    ).toEqual([{ productId: 'p1', delta: 4 }]);
+    expect(
+      buildPurchaseStockDeltas([], [{ productId: 'p1', qty: 2, factor: 6 }])
+    ).toEqual([{ productId: 'p1', delta: 12 }]);
+  });
 });

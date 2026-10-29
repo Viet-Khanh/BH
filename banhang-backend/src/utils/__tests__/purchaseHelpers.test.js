@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildOldDebtByPurchase } from '../purchaseHelpers.js';
+import {
+  buildOldDebtByPurchase,
+  buildQtyMapFromInvoices,
+  buildQtyMapFromItems,
+  buildQtyMapFromPurchases,
+} from '../purchaseHelpers.js';
+import { computeStock } from '../stock.js';
 
 describe('purchaseHelpers', () => {
   it('includes standalone supplier debt payments when computing old debt', () => {
@@ -63,5 +69,30 @@ describe('purchaseHelpers', () => {
       po1: 0,
       po2: 500,
     });
+  });
+});
+
+describe('base quantity maps', () => {
+  const ids = new Set(['p1']);
+  const lines = [
+    { productId: 'p1', qty: 2, unitName: 'thùng', factor: 24 },
+    { productId: 'p1', qty: 1 },
+  ];
+
+  it('sums base quantities', () => {
+    expect(buildQtyMapFromItems(lines)).toEqual({ p1: 49 });
+    expect(buildQtyMapFromPurchases([{ items: lines }], ids)).toEqual({ p1: 49 });
+    expect(buildQtyMapFromInvoices([{ items: lines }], ids)).toEqual({ p1: 49 });
+  });
+
+  it('computes stock in base units', () => {
+    expect(
+      computeStock(
+        'p1',
+        [{ items: [{ productId: 'p1', qty: 1, factor: 24 }] }],
+        [{ items: [{ productId: 'p1', qty: 2, factor: 6 }] }],
+        [{ id: 'p1', openingStock: 10 }]
+      )
+    ).toBe(22);
   });
 });

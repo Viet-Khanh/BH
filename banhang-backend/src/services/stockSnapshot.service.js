@@ -1,11 +1,12 @@
 import Product from '../models/Product.js';
 import Settings from '../models/Settings.js';
 import { isSnapshotReady } from '../utils/snapshotStatus.js';
+import { getBaseQty } from '../utils/productUnits.js';
 
 export const buildQtyMapFromItems = (items = []) =>
   items.reduce((acc, item) => {
     if (!item?.productId) return acc;
-    acc[item.productId] = (acc[item.productId] || 0) + Number(item.qty || 0);
+    acc[item.productId] = (acc[item.productId] || 0) + getBaseQty(item);
     return acc;
   }, {});
 
