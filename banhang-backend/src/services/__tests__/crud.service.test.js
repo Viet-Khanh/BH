@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   bulkCreateItems,
+  createItem,
   findDuplicateNamesInPayload,
   findExistingProductNameConflicts,
   normalizeProductName,
@@ -18,6 +19,7 @@ const createProductModel = ({
   updated,
 }) => ({
   modelName: 'Product',
+  create: vi.fn().mockImplementation(async (doc) => doc),
   insertMany: vi.fn().mockResolvedValue(inserted),
   findOne: vi.fn().mockReturnValue(createQuery(existing)),
   find: vi.fn().mockReturnValue(createQuery(duplicateProducts)),
@@ -121,5 +123,55 @@ describe('crud.service product duplicate checks', () => {
       { ordered: false }
     );
     expect(result).toEqual([newPackProduct]);
+  });
+});
+
+describe('crud.service product units', () => {
+  it('normalizes units on create', async () => {
+    const ProductModel = createProductModel({ existing: null });
+    const created = await createItem(ProductModel, {
+      name: 'Coca',
+      unit: 'lon',
+      units: [{ name: ' thùng ', factor: '24', sellPrice: '' }],
+    });
+    expect(created.units).toEqual([
+      { name: 'thùng', factor: 24, sellPrice: null },
+    ]);
+  });
+
+  it('rejects invalid units on create and update', async () => {
+    const ProductModel = createProductModel({
+      existing: { id: 'p1', name: 'Coca', unit: 'lon' },
+    });
+    await expect(
+      createItem(ProductModel, {
+        name: 'Coca 2',
+        unit: 'lon',
+        units: [{ name: 'thùng', factor: 1 }],
+      })
+    ).rejects.toThrow('Hệ số quy đổi của "thùng" phải lớn hơn 1.');
+    await expect(
+      updateItem(ProductModel, 'p1', { units: [{ name: 'lon', factor: 6 }] })
+    ).rejects.toThrow('Đơn vị quy đổi "lon" trùng đơn vị cơ bản.');
+  });
+
+  it('validates units against the new base unit when both change', async () => {
+    const ProductModel = createProductModel({
+      existing: { id: 'p1', name: 'Coca', unit: 'lon' },
+      updated: { id: 'p1' },
+    });
+    await updateItem(ProductModel, 'p1', {
+      unit: 'chai',
+      units: [{ name: 'lon', factor: 2 }],
+    });
+    expect(ProductModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { id: 'p1' },
+      {
+        $set: expect.objectContaining({
+          units: [{ name: 'lon', factor: 2, sellPrice: null }],
+        }),
+      },
+      expect.any(Object)
+    );
   });
 });

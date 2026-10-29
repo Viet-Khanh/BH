@@ -6,6 +6,7 @@ import {
   buildQtyMapFromItems,
   invertStockDeltas,
 } from './stockSnapshot.service.js';
+import { normalizeProductUnits } from '../utils/productUnits.js';
 
 export const sanitizePayload = (payload) => {
   if (!payload || typeof payload !== 'object') return {};
@@ -47,6 +48,14 @@ const prepareCreatePayload = (Model, payload) => {
   if (Model.modelName === 'Customer')
     return applyCustomerSnapshotDefaults(payload);
   return payload;
+};
+
+// Cleans `units` in a product payload (only when present); throws a user message.
+const applyProductUnits = (payload, baseUnit) => {
+  if (payload.units === undefined) return payload;
+  const { units, error } = normalizeProductUnits(payload.units, baseUnit);
+  if (error) throw new Error(error);
+  return { ...payload, units };
 };
 
 export const normalizeProductName = (value) =>
@@ -149,6 +158,7 @@ export const getItemById = async (Model, id) => {
 export const createItem = async (Model, payload) => {
   let cleanPayload = ensureActive(sanitizePayload(payload));
   if (Model.modelName === 'Product') {
+    cleanPayload = applyProductUnits(cleanPayload, cleanPayload.unit);
     const duplicateNames = await findExistingProductNameConflicts(Model, [
       cleanPayload,
     ]);
@@ -168,6 +178,7 @@ export const bulkCreateItems = async (Model, items) => {
   });
 
   if (Model.modelName === 'Product') {
+    payload = payload.map((item) => applyProductUnits(item, item.unit));
     const duplicateNamesInPayload = findDuplicateNamesInPayload(payload);
     if (duplicateNamesInPayload.length) {
       throw new Error(formatDuplicateProductMessage(duplicateNamesInPayload));
@@ -196,7 +207,7 @@ export const bulkCreateItems = async (Model, items) => {
 };
 
 export const updateItem = async (Model, id, payload) => {
-  const cleanPayload = sanitizePayload(payload);
+  let cleanPayload = sanitizePayload(payload);
   let existing = null;
 
   if (Model.modelName === 'Product') {
@@ -204,6 +215,10 @@ export const updateItem = async (Model, id, payload) => {
     if (!existing) {
       throw new Error('Không tìm thấy sản phẩm.');
     }
+    cleanPayload = applyProductUnits(
+      cleanPayload,
+      cleanPayload.unit ?? existing.unit
+    );
     const duplicateNames = await findExistingProductNameConflicts(
       Model,
       [cleanPayload],
