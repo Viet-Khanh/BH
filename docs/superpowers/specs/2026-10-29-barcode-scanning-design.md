@@ -61,13 +61,18 @@ Line builders shared by the product modal and scanning:
   `features/purchases/domain/purchasesDomain.js`.
 
 Scanner:
-- `src/utils/scanBuffer.js` (pure, tested): keystrokes closer than 40 ms form a scan; Enter
-  ends it; codes shorter than 4 characters are ignored.
-- `src/features/barcode/useBarcodeScanner.js`: window `keydown` in capture phase. While a scan is
-  in progress it prevents the keys from reaching the focused field (the first character, typed
-  before the scan was recognized, is removed from the field again), swallows the closing Enter
-  and calls `onScan(code)`. Ignores keys with Ctrl/Alt/Meta. Inactive while an Ant Design modal
-  is open (the scanner then types into the modal's field like a keyboard).
+- `src/utils/scanBuffer.js` (pure, tested): keystrokes closer than 40 ms form a burst; Enter
+  ends it; a burst is a scan when it has at least 4 printable ASCII characters, no editing key
+  (Backspace, arrows…) and Enter follows quickly. IME bursts (Unikey/OpenKey Telex corrections:
+  Backspace + 'ễ' within 1 ms) are therefore never scans.
+- `src/features/barcode/scanKeyHandler.js` (pure, tested): the keydown logic. Character keys are
+  never blocked. When a burst starts it remembers the focused field and its value; on a
+  recognised scan it swallows only the closing Enter, puts the field value back and calls
+  `onScan(code)`. Ignores key repeat, IME composition (`isComposing`, keyCode 229) and keys with
+  Ctrl/Alt/Meta. Inactive while an Ant Design modal is open (the scanner then types into the
+  modal's field like a keyboard).
+- `src/features/barcode/useBarcodeScanner.js`: thin glue — window `keydown` in capture phase,
+  DOM helpers from `barcodeDom.js` (`isModalOpen`, focused-field snapshot/restore).
 - `src/utils/beep.js`: short Web Audio beep (`ok` / `error`), silent when audio is unavailable.
 
 `src/features/barcode/useBarcodeLines.js` (shared by sales and purchases):
