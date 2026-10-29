@@ -51,6 +51,19 @@ describe('createPurchaseRows', () => {
     expect(rows[1].name).toBe('Mì mới');
   });
 
+  it('warns about barcodes too long for the label width', () => {
+    const long = { ...noodle, id: 'p3', code: 'SP-0000000001' };
+    const rows = createPurchaseRows([{ productId: 'p3', qty: 1 }], [long], [], {
+      labelWidthMm: 35,
+    });
+    expect(rows[0].warning).toBe('Mã quá dài cho khổ tem — có thể khó quét.');
+    expect(createProductRows(long, { labelWidthMm: 35 })[0].warning).not.toBe(
+      ''
+    );
+    const back = setRowUnit(rows, rows[0].key, '', { labelWidthMm: 60 });
+    expect(back[0].warning).toBe('');
+  });
+
   it('ignores lines whose product is unknown', () => {
     expect(createPurchaseRows(items, [noodle])).toHaveLength(1);
   });

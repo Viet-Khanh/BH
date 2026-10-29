@@ -3,6 +3,7 @@ import {
   getBaseQty,
   getUnitSellPrice,
 } from '../../../utils/productUnits.js';
+import { BARCODE_TOO_LONG_WARNING, isBarcodeTooLong } from './barcodeLayout.js';
 
 export const NO_UNIT_BARCODE_WARNING =
   'Đơn vị chưa có mã vạch — tem không có mã vạch.';
@@ -43,13 +44,26 @@ const readBarcode = (product, unit) => {
 
 const toCount = (value) => Math.max(0, Math.ceil(Number(value) || 0));
 
+const getLengthWarning = (barcode, format, labelWidthMm) =>
+  barcode && labelWidthMm && isBarcodeTooLong(barcode, format, labelWidthMm)
+    ? BARCODE_TOO_LONG_WARNING
+    : '';
+
 // One label row; without a count it is derived from baseCount (unit switch).
-export const buildLabelRow = (product, unitName = '', count, baseCount) => {
+// `labelWidthMm` enables the "too long to scan" warning.
+export const buildLabelRow = (
+  product,
+  unitName = '',
+  count,
+  baseCount,
+  { labelWidthMm } = {}
+) => {
   const unit = findProductUnit(product, unitName);
   const factor = unit ? Number(unit.factor) || 1 : 1;
   const hasCount = count !== undefined && count !== null;
   const base = baseCount ?? (hasCount ? Number(count) * factor : 0);
   const { barcode, hasOwnBarcode, warning } = readBarcode(product, unit);
+  const barcodeFormat = getBarcodeFormat(barcode);
   return {
     key: `${product?.id}::${unit ? unit.name : ''}`,
     productId: product?.id,
@@ -60,8 +74,8 @@ export const buildLabelRow = (product, unitName = '', count, baseCount) => {
     baseCount: base,
     price: getUnitSellPrice(product, unit ? unit.name : ''),
     barcode,
-    barcodeFormat: getBarcodeFormat(barcode),
-    warning,
+    barcodeFormat,
+    warning: warning || getLengthWarning(barcode, barcodeFormat, labelWidthMm),
     hasOwnBarcode,
   };
 };
@@ -71,6 +85,7 @@ export const buildLabelJobs = ({
   items = [],
   products = [],
   skipWithBarcode = true,
+  labelWidthMm,
 } = {}) => {
   const byId = new Map(products.map((product) => [product.id, product]));
   const totals = new Map();
@@ -81,7 +96,9 @@ export const buildLabelJobs = ({
   });
   return [...totals.entries()]
     .map(([productId, baseCount]) =>
-      buildLabelRow(byId.get(productId), '', undefined, baseCount)
+      buildLabelRow(byId.get(productId), '', undefined, baseCount, {
+        labelWidthMm,
+      })
     )
     .filter((row) => !(skipWithBarcode && row.hasOwnBarcode));
 };

@@ -86,6 +86,15 @@ describe('buildLabelJobs', () => {
     ).toHaveLength(2);
   });
 
+  it('passes the label width on for the length warning', () => {
+    const rows = buildLabelJobs({
+      items: [{ productId: 'p3', qty: 1 }],
+      products: [{ id: 'p3', name: 'X', code: 'SP-0000000001' }],
+      labelWidthMm: 35,
+    });
+    expect(rows[0].warning).toBe('Mã quá dài cho khổ tem — có thể khó quét.');
+  });
+
   it('ignores lines of unknown products and keeps line order', () => {
     const items = [
       { productId: 'p2', qty: 1 },
@@ -132,5 +141,27 @@ describe('buildLabelRow', () => {
   it('builds a stable key per product and unit', () => {
     expect(buildLabelRow(beer, 'thùng', 1).key).toBe('p1::thùng');
     expect(buildLabelRow(noodle, '', 1).key).toBe('p2::');
+  });
+
+  it('warns when the barcode is too long for the label width', () => {
+    const longCode = { ...noodle, code: 'SP-0000000001' };
+    const warning = 'Mã quá dài cho khổ tem — có thể khó quét.';
+    expect(
+      buildLabelRow(longCode, '', 1, undefined, { labelWidthMm: 35 })
+    ).toMatchObject({ warning });
+    expect(
+      buildLabelRow(longCode, '', 1, undefined, { labelWidthMm: 60 }).warning
+    ).toBe('');
+    expect(buildLabelRow(longCode, '', 1).warning).toBe('');
+    expect(
+      buildLabelRow(beer, '', 1, undefined, { labelWidthMm: 35 }).warning
+    ).toBe('');
+  });
+
+  it('keeps the missing-barcode warning for packaging units', () => {
+    const row = buildLabelRow(beer, 'thùng', 1, undefined, {
+      labelWidthMm: 35,
+    });
+    expect(row.warning).toBe('Đơn vị chưa có mã vạch — tem không có mã vạch.');
   });
 });

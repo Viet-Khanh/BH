@@ -26,6 +26,8 @@ export const useLabelPrint = ({ settings, products = [] } = {}) => {
   const enabled = useEditionFeature('labels');
   const storeSettings = useSettingsStore((state) => state.settings);
   const activeSettings = settings || storeSettings;
+  const printSettings = readPrintSettings(activeSettings);
+  const { labelWidthMm } = printSettings;
   const [state, setState] = useState(CLOSED);
   const [printing, setPrinting] = useState(false);
   const printingRef = useRef(false);
@@ -33,27 +35,40 @@ export const useLabelPrint = ({ settings, products = [] } = {}) => {
   // `auto`: opened by saving a purchase — stays closed when nothing needs a label.
   const openForPurchase = useCallback(
     (items, extraProducts = [], { auto = false } = {}) => {
-      const rows = createPurchaseRows(items, products, extraProducts);
+      const rows = createPurchaseRows(items, products, extraProducts, {
+        labelWidthMm,
+      });
       if (auto && !getVisibleRows(rows, true).length) return false;
       setState({ open: true, rows, skipWithBarcode: true, forPurchase: true });
       return true;
     },
-    [products]
+    [labelWidthMm, products]
   );
 
-  const openForProduct = useCallback((product) => {
-    const rows = createProductRows(product);
-    setState({ open: true, rows, skipWithBarcode: false, forPurchase: false });
-  }, []);
+  const openForProduct = useCallback(
+    (product) => {
+      const rows = createProductRows(product, { labelWidthMm });
+      setState({
+        open: true,
+        rows,
+        skipWithBarcode: false,
+        forPurchase: false,
+      });
+    },
+    [labelWidthMm]
+  );
 
   const close = useCallback(() => setState(CLOSED), []);
 
-  const setRowUnit = useCallback((key, unitName) => {
-    setState((prev) => ({
-      ...prev,
-      rows: changeRowUnit(prev.rows, key, unitName),
-    }));
-  }, []);
+  const setRowUnit = useCallback(
+    (key, unitName) => {
+      setState((prev) => ({
+        ...prev,
+        rows: changeRowUnit(prev.rows, key, unitName, { labelWidthMm }),
+      }));
+    },
+    [labelWidthMm]
+  );
 
   const setRowCount = useCallback((key, count) => {
     setState((prev) => ({
@@ -99,7 +114,7 @@ export const useLabelPrint = ({ settings, products = [] } = {}) => {
     rows: getVisibleRows(state.rows, state.skipWithBarcode),
     total,
     forPurchase: state.forPurchase,
-    printerName: readPrintSettings(activeSettings).labelPrinterName,
+    printerName: printSettings.labelPrinterName,
     printing,
     openForPurchase,
     openForProduct,
