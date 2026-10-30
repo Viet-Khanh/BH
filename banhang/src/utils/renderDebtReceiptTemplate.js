@@ -1,11 +1,6 @@
 import dayjs from 'dayjs';
 import { formatMoney } from './moneyFormat.js';
-
-const METHOD_LABELS = {
-  cash: 'Tiền mặt',
-  bank: 'Chuyển khoản',
-  other: 'Khác',
-};
+import { formatPaymentMethod } from './paymentMethod.js';
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -38,7 +33,7 @@ export const renderDebtReceiptTemplate = ({
   };
   const amount = Number(receipt?.amount || 0);
   const remainingDebt = Number(debtBefore || 0) - amount;
-  const methodLabel = METHOD_LABELS[receipt?.method] || receipt?.method || '';
+  const methodLabel = formatPaymentMethod(receipt?.method);
   const receiptDate = receipt?.date
     ? dayjs(receipt.date).format('DD/MM/YYYY HH:mm')
     : '';

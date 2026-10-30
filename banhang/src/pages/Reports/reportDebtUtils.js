@@ -1,13 +1,7 @@
 import { formatMoney } from '../../utils/moneyFormat.js';
+import { formatPaymentMethod } from '../../utils/paymentMethod.js';
 
-const PAYMENT_METHOD_LABELS = {
-  cash: 'Tiền mặt',
-  bank: 'Chuyển khoản',
-  other: 'Khác',
-};
-
-export const formatDebtPaymentMethod = (value) =>
-  PAYMENT_METHOD_LABELS[value] || value || '';
+export const formatDebtPaymentMethod = formatPaymentMethod;
 
 export const buildCustomerDebtExportRows = (rows = []) =>
   rows.map((row) => ({

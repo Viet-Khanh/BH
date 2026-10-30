@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { formatMoney } from '../../utils/moneyFormat.js';
+import { formatPaymentMethod } from '../../utils/paymentMethod.js';
 
 const InvoicePaymentsSection = ({
   isEdit,
@@ -36,7 +37,7 @@ const InvoicePaymentsSection = ({
               {payments.map((payment) => (
                 <tr key={payment.id}>
                   <td>{dayjs(payment.date).format('DD/MM/YYYY')}</td>
-                  <td>{payment.method}</td>
+                  <td>{formatPaymentMethod(payment.method)}</td>
                   <td>{formatMoney(payment.amount)}</td>
                   <td>{payment.note}</td>
                 </tr>

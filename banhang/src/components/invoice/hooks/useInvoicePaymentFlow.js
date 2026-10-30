@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { getLatestPaymentMethod } from '../../../utils/paymentMethod.js';
 import { createCheckoutHandler } from '../invoicePaymentHandlers.js';
 
 export const useInvoicePaymentFlow = ({
@@ -18,14 +19,18 @@ export const useInvoicePaymentFlow = ({
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentNote, setPaymentNote] = useState('');
+  const latestPaymentMethod = useMemo(
+    () => getLatestPaymentMethod(payments),
+    [payments]
+  );
 
   useEffect(() => {
     if (!paymentModalOpen) return;
 
     setPaymentAmount(isEdit ? paidTotal : 0);
     setPaymentNote('');
-    setPaymentMethod('cash');
-  }, [isEdit, paidTotal, paymentModalOpen]);
+    setPaymentMethod(isEdit ? latestPaymentMethod : 'cash');
+  }, [isEdit, latestPaymentMethod, paidTotal, paymentModalOpen]);
 
   const handleCheckout = useMemo(
     () =>
