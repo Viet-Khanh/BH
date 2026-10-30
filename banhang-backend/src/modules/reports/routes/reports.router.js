@@ -11,6 +11,10 @@ router.get(
   '/stock-movement',
   asyncHandler(ReportController.getStockMovementReport)
 );
+router.get(
+  '/stock-movement/:productId',
+  asyncHandler(ReportController.getStockCard)
+);
 router.get('/debt', asyncHandler(ReportController.getDebtReport));
 router.get(
   '/supplier-debt',

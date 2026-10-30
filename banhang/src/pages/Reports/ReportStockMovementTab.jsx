@@ -5,15 +5,12 @@ import ExportActions from '../../components/ExportActions.jsx';
 import { getStockMovementReport } from '../../features/reports/api/reportsApi.js';
 import { buildMonthToDateRange } from '../../features/reports/domain/reportFilters.js';
 import { useReportFilters } from '../../features/reports/hooks/useReportFilters.js';
-
-const buildExportRow = (row) => ({
-  'Tên hàng': row.name,
-  ĐVT: row.unit,
-  'Tồn đầu': row.openingStock,
-  Nhập: row.inQty,
-  Xuất: row.outQty,
-  'Tồn cuối': row.closingStock,
-});
+import StockCardModal from './components/StockCardModal.jsx';
+import StockMovementTable from './components/StockMovementTable.jsx';
+import {
+  buildStockMovementExportRow,
+  buildStockRangeLabels,
+} from './reportStockMovementUtils.js';
 
 const ReportStockMovementTab = () => {
   const defaultRange = useMemo(() => buildMonthToDateRange(), []);
@@ -23,6 +20,8 @@ const ReportStockMovementTab = () => {
   });
   const [keyword, setKeyword] = useState('');
   const [rows, setRows] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const labels = useMemo(() => buildStockRangeLabels(range), [range]);
 
   const fetchReport = useCallback(async () => {
     const data = await getStockMovementReport({ range });
@@ -59,7 +58,7 @@ const ReportStockMovementTab = () => {
   }, [rows, keyword]);
 
   const exportRows = useMemo(
-    () => filteredRows.map(buildExportRow),
+    () => filteredRows.map(buildStockMovementExportRow),
     [filteredRows]
   );
 
@@ -91,37 +90,21 @@ const ReportStockMovementTab = () => {
         </div>
       </div>
 
-      <div className="table-wrapper">
-        <table className="invoice-items-table">
-          <thead>
-            <tr>
-              <th>Tên hàng</th>
-              <th>ĐVT</th>
-              <th>Tồn đầu</th>
-              <th>Nhập</th>
-              <th>Xuất</th>
-              <th>Tồn cuối</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRows.map((row) => (
-              <tr key={row.id}>
-                <td>{row.name}</td>
-                <td>{row.unit}</td>
-                <td>{row.openingStock}</td>
-                <td>{row.inQty}</td>
-                <td>{row.outQty}</td>
-                <td>{row.closingStock}</td>
-              </tr>
-            ))}
-            {!filteredRows.length && (
-              <tr>
-                <td colSpan={6}>Chưa có dữ liệu.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div style={{ margin: '8px 0', color: '#5b6b69' }}>
+        Bấm vào một dòng để xem thẻ kho (từng phiếu nhập/xuất và tồn sau mỗi
+        phiếu).
       </div>
+      <StockMovementTable
+        rows={filteredRows}
+        labels={labels}
+        onSelect={setSelectedProduct}
+      />
+      <StockCardModal
+        product={selectedProduct}
+        range={range}
+        labels={labels}
+        onClose={() => setSelectedProduct(null)}
+      />
     </div>
   );
 };

@@ -1,10 +1,6 @@
 import { computeStock } from '../../../utils/stock.js';
 import { isSnapshotReady } from '../../../utils/snapshotStatus.js';
-import {
-  buildProfitRows,
-  inRange,
-  parseRange,
-} from '../../../utils/reportHelpers.js';
+import { buildProfitRows, parseRange } from '../../../utils/reportHelpers.js';
 import {
   findCashbookEntries,
   findInvoices,
@@ -56,94 +52,6 @@ export const getStockReport = async () => {
   });
 
   return { rows, lowStockThreshold: settings?.lowStockThreshold ?? 0 };
-};
-
-export const getStockMovementReport = async (query) => {
-  const { from, to } = parseRange(query);
-  const hasFrom = Boolean(from);
-
-  const [products, purchases, invoices] = await Promise.all([
-    findProducts({ isDeleted: { $ne: true } }),
-    findPurchases({ isDeleted: { $ne: true } }),
-    findInvoices({ isDeleted: { $ne: true } }),
-  ]);
-
-  const statsByProduct = {};
-  const getStats = (productId) => {
-    if (!statsByProduct[productId]) {
-      statsByProduct[productId] = {
-        appliedPurchaseTotal: 0,
-        purchaseBeforeFrom: 0,
-        purchaseRange: 0,
-        invoiceBeforeFrom: 0,
-        invoiceRange: 0,
-      };
-    }
-    return statsByProduct[productId];
-  };
-
-  purchases.forEach((purchase) => {
-    const purchaseDate = purchase.date;
-    const beforeFrom = hasFrom && new Date(purchaseDate) < from.toDate();
-    const inRangeFlag = inRange(purchaseDate, from, to);
-
-    (purchase.items || []).forEach((item) => {
-      if (!item.productId) return;
-      const stats = getStats(item.productId);
-      const qty = Number(item.qty || 0);
-      if (purchase.appliedToStock) {
-        stats.appliedPurchaseTotal += qty;
-      }
-      if (beforeFrom) stats.purchaseBeforeFrom += qty;
-      if (inRangeFlag) stats.purchaseRange += qty;
-    });
-  });
-
-  invoices.forEach((invoice) => {
-    const invoiceDate = invoice.date;
-    const beforeFrom = hasFrom && new Date(invoiceDate) < from.toDate();
-    const inRangeFlag = inRange(invoiceDate, from, to);
-
-    (invoice.items || []).forEach((item) => {
-      if (!item.productId) return;
-      const stats = getStats(item.productId);
-      const qty = Number(item.qty || 0);
-      if (beforeFrom) stats.invoiceBeforeFrom += qty;
-      if (inRangeFlag) stats.invoiceRange += qty;
-    });
-  });
-
-  const rows = products.map((product) => {
-    const stats = statsByProduct[product.id] || {
-      appliedPurchaseTotal: 0,
-      purchaseBeforeFrom: 0,
-      purchaseRange: 0,
-      invoiceBeforeFrom: 0,
-      invoiceRange: 0,
-    };
-    const baseStock = Number(product.openingStock || 0);
-    const initialStock = baseStock - Number(stats.appliedPurchaseTotal || 0);
-    const openingStock = hasFrom
-      ? initialStock +
-        Number(stats.purchaseBeforeFrom || 0) -
-        Number(stats.invoiceBeforeFrom || 0)
-      : initialStock;
-    const inQty = Number(stats.purchaseRange || 0);
-    const outQty = Number(stats.invoiceRange || 0);
-    const closingStock = openingStock + inQty - outQty;
-
-    return {
-      id: product.id,
-      name: product.name || '',
-      unit: product.unit || '',
-      openingStock,
-      inQty,
-      outQty,
-      closingStock,
-    };
-  });
-
-  return { rows };
 };
 
 export const getProfitReport = async (query) => {

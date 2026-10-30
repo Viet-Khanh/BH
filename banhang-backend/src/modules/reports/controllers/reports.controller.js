@@ -10,6 +10,21 @@ export const getStockMovementReport = async (req, res) => {
   res.json(data);
 };
 
+export const getStockCard = async (req, res) => {
+  try {
+    const data = await ReportService.getStockCard(
+      req.params.productId,
+      req.query
+    );
+    res.json(data);
+  } catch (err) {
+    if (err.message === 'Product not found') {
+      return res.status(404).json({ message: err.message });
+    }
+    throw err;
+  }
+};
+
 export const getDebtReport = async (req, res) => {
   const data = await ReportService.getDebtReport();
   res.json(data);

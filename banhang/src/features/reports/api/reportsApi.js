@@ -113,6 +113,16 @@ export const getStockMovementReport = ({ range } = {}) =>
     )
   );
 
+export const getStockCard = ({ productId, range } = {}) =>
+  apiRequest(
+    withQuery(
+      `/reports/stock-movement/${productId}`,
+      buildReportQueryString({
+        range,
+      })
+    )
+  );
+
 export const getProfitReport = ({ range } = {}) =>
   apiRequest(
     withQuery(
