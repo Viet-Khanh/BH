@@ -63,28 +63,65 @@ const itemColumnStyles = {
   total: 'width:100px;text-align:right;',
 };
 
+const getItemProductKey = (item, product) => {
+  if (item.productId) return item.productId;
+  if (product) return product.name;
+  return item.name || '';
+};
+
+const getItemArea = (item) => {
+  const length = Number(item.length || 0);
+  const width = Number(item.width || 0);
+  if (!(length > 0 && width > 0)) return 0;
+  return Number(item.qty || 0) * length * width;
+};
+
+// Consecutive rows of the same product print the name once; the first row
+// also carries the group's total quantity and area.
+const buildGroupTotals = (items, productKeys) => {
+  const totals = new Map();
+  let startIndex = 0;
+  items.forEach((item, index) => {
+    const key = productKeys[index];
+    const continuesGroup =
+      index > 0 && key && key === productKeys[index - 1];
+    if (!continuesGroup) startIndex = index;
+    const group = totals.get(startIndex) || { rows: 0, qty: 0, area: 0 };
+    group.rows += 1;
+    group.qty += Number(item.qty || 0);
+    group.area += getItemArea(item);
+    totals.set(startIndex, group);
+  });
+  return totals;
+};
+
+const buildGroupTotalHtml = (group, unit) => {
+  if (!group || group.rows < 2) return '';
+  const parts = [];
+  const qtyDisplay = formatMeasure(group.qty, { blankOnZero: true });
+  if (qtyDisplay) parts.push(`${qtyDisplay}${unit ? ` ${escapeHtml(unit)}` : ''}`);
+  const areaDisplay = formatMeasure(group.area, { blankOnZero: true });
+  if (areaDisplay) parts.push(`${areaDisplay} m2`);
+  if (!parts.length) return '';
+  return `<div class="item-group-total" style="font-size:0.9em;font-weight:700;margin-top:1px;">${parts.join(' · ')}</div>`;
+};
+
 export const buildItemsHtml = (items = [], products = []) => {
+  const itemProducts = items.map((item) =>
+    products.find((p) => p.id === item.productId)
+  );
+  const productKeys = items.map((item, index) =>
+    getItemProductKey(item, itemProducts[index])
+  );
+  const groupTotals = buildGroupTotals(items, productKeys);
   const rows = items
     .map((item, index) => {
-      const product = products.find((p) => p.id === item.productId);
+      const product = itemProducts[index];
       const name = product ? product.name : item.name || 'Sản phẩm';
-      const previousItem = items[index - 1];
-      const previousProduct = previousItem
-        ? products.find((p) => p.id === previousItem.productId)
-        : null;
-      const previousName = previousProduct
-        ? previousProduct.name
-        : previousItem?.name || 'Sản phẩm';
-      const currentProductKey =
-        item.productId || (product || item.name ? name : '');
-      const previousProductKey =
-        previousItem?.productId ||
-        (previousProduct || previousItem?.name ? previousName : '');
       const isSameAsPrevious = Boolean(
-        previousItem &&
-          currentProductKey &&
-          previousProductKey &&
-          currentProductKey === previousProductKey
+        index > 0 &&
+          productKeys[index] &&
+          productKeys[index] === productKeys[index - 1]
       );
       const unit = product?.unit || '';
       const productCode = product?.code || item.productCode || '';
@@ -99,7 +136,7 @@ export const buildItemsHtml = (items = [], products = []) => {
       const widthDisplay = hasDimensions
         ? formatMeasure(width, { blankOnZero: true })
         : '';
-      const areaQty = hasDimensions ? qty * length * width : 0;
+      const areaQty = getItemArea(item);
       const areaQtyDisplay = hasDimensions
         ? formatMeasure(areaQty, { blankOnZero: true })
         : '';
@@ -113,7 +150,7 @@ export const buildItemsHtml = (items = [], products = []) => {
           : '';
       const nameCell = isSameAsPrevious
         ? ''
-        : `<div class="item-name" style="font-weight:700;color:#111;">${escapeHtml(name)}</div>${codeCell}`;
+        : `<div class="item-name" style="font-weight:700;color:#111;">${escapeHtml(name)}</div>${codeCell}${buildGroupTotalHtml(groupTotals.get(index), unit)}`;
       return `
         <tr>
           <td style="${itemColumnStyles.index}">${index + 1}</td>
