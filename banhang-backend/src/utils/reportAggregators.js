@@ -54,7 +54,6 @@ export const aggregateSalesInvoices = async ({ from, to, customerId }) => {
   const products = productIds.size
     ? await Product.find({
         id: { $in: [...productIds] },
-        isDeleted: { $ne: true },
       }).lean()
     : [];
   const productMap = buildProductMap(products);
@@ -101,7 +100,6 @@ export const aggregateSingleInvoice = async (invoice) => {
   const baseProducts = productIds.size
     ? await Product.find({
         id: { $in: [...productIds] },
-        isDeleted: { $ne: true },
       }).lean()
     : [];
   const products = baseProducts.map((product) => ({
