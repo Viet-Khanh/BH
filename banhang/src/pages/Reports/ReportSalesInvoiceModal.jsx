@@ -7,6 +7,7 @@ const ReportSalesInvoiceModal = ({
   customer,
   items,
   onClose,
+  onCopy,
   onDelete,
   onEdit,
   onPrint,
@@ -80,6 +81,9 @@ const ReportSalesInvoiceModal = ({
           </Button>
           <Button size="large" onClick={onEdit}>
             SỬA
+          </Button>
+          <Button size="large" onClick={onCopy}>
+            SAO CHÉP
           </Button>
           <Button
             size="large"

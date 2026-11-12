@@ -42,6 +42,33 @@ export const buildCreatedInvoicePayload = ({ data, id }) => ({
   ...data,
 });
 
+export const buildCopiedInvoiceDraft = (
+  invoice,
+  now = new Date().toISOString()
+) => {
+  if (!invoice) return null;
+
+  const draft = { ...invoice };
+  delete draft.id;
+  delete draft.code;
+  delete draft.changeLog;
+  delete draft.customerId;
+  delete draft.paymentStatus;
+
+  return {
+    ...draft,
+    customerId: '',
+    date: now,
+    items: Array.isArray(invoice.items)
+      ? invoice.items.map((item) => {
+          const draftItem = { ...item };
+          delete draftItem.costPriceSnapshot;
+          return draftItem;
+        })
+      : [],
+  };
+};
+
 export const buildUpdatedInvoicePayload = ({ editing, data, paid }) => {
   const logs = [...(editing.changeLog || [])];
 

@@ -9,6 +9,7 @@ const SalesScreen = () => {
     <div>
       <InvoiceEditor
         invoice={invoice.editing}
+        draftInvoice={invoice.draft}
         customers={data.customers}
         invoices={data.invoices}
         products={data.products}

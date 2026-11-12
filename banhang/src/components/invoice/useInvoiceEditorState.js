@@ -9,6 +9,7 @@ import { useInvoiceTicketActions } from './hooks/useInvoiceTicketActions.js';
 
 const useInvoiceEditorState = ({
   invoice,
+  draftInvoice,
   customers = [],
   products = [],
   payments = [],
@@ -32,7 +33,7 @@ const useInvoiceEditorState = ({
 }) => {
   const isEdit = Boolean(invoice);
   const draft = useInvoiceDraftState({
-    invoice,
+    invoice: invoice || draftInvoice,
     customers,
     onCustomerChange,
   });

@@ -53,14 +53,7 @@ export const useSalesInvoicePersistence = ({
     ]
   );
 
-  const newInvoice = useCallback(() => {
-    editingRef.current = null;
-    setEditing(null);
-    setInvoicePayments([]);
-  }, [editingRef, setEditing, setInvoicePayments]);
-
   return {
     saveInvoice,
-    newInvoice,
   };
 };

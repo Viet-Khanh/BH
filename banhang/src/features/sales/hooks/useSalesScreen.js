@@ -25,6 +25,7 @@ export const useSalesScreen = () => {
   const debt = useSalesCustomerDebt();
   const editor = useSalesEditor({
     editId: navigation.editId,
+    copyId: navigation.copyId,
     mergeCatalogProducts: catalog.mergeCatalogProducts,
     onInvoiceDebtLoaded: debt.setCustomerDebt,
   });
@@ -109,6 +110,7 @@ export const useSalesScreen = () => {
     },
     invoice: {
       editing: editor.editing,
+      draft: editor.draftInvoice,
       payments: editor.invoicePayments,
       customerDebt: debt.customerDebt,
     },
@@ -124,7 +126,7 @@ export const useSalesScreen = () => {
       createProduct,
       refreshCustomerDebt,
       saveInvoice: invoicePersistence.saveInvoice,
-      newInvoice: invoicePersistence.newInvoice,
+      newInvoice: editor.resetEditing,
       addPayment: payments.addPayment,
       updatePayment: payments.updatePayment,
       removePayment: payments.removePayment,

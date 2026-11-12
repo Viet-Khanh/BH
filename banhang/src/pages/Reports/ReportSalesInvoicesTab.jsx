@@ -74,6 +74,7 @@ const ReportSalesInvoicesTab = ({ showSensitiveInfo = false }) => {
         customer={modal.selectedCustomer}
         items={modal.selectedItems}
         onClose={modal.closeInvoice}
+        onCopy={modal.handleCopy}
         onDelete={modal.handleDelete}
         onEdit={modal.handleEdit}
         onPrint={modal.handlePrint}
